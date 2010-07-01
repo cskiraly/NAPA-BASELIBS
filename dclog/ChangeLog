@@ -1,0 +1,10 @@
+2005-02-27  Josh Glover <jmglov@jmglov.net>
+
+	Released 1.1.0
+
+	* Initial public revision
+2006-03-04  Josh Glover <jmglov@jmglov.net>
+
+	Released 1.1.1
+
+	* Fixed broken dist tarball

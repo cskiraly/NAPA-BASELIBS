@@ -1,0 +1,59 @@
+# Initialization parameters for logging
+
+log {
+        level = 3
+        logfile = "source.log"
+	filemode = "a"
+}
+
+# Initialization parameters for ML
+network {
+	timeout = 3
+        # un-comment the "address" line and enter your primary
+        # IP address if auto-detection fails
+        # address = 192.168.35.15
+        # UDP port 
+	port = 1234
+	# STUN server
+	stun { server = "stun.ekiga.net" }
+}
+
+# Repository server to connect to (address:port)
+repository {
+	server = "repository.napa-wine.eu:9832" 
+}
+
+# Configuration for the pseudo-"SOM" module
+som {
+	# Use "neighborlistBroadcast" on the source node
+	# for the "Broadcast" test
+	protocol = "neighborlistBroadcast"
+	# Refresh the neighborlist from the Repository this often (sec)
+	neighborlist {
+		refreshPeriod = 5
+	}
+	# channel name - separate our experiments from others
+	# please change MyChannel to a reasonable value
+	channel = "MyChannel"
+}
+
+# Source ingestor configuration
+# 2 modes are supported: "VLC" (UDP-based streaming) and "Napa-WINE" (internal HTTP interface)
+# the 2 modes are differentiated by the "stream" URL:
+# - if it starts with "udp://", the VLC mode will be activated,
+# - it it starts with "http://" then the internal HTTP interface is used
+
+source {
+	# 1. VLC-style configuration
+	# Use vlc to stream to this UDP port
+	# On Unix, use a command line like this:
+	# vlc -L --sout udp://127.0.0.1:5556 -I none --quiet ~tiv/starwars.avi 
+	stream = "udp://127.0.0.1:5556"
+	# Length of a chunk in seconds for the chunkizer 
+	# (this parameter only used by the VLC-style chunkizer)
+	chunk_duration = 0.5
+
+	# "NAPA-WINE" style chunkizer specification
+	#stream = "http://127.0.0.1:7657/source"
+}
+

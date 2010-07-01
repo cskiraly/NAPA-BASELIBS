@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<alto xmlns='urn:ietf:params:xml:ns:p2p:alto'>
+    <group_rating_request db_version='1234'>
+        <pri_ratcrit crit='pref'/>
+        <rc_hla><ipprefix version='4' prefix='195.37.70.39/32'/></rc_hla>
+        <cnd_hla>
+            <ipprefix version='4' prefix='195.37.70.39/32'/>
+            <ipprefix version='4' prefix='193.141.139.237/32'/>
+            <ipprefix version='4' prefix='58.89.210.171/32'/>
+            <ipprefix version='4' prefix='122.224.8.143/32'/>
+            <ipprefix version='4' prefix='202.103.147.132/32'/>
+            <ipprefix version='4' prefix='135.245.1.29/32'/>
+            <ipprefix version='4' prefix='139.15.248.12/32'/>
+            <ipprefix version='4' prefix='141.113.97.34/32'/>
+            <ipprefix version='4' prefix='129.206.0.0/16'/>
+            <ipprefix version='4' prefix='129.13.0.0/16'/>
+            <ipprefix version='4' prefix='129.69.0.0/16'/>
+            <ipprefix version='4' prefix='130.83.0.0/16'/>
+            <ipprefix version='4' prefix='130.149.0.0/16'/>
+            <ipprefix version='4' prefix='171.67.0.0/16'/>
+            <ipprefix version='4' prefix='129.78.64.24'/>
+            <ipprefix version='4' prefix='12.110.110.204/32'/>
+            <ipprefix version='4' prefix='85.180.57.61/32'/>
+            <ipprefix version='4' prefix='84.56.180.139/32'/>
+            <ipprefix version='4' prefix='62.227.16.206/32'/>
+            <ipprefix version='4' prefix='80.238.206.25/32'/>
+        </cnd_hla>
+    </group_rating_request>
+</alto>

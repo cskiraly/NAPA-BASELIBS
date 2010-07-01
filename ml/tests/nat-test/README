@@ -1,0 +1,23 @@
+This directory contains a Netkit (www.netkit.org) laboratory
+intended to test the NAT capabilities of the ML.
+See
+http://wiki.netkit.org/netkit-labs/netkit_introduction/netkit-introduction.pdf
+for a quick introduction to netkit laboratories.
+
+PREREQUISITES
+-------------
+
+Download and install Netkit from 
+http://www.netkit.org
+
+Don't forget to define the netkit environment variables, e.g.
+
+export NETKIT_HOME=$HOME/netkit
+export MANPATH=:$NETKIT_HOME/man
+export PATH=$NETKIT_HOME/bin:$PATH
+
+
+HOW TO RUN
+----------
+
+./labrestart.sh

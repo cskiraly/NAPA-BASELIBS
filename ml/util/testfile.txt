@@ -1,0 +1,296 @@
+1Writing in English
+
+1.Style
+
+Goldene Regeln
+
+1.Subjekt und Verb sollten so nahe beisammen sein wie möglich! Vermeide „verwaiste“ Verben
+2.Der Satzanfang verbindet den Satz mit dem vorherigen Text.
+3.Das Satzende ist die richtige Stelle für neue Informationen.
+4.Nr. 2 und 3 gelten auch für ganze Abschnitte! 
+5.Vermeide passive Verben und „schwache“ Verbindungsverben wie is, was und has
+6.Vermeide Ketten von Nomen und Nominalisierungen 
+7.Benutze keine überflüssigen Wörter!
+8.Schachtelsätze sind schwerer zu verstehen als Ideen, die mit überleitenden Worten zusammengefügt sind.
+9.Mut zu kurzen Sätzen!!! Aber geize nicht zu sehr mit Worten!
+
+
+Überleitungen (transitional words)
+
+To provide an example:		To compare:		To summarize:		To contrast:
+for example			also 			in other words		but
+for instance			in the same manner	in short			however
+to illustrate the point		similarly			in summary		yet
+specifically			likewise			in conclusion		nonetheless
+that is 				in the same vein		finally			in contrast to
+				in comparison to 		that is			nevertheless
+										still
+even though
+										on the contrary
+although
+										despite
+										in opposition to
+										
+
+
+To indicate temporal 		To indicate logical	To indicate spatial	To show sequence:
+relationships:			relationships:		relationships: 		and
+before				so 			below			also
+earlier				if			above			besides
+during				or			beneath 			further
+now				therefore		beyond			furthermore	
+simultaneously			consequently		nearby			additionally
+meanwhile			as a result		at hand			moreover
+at the same time			obviously		across			next
+when				clearly			behind			too
+while				if and only if		throughout		first, second, third
+later				it follows that		nowhere			finally
+following			logically			everywhere			
+then				since						
+immediately			because					
+thereafter			nonetheless					
+after				by implication					
+afterwards									
+suddenly
+subsequently
+once again
+
+
+To add conditions
+apparently
+seemingly
+perhaps
+only when
+if and only if
+it might be
+possibly
+under these circumstances
+in these cases
+under these conditions
+in the case of
+														
+2.Sprache – Konventionen
+
+Capital letters
+
+Im Englischen werden Wörter in folgenden Fällen groß geschrieben:
+das erste Wort eines Satzes oder Satzfragments
+Namen von Tagen und Monaten (nicht jedoch Jahreszeiten)
+Namen von Sprachen
+Ortszugehörigkeiten wie Bsp.  German literature,  a Dutch person, Welsh music, Glaswegian beer
+Ausnahme: wenn die Ortszugehörigkeit fest in den Begriff integriert ist und nicht mehr unbedingt etwas mit der Herkunft zusammenhängt
+Bsp. möglich sind also: Danish pastry und danish pastry
+Zu beachten ist in diesem Zusammenhang, dass sich die Bedeutung unterscheiden kann:
+Bsp. In warm weather, we keep our french windows open. – Art der Fenster
+	  After nightfall, French windows are always shuttered. – die Fenster in Frankreich
+Nationalitäten und Namen von ethnischen Gruppen
+Bsp. The Basques and the Catalans spent decades struggling for autonomy.
+	  The African- American people...
+Namen
+von Personen und Gegenständen, aber beachte folgende Beispiele:
+The patron saint of carpenters is Saint Joseph.
+Government wird groß geschrieben, wenn man eine ganz bestimmte Regierung meint, jedoch ansonsten klein, genauso auch Parliament
+Namen von Epochen in der Geschichte
+Bsp. London was a prosperous city during the Middle Ages.
+Namen von Feiertagen
+Religiöse Bezeichnungen wie Last Supper, Prophet, Old Testament
+Alle wichtigen Wörter von Titeln können groß geschrieben werden. Dies ist in wissenschaftlichen Texten jedoch eher unüblich.
+Das erste Wort eines direkten Zitats, wenn dieses aus einem ganzen Satz besteht.
+Warennamen
+Das Pronomen I
+
+Abbreviations
+
+Titel: Mr Blair, Mrs Thatcher, Dr Watson, St John, aber
+M. Mitterand, 
+Prof. Higgins, jedoch im Text besser als Professor Higgins
+Vornamen werden oft ebenfalls abgekürzt: John F. Kennedy, George W. Bush. Mittlerweile werden die Punkte oft weggelassen: John F Kennedy, George W Bush
+a.m. und p.m. (im AE wird oft die Schreibweise am und pm vorgezogen)
+bc, ad
+Gebräuchliche Abkürzungen: BBC, DDT nur in Großbuchstaben,
+Akronyme werden wie normale Worte behandelt : radar, scuba diving
+in wenigen Ausnahmen werden sie groß geschrieben: Aids, the Benelux countries (von Belgium, the Netherlands and Luxembourg)
+Einheiten werden immer abgekürzt
+lateinische Abkürzungen, die zwar immer öfter verwendet werden, aber in wissenschaftlichen Texten vermieden werden sollten, wie beispielsweise
+e.g. – for example
+i.e. -  in other words
+cf. -  compare 
+viz. -  namely
+
+Schreibweise von Zahlen
+
+Die Zahlen 0 – 20 sollten in förmlichen Texten ausgeschrieben werden, allerdings nicht in naturwissenschaftlichen Arbeiten! Schöner ist es, wenn man darauf achtet, keine Zahl an den Satzanfang zu stellen.
+Tausender- und Dezimaltrennzeichen: 1 234.56 (BE) bzw. 1,234.56 (AE)
+Zehnerpotenzen: liegendes Kreuz statt Malpunkt: 6.023 x 10²³ statt 6,023 ∙ 10²³
+Schreibweise von Daten:
+21 April 2002 oder 21 April, 2002
+21/1/2002 (BE!) bzw. 1/21/2002 (AE)
+12-23 January 2005 oder from 12th to 23rd January 2005
+1991-2002 oder between 1991 and 2002, aber 1991-2
+ad meist vor der Jahreszahl, bc nach der Jahreszahl
+Bsp. in ac 1032, in 1032 bc
+
+3.Sprache – Satzzeichen
+
+Quotation marks
+
+Anführungszeichen nur oben, also ‘...’ an Stelle von „...“. Gebräuchlich sind einfache Anführungszeichen, doppelte meist (BE) nur innerhalb halber Anführungszeichen, also ’blablabla “bla”...‘. Im amerikanischen Englisch werden auch doppelte Anführungszeichen gebraucht, einzelne Wörter stehen aber immer in einfachen Anführungszeichen.
+Im Allgemeinen gilt dazu: am besten so wenige direkte Zitate wie möglich in natur-wissenschaftlichen Texten benutzen. Auch einzelne Wörter werden üblicherweise nicht in Anführungszeichen zitiert.
+
+Kommaregeln
+
+kein Komma vor Infinitivsätzen
+Bsp. This investigation was done to get information about...
+Kein Komma vor that
+Bsp. Due to the fact that...
+Aber: The fact that has to be considered, is – The fact, which has to be considered, is
+kein Komma bei inhaltlich unentbehrlichen Relativsätzen
+Bsp.... was the test procedure which applied the highest voltage.
+Kommasetzung bei erläutenden Relativsätzen
+Bsp. The test procedure, which was carried out several times, showed...
+Kommasetzung nach einleitenden Umstandsbestimmungen oder bei Appositionen
+Bsp. In principle, the parameters can vary from..
+        for example, butterflies, moths, and flies
+Kommasetzung auch vor der letzten Aufzählung
+Bsp. ...experiment, simulation, and literature.
+
+Semicolon
+
+In englischen Texten werden Semicolons eher verwendet als in deutschen. Sie trennen zwei selbstständige Sätze, die eng zusammengehören. Semicolons sind somit ein stärkeres Trennungszeichen als ein Komma, aber weniger stark als ein Punkt. Sie ersetzen somit Verbindungswörter wie and, or, but und while.
+Bsp. 	There is no more to say; the matter is closed.
+	
+
+Runde Klammern (round brackets, parentheses)
+Klammern werden dafür eingesetzt, zusätzliche Information in einen Satz einzubauen, ohne den Leser zu stark von der Hauptaussage abzulenken. Diese Information kann aus Beispielen, Erklärungen eines Begriffs, Spezifikationen, Übersetzungen von Begriffen und Referenzen bzw. Querverweisen bestehen.
+Bsp. 	Many types of shellfish (for example, mussels and oysters) can be farmed quite readily.
+	Economists predict that the G7 countries (United States, Canada, Japan, Britain, France, Germany, 
+and Italy) will have growth rates averaging 2.5 % per annum.
+The beech (Fagus sylvatica) is a very common tree in Central Europe
+Temperatures will fall to 15 °C (59 °F) in the late evening.
+Daneben können Klammern angewandt werden, um platzsparend eine Option zu zeigen.
+Bsp. 	Any objection(s) should be made in writing to the Planning Department
+
+Wann sollten Klammern nicht eingesetzt werden?
+Unabhängige Sätze sollten nicht in durch Klammern in einen anderen Satz eingefügt werden.
+Bsp.	Statt: UN troops (all units are commanded by an officer experienced in peacekeeping duties) have been 
+deployed along the cease-fire line.
+Besser: UN troops (all units of which are commanded by an officer experienced in peacekeeping duties) have been 
+deployed along the cease-fire line
+	UN troops have been deployed along the cease-fire line. All units are commanded by an officer experienced in peacekeeping duties)
+
+
+
+Trennungsregeln
+Im Englischen wird nicht nach Silben getrennt wie im Deutschen, sondern nach dem Wortstamm. Z.B. writ-ing, avail-able
+
+
+4.Unterschiede British English (BE)/ American English (AE)
+
+wichtig!!! Die Arbeit einheitlich verfassen!
+
+Rechtschreibung:
+1.Endungen: 
+die Endungen –our bzw. –re im British English werden im American English meist zu –or und –er 
+Bsp. 	colour/ color
+vapour/vapor
+centre/ center
+In abgeleiteten Worten wird der letzte Buchstabe des Stammes im BE oft verdoppelt, im AE nicht.
+Bsp.	cancelled/ canceled
+	counsellor/ counselor
+	traveller/ traveler
+	aber: 	formatting/ formatting
+Am Ende bestimmter zweisilbiger Wörter steht im AE meist ein doppel- l, wo im BE nur ein l steht
+Bsp.	appal/ apall
+	distil/ distill
+	enrol/ enroll
+BE: ae oder oe wird im AE vielmals zu e
+Bsp. 	aesthetic/ esthetic
+	amoeba/ ameba
+diarrhoea/ diarrhea
+foetus/ fetus
+haemoglobin/ hemoglobin
+-ise bzw. -yse im BE wird zu –ize  bzw. –yze im AE
+Bsp.	paralyse/ paralyze
+	analyse/ analyze
+weitere Ausnahmen
+Bsp.	catalogue/ catalog
+licence/ license
+programme/program
+2.Wortstamm: 
+reflexion/ reflection
+deflexion/ deflection
+tyre/tire
+acknowledgement/acknowledgment
+aeroplane/airplane
+gaol/jail
+axe/ ax
+sulphur/ sulfur
+grey/ gray
+sceptic/ skeptic
+...
+Unterschiedliche Begriffe:
+z.B. (BE/AE) housing/gearbox, transmission/ linkage, misprint/typo etc.
+
+Schreibweise von Zahlen
+Tausender- und Dezimaltrennzeichen: 1,234.56 bzw. 1 234.56
+Zehnerpotenzen: liegendes Kreuz statt Malpunkt: 6.023 x 10²³ statt 6,023 ∙ 10²³
+
+
+5.Common errors
+
+Errors in using nouns
+
+Nomen, die immer im Plural stehen
+annals,	goods, links, scissors, riches, remains, proceeds, vitals, thanks, wages...
+Nomen, die immer in Singular stehen
+acoustics, analytics, dynamics, economics, ethics, hydromechanics, means, news, optics, politics, statistics, United States...
+selten können diese Wörter jedoch auch im Plural verwendet werden
+Bsp. the politics of the brothers are sharply different (hier wird politics für politic beliefs verwendet)
+
+Errors in using pronouns
+
+Everyone und ähnliche Pronomen (anyone, no one, somebody...) sind immer im Singular
+Bsp. Everyone is reading in his book
+(wie im Deutschen)
+either – neither
+it als Pronomen
+als Pronomen ist it immer im Singular, auch wenn das zugehörige Nomen im Plural steht.
+Bsp. It is the snowfalls that do the real damage
+both, few, many und several stehen immer im Plural
+all, any, none und some: können sowohl im Plural als auch im Singular stehen
+Bsp.  All I have left is a few books
+	   All of the group are planning to attend
+	  Is any of the cake left?
+	  None of the books are here.
+
+Errors in case – the gerund
+
+Das Gerund kann als Verb oder Partizip benutzt werden. Als Verb beschreibt es eine zu einem Zeitpunkt ablaufende Handlung ohne bestimmten Anfang oder Ende; als Partizip wird es ähnlich eines Nomens verwendet. 
+Bsp.  	Gerund: We heard him singing. I was working in the library when I saw him.
+	Partizip: We heard his singing.
+		  John likes running.
+
+False friends
+
+Bsp.
+Englisch		Deutsch
+also			auch, also
+when			wann, auch wenn 
+economical			sparsam
+politic			klug, opportun
+overlook			Aussicht haben auf; ignorieren
+disinterested		unvoreingenommen, uneigennützig; desinteressiert
+... also im Zweifelsfall doch noch einmal das Wörterbuch konsultieren!
+
+6.Literatur
+
+Berry, T.E., 1971. The Most Common Mistakes in English Usage. McGraw-Hill, New York
+Breitkreuz, H., 1991. False Friends. Stolpersteine des deutsch-englischen Wortschatzes. Rowohlt, Hamburg.
+Cullen, K. (Hrsg.), 1999. Guide to Punctuation. Chambers, Edinburgh.
+Davidson, G. (Hrsg.), 1996. Guide to Grammar and Usage. Chambers, Edinburgh.
+Friedrich, Ch., 1997. Schriftliche Arbeiten im technisch- naturwissenschaftlichen Studium. DUDEN Taschenbücher, Dudenverlag, Mannheim.
+Porush, D., 1995. A Short Guide to Writing about Science. HaperCollins College Publishers, New York
+Strunk, J.R. und White, E.B., 2000. The Elements of Style. 4. Aufl. Allyn und Bacon, Boston.
+Trask, R.L., 1997. The Penguin Guide to Punctuation. Penguin Books, London.
+
+

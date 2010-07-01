@@ -1,0 +1,42 @@
+This is an short explaination for the messaging layer library.   
+
+The library requires the libevent library in the version 2.0.1 alpha and
+the C math library. The library is implemented in C and works in
+unix/linux. It is tested with Ubuntu 8.04.
+
+The library can be compile with ./make.
+
+This library is a network layer abstraction for p2p systems, that has
+the primitives: 
+	- connect to a peer 
+	- send arbitrary size data to a peer
+
+Furthermore, it provides the functionalites: 
+	- pmtu discovery
+	- NAT traversal
+	- data fragmentation and reassembly
+
+The library has six source code files: messagingLayer.h messagingLayer.c
+transmissionHandler.h transmissionHandlder.c stun.h stun.c udpSocket.h
+udpSocket.c 
+
+The files stun.h stun.c udpSocket.h udpSocket.c are placed in the
+subfolder "util". 
+
+The messagingLayer.h and messagingLayer.c files contain the functions of
+the API. These files are only wrapper files for function in the
+transmissionHandler.h and transmissionHandler.c files. 
+
+The files transmissionHandler.h and transmissionHandler.c have the main
+functionality of the messaging layer. For simplicity several
+functionalites were excluded into utility files stun.h, stun.c,
+udpSocket.h ,and udpSocket.c .
+
+Stun.h and stun.c contain the NAT traversal functionality according to
+STUN. They are used by the transmissionHandler to implement a STUN
+client.
+
+The udpSocket.h and udpSocket.c files contain a udp socket abstraction.
+In the current implementation the file works only with a unix socket.   
+
+The tests folder contains various test programs and usage eexample code.

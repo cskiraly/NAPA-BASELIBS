@@ -1,0 +1,16 @@
+We implemented a simple echo server to show how the messaging layer
+library can be used. The echo server is named echoServer.c .
+
+The echo server demonstartion requires that you start a STUN server
+first. An open source STUN server is in the folder "../stun_server". It can
+be started with the script start_stun_server.sh. In the following you
+have to start three instances of the echo server in different shells,
+each with a different argument. The arguments are 1, 2, and 3.
+
+The commands for the demo in short:
+    In the folder ../stun_server/stund/ start
+    ./start_stun_server.sh
+    Back in the original folder start
+    ./echoServer 1
+    ./echoServer 2
+    ./echoServer 3

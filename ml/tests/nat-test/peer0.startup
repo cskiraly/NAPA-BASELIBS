@@ -1,0 +1,7 @@
+#configure the network interfaces
+ifconfig eth0 $HOSTNAME up
+
+. /hostlab/CONFIG
+
+#start receiver
+$GRAPESDIR/som/Tests/chunk_delivery_test -r -x stunserver1a &

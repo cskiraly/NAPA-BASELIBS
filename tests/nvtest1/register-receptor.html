@@ -1,0 +1,82 @@
+<HTML>
+<HEAD>
+<META NAME="GENERATOR" Content="Microsoft Visual Studio 8.0">
+<TITLE></TITLE>
+    <style type="text/css">
+        #Text1
+        {
+            width: 233px;
+        }
+        .style1
+        {
+            text-align: center;
+        }
+    </style>
+<script language="javascript" type="text/javascript">
+// <!CDATA[
+
+function Text2_onclick() {
+
+}
+
+// ]]>
+</script>
+</HEAD>
+<BODY bgcolor="#ffff99">
+
+
+
+    <h2 class="style1">
+        GRAPES Application Receptor Registration</h2>
+    <p>
+        <i>This screen allows you to register HTTP receptors for this peer 
+        manually. Fill in the 
+        values and press &quot;Register&quot;.</i></p>
+    <form action="/register-receptor" method="get">
+    <table style="width:100%;" bgcolor="#C0FFC0">
+        <tr bgcolor="#E0E0E0">
+            <th>
+                Parameter</th>
+            <th>
+                Value</th>
+            <th>
+                Example</th>
+        </tr>
+        <tr>
+            <td>
+                URL prefix for receiving chunks</td>
+            <td>
+                <input name="url" type="text" value="localhost:9191/NapaTest/chunk"></td>
+            <td>
+                http://dechunker11.napa.org:9191/NapaTest/chunk</td>
+        </tr>
+        <tr>
+            <td>
+                Delay target (seconds, relative to ingestion time)</td>
+            <td>
+                <input name="delay" type="text" value="5.0" /></td>
+            <td>
+                2.5&nbsp;&nbsp; (expressed in seconds)</td>
+        </tr>
+        <tr>
+            <td>
+                Registration expiration (seconds)</td>
+            <td>
+                
+                <input name="validity" type="text" value="300"/></td>
+            <td>
+                600 (i.e. 10 minutes)</td>
+        </tr>
+        <tr>
+            <td>
+                </td>
+            <td>
+                <input type="submit" value="Register"/> 
+                <input type="reset" value="Reset"/></td>
+            <td>
+                </td>
+        </tr>
+    </table>
+    </form>
+</BODY>
+</HTML>

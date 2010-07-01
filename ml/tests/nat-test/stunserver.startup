@@ -1,0 +1,8 @@
+#configure the network interfaces
+ifconfig eth0 stunserver1a up
+ifconfig eth1 stunserver1b up
+
+. /hostlab/CONFIG
+
+#start receiver
+$GRAPESDIR/ml/stun_server/stund/server -v -h stunserver1a -a stunserver1b &

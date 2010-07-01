@@ -1,0 +1,20 @@
+195.37.70.39/32         # mito.netlab.nec.de
+193.141.139.237/32      # www.nec.de
+58.89.210.171/32        # www.nec.co.jp
+122.224.8.143/32        # www.huawei.cn
+202.103.147.132/32      # www.zte.com.cn
+135.245.1.29/32         # www.alcatel.de
+139.15.248.12/32        # www.bosch.de
+141.113.97.34/32        # www.daimler.de
+129.206.0.0/16          # university of heidelberg
+129.13.0.0/16           # university of karlsruhe
+129.69.0.0/16           # university of stuttgart
+130.83.0.0/16           # university of darmstadt
+130.149.0.0/16          # university of berlin (TU)
+171.67.0.0/16           # stanford university
+129.78.64.24            # university of sidney
+12.110.110.204/32       # www.nsa.gov
+85.180.57.61/32         # some random residential DSL user (ALICE)
+84.56.180.139/32        # some random residential DSL user (Arcor)
+62.227.16.206/32        # some random residential DSL user (DTAG)
+80.238.206.25/32        # some random residential DSL user (.ch)

@@ -1,0 +1,5 @@
+#specify GRAPES directory with 32 bit build. Executables are used from here
+export GRAPESDIR=/hosthome/local/git/GRAPES/GRAPES
+
+#specify path to a 32 bit build of libevent2
+export LD_LIBRARY_PATH=LD_LIBRARY_PATH:/hosthome/local/git/GRAPES/libevent-2-build/32bit/lib

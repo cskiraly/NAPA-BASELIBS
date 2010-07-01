@@ -1,0 +1,39 @@
+MONITORING LAYER TEST CODE
+==========================
+
+This is a simple test program to test (and show the usage of) the Monitoring Layer 
+(and also the Messaging Layer).
+The test suite consists of a single executable, mon_test.
+
+The program runs either in active or passive mode.
+
+In passive mode the program waits for any incoming connection and only sends replies ("pong"). 
+In active mode, it sends "ping" messages to the peer specified.
+
+Usage:
+	./mon_test [-b <bindIp>] [-a <SocketId>] [-r <repository:port>] [-s <stunserver>]
+Defaults:
+	<bindIp> primary IP address of the host running mon_test. Autodetected if missing.
+	<socketId> in active mode, send "ping"s to this peer
+	<repository:port> address of repository server, default: repository.napa-wine.eu:9832
+	<stunserver> STUN server address for NAT traversal. Default: stun.ekiga.net:3472
+
+Measurements implemented:
+ - hopcount
+ - rtt
+
+Measurement results are published to the repository, as well as the local peerID (socketId).
+
+Example
+=======
+
+
+Host A is passive while Host B is active.
+
+Host A (SocketIdA?: 192.168.85.88:9000-130.192.86.20:9000)
+
+./MonTest
+
+Host B (SocketIdB?: 192.168.85.133:9000-130.192.86.20:1651)
+
+./MonTest -a 192.168.85.88:9000-130.192.86.20:9000

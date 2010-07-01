@@ -1,0 +1,26 @@
+README file for dclog
+------------------------------------------------------------------------------
+
+INSTALLATION:
+
+a. From source:
+
+make all
+make install  # as root!
+
+b. Gentoo users:
+
+emerge -vp dclog
+emerge dclog
+
+
+DOCUMENTATION:
+
+See the doc/ directory of the distribution tarball, or:
+
+http://www.jmglov.net/opensource/dclog/doc/
+
+
+BUGS / HELP:
+
+See: http://sourceforge.net/projects/dclog/

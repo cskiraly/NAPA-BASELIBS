@@ -1,0 +1,10 @@
+COMPILER=gcc 
+EVENT=-levent
+MATH=-lm
+GDB=-g
+
+testMessaginglayer: echoServer.c ml.h ml.c transmissionHandler.h transmissionHandler.c util/stun.h util/stun.c util/udpSocket.h util/udpSocket.c
+	${COMPILER} -o echoServer.o echoServer.c ml.h ml.c transmissionHandler.h transmissionHandler.c util/stun.h util/stun.c util/udpSocket.h util/udpSocket.c ${EVENT} ${MATH} ${GDB}
+
+clean: 
+	rm -f echoServer.o 

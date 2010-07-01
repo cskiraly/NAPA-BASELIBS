@@ -1,0 +1,1 @@
+SUBDIRS = log MonTest MonTestDist nvtest1 RepoClient

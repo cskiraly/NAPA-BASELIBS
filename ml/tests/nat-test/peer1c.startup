@@ -1,0 +1,8 @@
+#configure the network interfaces
+ifconfig eth0 $HOSTNAME up
+route add default gw nat1priv
+
+. /hostlab/CONFIG
+
+#start sender
+$GRAPESDIR/som/Tests/chunk_delivery_test -s -x stunserver1a -i peer1a &
