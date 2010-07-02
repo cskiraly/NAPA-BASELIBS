@@ -3,7 +3,8 @@ XMLSRC ?= /usr/include/libxml2
 CPPFLAGS += -I$(XMLSRC)
 LDLIBS += -lxml2
 
-LDLIBS += -lcurl
+# libcurl is now obsolete
+#LDLIBS += -lcurl
 
 all: main lib
 

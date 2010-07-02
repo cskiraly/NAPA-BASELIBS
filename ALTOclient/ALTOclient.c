@@ -1,36 +1,37 @@
 /*
- *          Policy Management
- *
- *          NEC Europe Ltd. PROPRIETARY INFORMATION
- *
- * This software is supplied under the terms of a license agreement
- * or nondisclosure agreement with NEC Europe Ltd. and may not be
- * copied or disclosed except in accordance with the terms of that
- * agreement.
- *
- *      Copyright (c) 2009 NEC Europe Ltd. All Rights Reserved.
- *
- * Authors: Thilo Ewald  <ewald@neclab.eu>
- *          Armin Jahanpanah <jahanpanah@neclab.eu>
- *
- *
- * NEC Europe Ltd. DISCLAIMS ALL WARRANTIES, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY
- * AND FITNESS FOR A PARTICULAR PURPOSE AND THE WARRANTY AGAINST LATENT
- * DEFECTS, WITH RESPECT TO THE PROGRAM AND THE ACCOMPANYING
- * DOCUMENTATION.
- *
- * No Liability For Consequential Damages IN NO EVENT SHALL NEC Europe
- * Ltd., NEC Corporation OR ANY OF ITS SUBSIDIARIES BE LIABLE FOR ANY
- * DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOSS
- * OF BUSINESS PROFITS, BUSINESS INTERRUPTION, LOSS OF INFORMATION, OR
- * OTHER PECUNIARY LOSS AND INDIRECT, CONSEQUENTIAL, INCIDENTAL,
- * ECONOMIC OR PUNITIVE DAMAGES) ARISING OUT OF THE USE OF OR INABILITY
- * TO USE THIS PROGRAM, EVEN IF NEC Europe Ltd. HAS BEEN ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGES.
- *
- *     THIS HEADER MAY NOT BE EXTRACTED OR MODIFIED IN ANY WAY.
+ ============================================================================
+ Name        : ALTOclient.c
+ Author      : T. Ewald <ewald@nw.neclab.eu>
+ Version     : 243
+ Proprietary : NEC Europe Ltd. PROPRIETARY INFORMATION
+			   This software is supplied under the terms of a license
+			   agreement or nondisclosure agreement with NEC Europe Ltd. and
+			   may not be copied or disclosed except in accordance with the
+			   terms of that agreement. The software and its source code
+			   contain valuable trade secrets and confidential information
+			   which have to be maintained in confidence.
+			   Any unauthorized publication, transfer to third parties or
+			   duplication of the object or source code - either totally or in
+			   part - is prohibited.
+ Copyright	 : Copyright (c) 2004 NEC Europe Ltd. All Rights Reserved.
+			   NEC Europe Ltd. DISCLAIMS ALL WARRANTIES, EITHER EXPRESS OR
+			   IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF
+			   MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE AND THE
+			   WARRANTY AGAINST LATENT DEFECTS, WITH RESPECT TO THE PROGRAM
+			   AND THE ACCOMPANYING DOCUMENTATION.
+			   No Liability For Consequential Damages IN NO EVENT SHALL NEC
+			   Europe Ltd., NEC Corporation OR ANY OF ITS SUBSIDIARIES BE
+			   LIABLE FOR ANY DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION,
+			   DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION, LOSS
+			   OF INFORMATION, OR OTHER PECUNIARY LOSS AND INDIRECT,
+			   CONSEQUENTIAL, INCIDENTAL, ECONOMIC OR PUNITIVE DAMAGES) ARISING
+			   OUT OF THE USE OF OR INABILITY TO USE THIS PROGRAM, EVEN IF NEC
+			   Europe Ltd. HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+ Modification: THIS HEADER MAY NOT BE EXTRACTED OR MODIFIED IN ANY WAY.
+ Description : First try of the ALTO client
+ ============================================================================
  */
+
 #include "ALTOclient.h"
 #include "ALTOclient_impl.h"
 
@@ -39,7 +40,7 @@
  * 		Here the reference to the accessible DBs is set
  */
 altoDbPtr ALTO_DB_req;		// Pointer to the ALTO DB for the Request
-altoDbPtr ALTO_DB_res;		// Pointer to the ALTO DB for the Response
+altoDbPtr ALTO_DB_res;		// Pointer to the ALTO DB for the Resposne
 
 xmlDocPtr ALTO_XML_req;		// Pointer to the XML for the Request
 xmlDocPtr ALTO_XML_res;		// Pointer to the XML for the Request
@@ -49,8 +50,9 @@ xmlDocPtr ALTO_XML_res;		// Pointer to the XML for the Request
 char alto_server_url[256];
 
 // And this is the struct where the XML buffer for CURL is cached
-struct curl_reply_buffer_t alto_rep_buf = {ALTO_REP_BUF_SIZE,0,""};
+//struct curl_reply_buffer_t alto_rep_buf = {ALTO_REP_BUF_SIZE,0,""};
 
+static char alto_reply_buf_nano[ALTO_REP_BUF_SIZE];
 
 /*
  * 	Function to set the actual ALTO server for configuration
@@ -189,13 +191,10 @@ xmlDocPtr alto_create_request_XML(struct alto_db_t * db, struct in_addr rc_host,
     node_PRI = xmlNewChild(node_GRR, NULL, BAD_CAST "pri_ratcrit", NULL);
     if(pri_rat == REL_PREF){
     	xmlNewProp(node_PRI, BAD_CAST "crit", BAD_CAST "pref");
-    	fprintf(stdout, "SET Primary Rating Criteria to: PREF \n");
     }else if(pri_rat == TOP_DIST){
     	xmlNewProp(node_PRI, BAD_CAST "crit", BAD_CAST "dist");
-    	fprintf(stdout, "SET Primary Rating Criteria to: DIST \n");
     }else if(pri_rat == MIN_BOUN){
     	xmlNewProp(node_PRI, BAD_CAST "crit", BAD_CAST "lat");
-    	fprintf(stdout, "SET Primary Rating Criteria to: LAT \n");
     }
 
 
@@ -204,19 +203,16 @@ xmlDocPtr alto_create_request_XML(struct alto_db_t * db, struct in_addr rc_host,
 		xmlNodePtr node_SEC1 = NULL;
 		node_SEC1 = xmlNewChild(node_GRR, NULL, BAD_CAST "fur_ratcrit", NULL);
 		xmlNewProp(node_SEC1, BAD_CAST "crit", BAD_CAST "pref");
-    	fprintf(stdout, "ADD Secondray Rating Criteria to: PREF \n");
 	}
 	if((sec_rat & TOP_DIST) == TOP_DIST){
 		xmlNodePtr node_SEC2 = NULL;
 		node_SEC2 = xmlNewChild(node_GRR, NULL, BAD_CAST "fur_ratcrit", NULL);
 		xmlNewProp(node_SEC2, BAD_CAST "crit", BAD_CAST "dist");
-		fprintf(stdout, "ADD Secondray Rating Criteria to: DIST \n");
 	}
 	if((sec_rat & MIN_BOUN) == MIN_BOUN){
 		xmlNodePtr node_SEC4 = NULL;
 		node_SEC4 = xmlNewChild(node_GRR, NULL, BAD_CAST "fur_ratcrit", NULL);
 		xmlNewProp(node_SEC4, BAD_CAST "crit", BAD_CAST "lat");
-		fprintf(stdout, "ADD Secondray Rating Criteria to: LAT \n");
 	}
 
 
@@ -225,15 +221,17 @@ xmlDocPtr alto_create_request_XML(struct alto_db_t * db, struct in_addr rc_host,
     xmlNodePtr node_RC_HLA = NULL;
     node_RC_HLA = xmlNewChild(node_GRR, NULL, BAD_CAST "rc_hla", NULL);
 
+    // and within the actual source
+    // <ipprefix version='4' prefix='195.37.70.39/32'/>
     xmlNodePtr node_IPP = NULL;
     node_IPP = xmlNewChild(node_RC_HLA, NULL, BAD_CAST "ipprefix", NULL);
     xmlNewProp(node_IPP, BAD_CAST "version", BAD_CAST "4");
+//  xmlNewProp(node_IPP, BAD_CAST "prefix", BAD_CAST "195.37.70.39/32");
     char rc_host_str[256];
     strcpy(rc_host_str, inet_ntoa(rc_host));
     // TODO: really dirty, but it should work
     strcat(rc_host_str,"/32");
     xmlNewProp(node_IPP, BAD_CAST "prefix", BAD_CAST rc_host_str);
-
 
     // Now prepare the request
     // <cnd_hla>
@@ -244,26 +242,24 @@ xmlDocPtr alto_create_request_XML(struct alto_db_t * db, struct in_addr rc_host,
     // from the given ALTO_LIST
     // so create something like this:
     // <ipprefix version='4' prefix='195.37.70.39/32'/>
-    int count = 0;
     char tmp_buff[256];
     struct alto_db_element_t * cur;
     cur = db->first;
-    while(cur != NULL){
+    while(cur->next != NULL){
     	node_IPP = xmlNewChild(node_HLA, NULL, BAD_CAST "ipprefix", NULL);
     	xmlNewProp(node_IPP, BAD_CAST "version", BAD_CAST "4");
     	sprintf(tmp_buff,"%s/%d",inet_ntoa(cur->host), cur->host_mask);
     	xmlNewProp(node_IPP, BAD_CAST "prefix", BAD_CAST tmp_buff);
-
-    	// Increase the counter
-    	count++;
-
-    	// Take the next element from the DB
     	cur = cur->next;
     }
 
+    // Dump for checking
+	#ifdef WIN32
+    // void
+	#else
+    xmlDocDump(stdout, doc);
+    #endif
 
-    // Feedback
-    fprintf(stdout, "Created elements in the request XML: %d \n", count);
 
     // Free the global variables that may have been allocated by the parser.
     xmlCleanupParser();
@@ -272,7 +268,8 @@ xmlDocPtr alto_create_request_XML(struct alto_db_t * db, struct in_addr rc_host,
     return doc;
 }
 
-
+// libcurl is now obsolete!
+#if 0
 
 // this function will be registered with curl as a handler, which
 // copies the http reply to a the buffer
@@ -311,7 +308,6 @@ xmlDocPtr query_ALTO_server_curl(xmlDocPtr doc, char* ALTO_server_URL){
 	xmlChar*  doctxt;
 	int       doclen;
 	xmlDocDumpFormatMemoryEnc(doc,&doctxt,&doclen,"utf-8",1);
-
 
 	// URL that receives this POST
 	curl_easy_setopt(curl, CURLOPT_URL, ALTO_server_URL);
@@ -356,56 +352,130 @@ xmlDocPtr query_ALTO_server_curl(xmlDocPtr doc, char* ALTO_server_URL){
 }
 
 
+#endif
 
+#define POST_BOUNDARY "---------------------------12408751047121013601852724877"
 
+void POST_add(char* buf, const char* name, const char* value) {
+	sprintf(buf+strlen(buf), "--"POST_BOUNDARY"\r\nContent-Disposition: form-data; name=\"%s\"\r\n\r\n%s\r\n", name, value);
+}
+
+void POST_end(char* buf) {
+	sprintf(buf+strlen(buf), "--"POST_BOUNDARY"--\r\n\r\n");
+}
+
+void* POST_send(const char* url, const char* data) {
+	void* ctx;
+	char contentType[512] = "multipart/form-data; boundary="POST_BOUNDARY;
+	char* ct = contentType;
+
+	ctx = xmlNanoHTTPMethod(url, "POST", data, &ct, NULL, strlen(data));
+
+	free(ct);
+	return ctx;
+}
+
+// nano
 xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint){
-	xmlDocPtr result;
-//	char*  	  headers = "Content-Type: text/xml; charset=utf-8 \"\"\n";
+	xmlDocPtr result = NULL;
 	int       size;
 	xmlChar*  doctxt;
 	int       doclen;
-	xmlNanoHTTPInit();
 	int       bytesRead;
 	size = 0;
+	char*	data;
+	size_t  dataLen = 0;
+	void*	ctx = NULL;
+//	int		errorcode = 0;
+//	FILE*	f = NULL;
 
+	xmlNanoHTTPInit();
 	xmlDocDumpFormatMemoryEnc(doc,&doctxt,&doclen,"utf-8",1);
+
+	dataLen = doclen + 2048;
+	data = malloc(dataLen);
+	memset(data, 0, dataLen);
+
+	// build the mime multipart contents
+	POST_add(data, "alto_xml_request", doctxt);
+	POST_add(data, "action", "submit");
+	POST_end(data);
+
+	//printf("data:\n\n%s", data);
 
 	printf("POST it\n");
 
-	void* ctx = xmlNanoHTTPMethod ( endPoint,
-									"POST",
-									(char*)doctxt,
-									NULL,
-									NULL,
-									sizeof(doctxt));
+	// send it
+	ctx = POST_send(endPoint, data);
 
-//	const char *	xmlNanoHTTPEncoding	(void * ctx)
+	free(data);
+	data = NULL;
 
+	printf("after POST it\n");
+/*
 	char output[10024];
+	memset(output, 0, 10024);
+
 	bytesRead = xmlNanoHTTPRead(ctx,&output,10024);
-	xmlParserCtxtPtr pushCtx;
+//	output[bytesRead] = '\n';
+*/
+	memset(alto_reply_buf_nano, 0, ALTO_REP_BUF_SIZE);
+
+	bytesRead = xmlNanoHTTPRead(ctx, &alto_reply_buf_nano, ALTO_REP_BUF_SIZE);
+	printf("xmlNanoHTTPRead: %d bytes read.\n", bytesRead);
+	printf("ALTO reply (%d bytes):\n\n%s", bytesRead, alto_reply_buf_nano);
+
+	// dump to file
+/*	f = fopen("http_reply.txt", "wt");
+	fwrite(output, 1, strlen(output), f);
+	fclose(f);*/
+
+	result = xmlRecoverMemory(alto_reply_buf_nano, bytesRead);
+//
+// TODO: PushParser doesn't work yet somehow..
+//
+/*
+	xmlParserCtxtPtr pushCtx = NULL;
 	pushCtx = xmlCreatePushParserCtxt(NULL, NULL, output, bytesRead, NULL);
+//	xmlInitParserCtxt(pushCtx);
+
+	if (!pushCtx) {
+		printf("ERROR: xmlCreatePushParserCtxt failed!\n");
+	} else {
+		printf("xmlCreatePushParserCtxt ok.\n");
+	}
 
 	while (bytesRead) {
-		xmlParseChunk(pushCtx, output, bytesRead, 0);
-		bytesRead = xmlNanoHTTPRead(ctx,&output,10024);
+		if(xmlParseChunk(pushCtx, output, bytesRead, 0) != 0) {
+			printf("ERROR: xmlParseChunk failed!\n");
+		} else {
+			printf("xmlParseChunk ok.\n");
 		}
+		bytesRead = xmlNanoHTTPRead(ctx,&output,10024);
+		printf("xmlNanoHTTPRead: %d bytes read.\n", bytesRead);
+	}
 
-//	printf("%s\n",output);
+	printf("Finalizing...\n");
+	errorcode = xmlParseChunk(pushCtx, output, 0, 1);
+	if(errorcode) {
+		printf("ERROR: Final xmlParseChunk failed! errorcode=%d\n", errorcode);
+	} else {
+		printf("Final xmlParseChunk ok.\n");
+	}
 
-	output[0]='\0';
-	xmlParseChunk(pushCtx, output, 0, 1);
 	result = pushCtx->myDoc;
 	xmlFreeParserCtxt(pushCtx);
+*/
+
+	if (!result) {
+		printf("ERROR: XML parsing failed (result == NULL)!\n");
+	} else {
+		printf("XML parsing ok.\n");
+	}
 
 	xmlNanoHTTPClose(ctx);
 	return result;
 }
-
-
-
-
-
 
 
 
@@ -757,15 +827,13 @@ int get_alto_subnet_mask(ALTO_DB_ELEMENT_T * element, ALTO_DB_T * db){
  * 	return:	1			Success
  */
 int alto_do_the_magic(ALTO_DB_T * ALTO_db_req, ALTO_DB_T * ALTO_db_res){
-	fprintf(stdout, "ALTO do the magic!!! \n");
+	fprintf(stdout, "ALTO do the magic!!! Find the rating and assign to IPs \n");
 
 	// Sanity check
 	if(ALTO_db_req == NULL || ALTO_db_res == NULL){
 		fprintf(stderr, "Errors in accessing the DBs! ABORT \n");
 		return 0;
 	}
-
-	int count;
 
 	// Now iterate through the hosts and find the corresponding rating
 	ALTO_DB_ELEMENT_T * cur;
@@ -775,18 +843,12 @@ int alto_do_the_magic(ALTO_DB_T * ALTO_db_req, ALTO_DB_T * ALTO_db_res){
 		// store the rating in the asking element
 		cur->rating = get_alto_rating(cur, ALTO_db_res);
 
-		// Increment internal counter
-		count++;
-
 		// next DB item to query
 		cur = cur->next;
 	}
 
-	// Give Feedback
-	fprintf(stdout, "Number of progressed matches hosts: %d \n", count);
-
 	// Aaaaaand finished!
-	return count;
+	return 1;
 }
 
 
@@ -796,8 +858,6 @@ int alto_do_the_magic(ALTO_DB_T * ALTO_db_req, ALTO_DB_T * ALTO_db_res){
 
 int alto_parse_from_file(altoDbPtr db, char *file_name){
 	fprintf(stdout, "Read hosts from file (%s) and store it in the Request-DB\n", file_name);
-
-	int num = 0;
 
 	FILE *file;
 	char line[256];
@@ -826,31 +886,20 @@ int alto_parse_from_file(altoDbPtr db, char *file_name){
 		element->host_mask = get_ALTO_host_mask(ptr);
 		// and add this element to the db
 		alto_add_element(db, element);
-
-		// Increment counter for successfull added elements
-		num++;
 	    }
-
-	// Feedback
-	fprintf(stdout, "Number of successfull read elements: %d\n", num);
-
-	// Return with the number of successfull written elements
-	return num;
+	return 1;
 }
 
 
 
 int alto_parse_from_XML(altoDbPtr db, xmlDocPtr doc){
-	fprintf(stdout, "Parse the ALTO XML response into the receive DB\n");
+	fprintf(stdout, "Parse an XML element into the DB structure\n");
 
 	// Sanity check
 	if(db == NULL || doc == NULL){
 		fprintf(stderr, "couldn't access XML or DB! ABORT \n");
 		return -1;
 	}
-
-	// Internal counter
-	int count = 0;
 
 	xmlNode *cur = NULL;
 	cur = xmlDocGetRootElement(doc);
@@ -872,10 +921,6 @@ int alto_parse_from_XML(altoDbPtr db, xmlDocPtr doc){
 			// and add this element to the db
 			alto_add_element(db, element);
 
-			// increase internal counter
-			count++;
-
-		// Go to the next element in the XML tree
 		} if(cur->children != NULL){
 //			printf("cur->children == NULL \n");
 			cur = cur->children;
@@ -888,11 +933,7 @@ int alto_parse_from_XML(altoDbPtr db, xmlDocPtr doc){
 		}
 	}
 
-	// Feedback
-	fprintf(stdout, "Successfull parsed elements from the ALTO XML response: %d\n", count);
-
-	// Return with the number of successfull written elements
-	return count;
+	return 1;
 }
 
 
@@ -980,9 +1021,6 @@ int alto_write_to_file(altoDbPtr db, char *file_name){
 		cur = cur->next;
 	}
 
-	// Give Feedback
-	fprintf(stdout, "Number of successfull written lines: %d \n", count);
-
 	// Return the number of sucessful written lines
 	return count;
 }
@@ -1051,7 +1089,7 @@ int get_ALTO_guidance_for_txt(char * txt, struct in_addr rc_host, int pri_rat, i
 	}
 
 	// Sanity checks 1
-	if(rc_host.s_addr == 0){
+	if(rc_host.s_addr == NULL){
 			fprintf(stderr, "Can't read the rc_host! ABORT!\n");
 			return 0;
 		}
@@ -1062,7 +1100,7 @@ int get_ALTO_guidance_for_txt(char * txt, struct in_addr rc_host, int pri_rat, i
 		return 0;
 	}
 
-	if(sec_rat < 0 || sec_rat > 8){
+	if(sec_rat < 1 || sec_rat > 8){
 		fprintf(stderr, "Secondary Rating Criteria(s) wrong! ABORT\n");
 		return 0;
 	}
@@ -1093,7 +1131,7 @@ int get_ALTO_guidance_for_txt(char * txt, struct in_addr rc_host, int pri_rat, i
  * 	return:		count	Number of sucessfully processed hosts
  */
 int get_ALTO_guidance_for_list(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int pri_rat, int sec_rat){
-	fprintf(stdout, "get_ALTO_guidance() was called \n");
+	fprintf(stdout, "get_ALTO_guidance(list, num_of_elements) was called \n");
 
 	int count = 0;
 
@@ -1108,18 +1146,6 @@ int get_ALTO_guidance_for_list(ALTO_GUIDANCE_T * list, int num, struct in_addr r
 		fprintf(stderr, "<0 elements? Can't be! ABORT!\n");
 		return 0;
 	}
-
-	// Sanity check 2
-	if(pri_rat < 1 || pri_rat > 3){
-		fprintf(stderr, "Primary Rating Criteria wrong! ABORT\n");
-		return 0;
-	}
-
-	if(sec_rat < 0 || sec_rat > 8){
-		fprintf(stderr, "Secondary Rating Criteria(s) wrong! ABORT\n");
-		return 0;
-	}
-
 
 	// Step 1 (read struct into DB)
 	alto_parse_from_list(ALTO_DB_req, list, num);
@@ -1137,13 +1163,13 @@ int get_ALTO_guidance_for_list(ALTO_GUIDANCE_T * list, int num, struct in_addr r
 }
 
 
-
-
 /*
  * Function:	With this call the internal request to update the DB is triggered.
  * 				This should be done on a regual basis to keep the local ALTO-DB
  * 				up2date
  */
+
+
 void do_ALTO_update(struct in_addr rc_host, int pri_rat, int sec_rat){
 
 	// Step 2: create an XML from the DB entries
@@ -1151,7 +1177,8 @@ void do_ALTO_update(struct in_addr rc_host, int pri_rat, int sec_rat){
 
 #ifndef USE_LOCAL_REPLY_XML
 	// Step2a: use CURL
-	ALTO_XML_res = query_ALTO_server_curl(ALTO_XML_req, alto_server_url);
+	//ALTO_XML_res = query_ALTO_server_curl(ALTO_XML_req, alto_server_url);
+	ALTO_XML_res = ALTO_request_to_server(ALTO_XML_req, alto_server_url);
 #else
 	// Step2b: use for testing the local stored TXT-file
 	ALTO_XML_res = xmlReadFile("reply.xml",NULL,XML_PARSE_RECOVER);
@@ -1165,6 +1192,12 @@ void do_ALTO_update(struct in_addr rc_host, int pri_rat, int sec_rat){
 	alto_do_the_magic(ALTO_DB_req, ALTO_DB_res);
 
 }
+
+
+
+
+
+
 
 
 
