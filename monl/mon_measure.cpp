@@ -76,6 +76,7 @@ void MonMeasure::debugInit(const char *name) {
 			break;
 	case TXRXBI:
 			output_name += "TXRXBI";
+			break;
 	case TXRXUNI:
 			output_name += "TXRXUNI";
 			break;
@@ -97,7 +98,7 @@ void MonMeasure::debugInit(const char *name) {
 		}
 	}
 
-	output_file.open (output_name.c_str(), std::fstream::out);
+	output_file.open (output_name.c_str(), std::fstream::out | std::fstream::app);
 	output_file.setf(std::ios::fixed, std::ios::floatfield);
 	output_file.precision(6);
 }

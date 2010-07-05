@@ -618,10 +618,12 @@ int MeasureDispatcher::activateMeasure(class MonMeasure *m, SocketId dst, MsgTyp
 						mm->mMeasureInstances[mh]->auto_loaded = true;
 					else {
 						mm->monDestroyMeasure(mh);
-						return -EUNRESOLVEDDEP;
+						ret = -EUNRESOLVEDDEP;
+						goto error;
 					}
 				} else
-					return -EUNRESOLVEDDEP;	
+					ret = -EUNRESOLVEDDEP;
+					goto error;
 			}
 		}
 	}
@@ -657,7 +659,11 @@ int MeasureDispatcher::activateMeasure(class MonMeasure *m, SocketId dst, MsgTyp
 		/* Remote counterparts ? */
 		if(m->flags & TXREM || m->flags & RXREM) {
 			/* Yes, initialise them */
-			return initRemoteMeasureTx(m,dst,mt);
+			ret = initRemoteMeasureTx(m,dst,mt);
+			if(ret != EOK)
+				goto error;
+			else
+				return ret;
 		}
 	}
 
@@ -665,18 +671,24 @@ int MeasureDispatcher::activateMeasure(class MonMeasure *m, SocketId dst, MsgTyp
 		struct timeval tv = {0,0};
 		/* TXLOC need only a local instance */
 		if(m->flags & TXLOC) {
-			if(m->scheduleNextIn(&tv) != EOK)
+			ret = m->scheduleNextIn(&tv);
+			if(ret != EOK)
 				goto error;
 		}
 
 		/* Remote counterparts ? */
 		if(m->flags & TXREM || m->flags & RXREM) {
 			/* Yes, initialise them */
-			return initRemoteMeasureTx(m,dst,mt);
+			ret = initRemoteMeasureTx(m,dst,mt);
+			if(ret != EOK)
+				goto error;
+			else
+				return ret;
 		} else {
 			/* No, we are done */
-			if(m->scheduleNextIn(&tv) != EOK)
-					goto error;
+			ret = m->scheduleNextIn(&tv);
+			if(ret != EOK)
+				goto error;
 		}
 	}
 
@@ -684,8 +696,9 @@ int MeasureDispatcher::activateMeasure(class MonMeasure *m, SocketId dst, MsgTyp
 	return EOK;
 
 error:
-	m->r_tx_list = m->r_rx_list = NULL;
 	m->status = FAILED;
+	m->r_tx_list = m->r_rx_list = NULL;
+	return ret;
 };
 
 int MeasureDispatcher::deactivateMeasure(class MonMeasure *m) {
@@ -702,8 +715,9 @@ int MeasureDispatcher::deactivateMeasure(class MonMeasure *m) {
 	if(m->used_counter > 0)
 		return -EINUSE;
 
+	if(m->status != FAILED)
+		m->defaultStop();
 
-	m->defaultStop();
 	m->status = STOPPED;
 	m->r_tx_list = m->r_rx_list = NULL;
 
