@@ -80,7 +80,7 @@
 #define SO_EE_ORIGIN_ICMP6      3
 /// @}
 
-typedef enum {OK = 0, MSGLEN, FAILURE} error_codes;
+typedef enum {OK = 0, MSGLEN, FAILURE, THROTTLE} error_codes;
 
 /** 
  * A callback functions for received pmtu errors (icmp packets type 3 code 4) 
@@ -113,6 +113,24 @@ int getTTL(const int udpSocket,uint8_t *ttl);
  * @param *socketaddr The address of the remote socket
  */
 int sendPacket(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr);
+
+/** 
+  * Decide if a packet should be throttled
+  * The implementation follows a leaky bucket algorithm: 
+  * if the packet would fill the bucket beyond its limit, it is to be discarded
+  *
+  * @param len The length of the packet to be sent
+  * @return OK or THROTTLE 
+*/
+int outputRateControl(int len);
+
+/**
+  * Configure the parameters for output rate control.
+  * These values may also be set while packets are being transmitted.
+  * @param bucketsize The size of the bucket in kbytes
+  * @param drainrate The amount of kbytes draining in a second. If drainrate is 0, then rateControl is completely disabled (all packets are passed).
+*/
+void setOutputRateParams(int bucketsize, int drainrate);
 
 /**
  * Receive a udp packet

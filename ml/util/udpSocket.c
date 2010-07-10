@@ -179,6 +179,8 @@ int sendPacket(const int udpSocket, struct iovec *iov, int len, struct sockaddr_
 {
 	int error, ret;
 	struct msghdr msgh;
+        
+        if(outputRateControl(len) != OK) return THROTTLE;
 
 	msgh.msg_name = socketaddr;
 	msgh.msg_namelen = sizeof(struct sockaddr_in);

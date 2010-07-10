@@ -262,6 +262,14 @@ void register_recv_localsocketID_cb(receive_localsocketID_cb local_socketID_cb);
 int mlInit(bool recv_data_cb,struct timeval timeout_value,const int port,const char *ipaddr,const int stun_port,const char *stun_ipaddr,receive_localsocketID_cb local_socketID_cb,void *arg);
 
 /**
+  * Configure the parameters for output rate control.
+  * These values may also be set while packets are being transmitted.
+  * @param bucketsize The size of the bucket in kbytes
+  * @param drainrate The amount of kbytes draining in a second. If drainrate is <=0, then rateControl is completely disabled (all packets are passed).
+*/
+void mlSetThrottle(int bucketsize, int drainrate);
+
+/**
  * @brief Register a received packet callback.
  * This function is to register a callback that is invoked when a messaging layer packet is received.
  * @param recv_pkt_inf_cb A function pointer to a callback function from the type get_recv_pkt_inf_cb

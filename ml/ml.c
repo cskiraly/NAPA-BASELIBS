@@ -339,6 +339,10 @@ void send_msg(int con_id, int msg_type, char* msg, int msg_len, bool truncable, 
 					info("ML: sending message failed (to:%s conID:%d lconID:%d msgsize:%d offset:%d)\n", conid_to_string(con_id), ntohl(msg_h.remote_con_id), ntohl(msg_h.local_con_id), msg_len, offset);
 					offset = msg_len; // exit the while
 					break;
+                                case THROTTLE:
+                                    //    debug("THROTTLE on output"); 
+					offset = msg_len; // exit the while
+					break;
 				case OK:
 					//update
 					offset += pkt_len;
@@ -1327,6 +1331,11 @@ int mlInit(bool recv_data_cb,struct timeval timeout_value,const int port,const c
 	register_recv_localsocketID_cb(local_socketID_cb);
 	return create_socket(port, ipaddr);
 }
+
+void mlSetThrottle(int bucketsize, int drainrate) {
+        setOutputRateParams(bucketsize, drainrate);
+}
+     
 
 /* register callbacks  */
 void mlRegisterGetRecvPktInf(get_recv_pkt_inf_cb recv_pkt_inf_cb){
