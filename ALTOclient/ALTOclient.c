@@ -1187,9 +1187,12 @@ void do_ALTO_update(struct in_addr rc_host, int pri_rat, int sec_rat){
 	ALTO_XML_req = alto_create_request_XML(ALTO_DB_req, rc_host, pri_rat, sec_rat);
 
 #ifndef USE_LOCAL_REPLY_XML
-	// Step2a: use CURL
-	//ALTO_XML_res = query_ALTO_server_curl(ALTO_XML_req, alto_server_url);
+	// Step2a: send POST request to ALTO server
+	#ifdef USE_CURL
+	ALTO_XML_res = query_ALTO_server_curl(ALTO_XML_req, alto_server_url);
+	#else
 	ALTO_XML_res = ALTO_request_to_server(ALTO_XML_req, alto_server_url);
+	#endif
 #else
 	// Step2b: use for testing the local stored TXT-file
 	ALTO_XML_res = xmlReadFile("reply.xml",NULL,XML_PARSE_RECOVER);

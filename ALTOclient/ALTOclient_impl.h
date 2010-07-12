@@ -50,6 +50,9 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
+// use #define USE_CURL to enable curl codepath for POST requests to
+// the ALTO server
+//
 // don't forget to install CURL http://curl.haxx.se/download.html
 // and install as described!!!!!
 #ifdef USE_CURL
