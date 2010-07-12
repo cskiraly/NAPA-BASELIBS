@@ -52,10 +52,11 @@
 
 // don't forget to install CURL http://curl.haxx.se/download.html
 // and install as described!!!!!
-//#include <curl/curl.h>
-//#include <curl/types.h>
-//#include <curl/easy.h>
-
+#ifdef USE_CURL
+#include <curl/curl.h>
+#include <curl/types.h>
+#include <curl/easy.h>
+#endif
 
 
 
@@ -104,13 +105,13 @@ typedef struct alto_db_element_t{
 /*
  * 	This is needed for the CURL intearction with the ALTO server
  */
-/*
+#ifdef USE_CURL
 struct curl_reply_buffer_t {
     size_t          size;
     size_t          fill;
     char            buffer[ALTO_REP_BUF_SIZE];
-};*/
-
+};
+#endif
 
 
 
@@ -123,10 +124,12 @@ struct in_addr get_ALTO_host_IP(char * host_string);
 int16_t get_ALTO_host_mask(char * host_string);
 
 xmlDocPtr alto_create_request_XML(struct alto_db_t * db, struct in_addr rc_host, int pri_rat, int sec_rat);
-//xmlDocPtr query_ALTO_server_curl(xmlDocPtr doc, char* ALTO_server_URL);
 xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint);
 
-//size_t curl_copy_reply_to_buf(void *ptr,size_t size,size_t nmemb,void *stream);
+#ifdef USE_CURL
+xmlDocPtr query_ALTO_server_curl(xmlDocPtr doc, char* ALTO_server_URL);
+size_t curl_copy_reply_to_buf(void *ptr,size_t size,size_t nmemb,void *stream);
+#endif
 
 void print_Alto_XML_info(xmlDocPtr doc);
 void dump_internal_ALTO_db(struct alto_db_t * db);

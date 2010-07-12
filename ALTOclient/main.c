@@ -28,7 +28,7 @@ int main(){
 	set_ALTO_server("http://10.10.251.107/cgi-bin/alto-server.cgi");
 
 	// And now get the result for this list
-	get_ALTO_guidance_for_txt("ip.list", rc_addr, 1, 7);
+	get_ALTO_guidance_for_txt("ip.list", rc_addr, REL_PREF, 7);
 
 	// and stop the client
 	stop_ALTO_client();

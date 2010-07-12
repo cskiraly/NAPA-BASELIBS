@@ -50,7 +50,9 @@ xmlDocPtr ALTO_XML_res;		// Pointer to the XML for the Request
 char alto_server_url[256];
 
 // And this is the struct where the XML buffer for CURL is cached
-//struct curl_reply_buffer_t alto_rep_buf = {ALTO_REP_BUF_SIZE,0,""};
+#ifdef USE_CURL
+struct curl_reply_buffer_t alto_rep_buf = {ALTO_REP_BUF_SIZE,0,""};
+#endif
 
 static char alto_reply_buf_nano[ALTO_REP_BUF_SIZE];
 
@@ -245,7 +247,8 @@ xmlDocPtr alto_create_request_XML(struct alto_db_t * db, struct in_addr rc_host,
     char tmp_buff[256];
     struct alto_db_element_t * cur;
     cur = db->first;
-    while(cur->next != NULL){
+    //while(cur->next != NULL){		// armin 12-jul-2010, bug reported by Andrzej
+    while(cur != NULL){
     	node_IPP = xmlNewChild(node_HLA, NULL, BAD_CAST "ipprefix", NULL);
     	xmlNewProp(node_IPP, BAD_CAST "version", BAD_CAST "4");
     	sprintf(tmp_buff,"%s/%d",inet_ntoa(cur->host), cur->host_mask);
@@ -268,8 +271,12 @@ xmlDocPtr alto_create_request_XML(struct alto_db_t * db, struct in_addr rc_host,
     return doc;
 }
 
+/*==================================
+       libCURL-based POST code
+  ==================================*/
+
 // libcurl is now obsolete!
-#if 0
+#ifdef USE_CURL
 
 // this function will be registered with curl as a handler, which
 // copies the http reply to a the buffer
@@ -329,6 +336,7 @@ xmlDocPtr query_ALTO_server_curl(xmlDocPtr doc, char* ALTO_server_URL){
 	curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
 
 	// we do not want the reply written to stdout but to our buffer
+	alto_rep_buf.fill = 0;	// reset buffer (armin 12-jul-2010, reported by Andrzej)
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_copy_reply_to_buf);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &alto_rep_buf);
 
@@ -351,8 +359,11 @@ xmlDocPtr query_ALTO_server_curl(xmlDocPtr doc, char* ALTO_server_URL){
 	return ALTO_XML_response;
 }
 
+#endif // USE_CURL
 
-#endif
+/*==================================
+   libxml2 nanohttp based POST code
+  ==================================*/
 
 #define POST_BOUNDARY "---------------------------12408751047121013601852724877"
 
@@ -423,7 +434,7 @@ xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint){
 
 	bytesRead = xmlNanoHTTPRead(ctx, &alto_reply_buf_nano, ALTO_REP_BUF_SIZE);
 	printf("xmlNanoHTTPRead: %d bytes read.\n", bytesRead);
-	printf("ALTO reply (%d bytes):\n\n%s", bytesRead, alto_reply_buf_nano);
+//	printf("ALTO reply (%d bytes):\n\n%s", bytesRead, alto_reply_buf_nano);
 
 	// dump to file
 /*	f = fopen("http_reply.txt", "wt");
@@ -515,7 +526,7 @@ int alto_free_db(struct alto_db_t * db){
 	cur = db->first;
 	while(cur != NULL){
 		alto_rem_element(cur);
-		cur = cur->next;
+		cur = db->first; //cur->next;	// armin 12-jul-2010, bug reported by Andrzej
 	}
 
 	// Free the DB struct & Goodby!
