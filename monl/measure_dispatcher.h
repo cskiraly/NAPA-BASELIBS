@@ -44,103 +44,73 @@ typedef struct {
 
 void open_con_cb (int con_id, void *arg);
 
-/* DestinationId Comparison function */
-//TODO change it to a correct implemnetation
-// struct socketIdCompare
-// {
-// 	bool operator()(const SocketId x, const SocketId y) const { 
-// 		char *xptr, *yptr;
-// 		xptr = (char *) x;
-// 		yptr = (char *) y;
-// 		if(memcmp(xptr, yptr, SOCKETID_SIZE) == 0)
-// 			return true;
-// 		return false;
-// 	}
-// };
-struct socketIdCompare
+struct SocketIdMt {
+	SocketId sid;
+	MsgType mt;
+};
+
+struct socketIdMtCompare
 {
-	bool operator()(const SocketId x, const SocketId y) const { 
-		if(mlCompareSocketIDs(x,y) == 0)
+	bool operator()(struct SocketIdMt x, struct SocketIdMt y) const {
+		if(mlCompareSocketIDs(x.sid,y.sid) == 0 && x.mt == y.mt)
 			return true;
 		return false;
 	}
 };
-/* DestinationId Hash function */
-// struct socketIdHash
-// {
-// 	int operator()(const SocketId x) const {
-// 		uint32_t hash_code = 0;
-// 		uint32_t *intptr = (uint32_t*) x;
-// 		for(int i=0; i < SOCKETID_SIZE / sizeof(uint32_t); i++)
-// 			hash_code = hash_code + intptr[i];
-// 		return hash_code;
-// 	}
-// };
-struct socketIdHash
+
+struct socketIdMtHash
 {
-	int operator()(const SocketId x) const {
-		return mlHashSocketID(x);
+	int operator()(struct SocketIdMt x) const {
+		return mlHashSocketID(x.sid) + x.mt;
 	}
 };
 
 typedef struct {
-	ExecutionList el_local;
-	ExecutionList el_remote;
-	// elements in the execution list
-	int32_t n_el_local;
-	int32_t n_el_remote;
-} DestinationMsgTypeData;
+	ExecutionList el_rx_pkt_local;
+	ExecutionList el_rx_pkt_remote;
+	ExecutionList el_tx_pkt_local;
+	ExecutionList el_tx_pkt_remote;
+	ExecutionList el_rx_data_local;
+	ExecutionList el_rx_data_remote;
+	ExecutionList el_tx_data_local;
+	ExecutionList el_tx_data_remote;
 
-struct pkt_result{
-	result r_rx_local[R_LAST_PKT];
-	result r_rx_remote[R_LAST_PKT];
-	result r_tx_local[R_LAST_PKT];
-	result r_tx_remote[R_LAST_PKT];
-	uint32_t tx_seq_num;
-	//TODO store here destination specific data
-};
+	result pkt_r_rx_local[R_LAST_PKT];
+	result pkt_r_rx_remote[R_LAST_PKT];
+	result pkt_r_tx_local[R_LAST_PKT];
+	result pkt_r_tx_remote[R_LAST_PKT];
+	uint32_t pkt_tx_seq_num;
 
-struct data_result {
-	result r_rx_local[R_LAST_DATA];
-	result r_rx_remote[R_LAST_DATA];
-	result r_tx_local[R_LAST_DATA];
-	result r_tx_remote[R_LAST_DATA];
-	uint32_t tx_seq_num;
-	//TODO store here destination specific data
-};
+	result data_r_rx_local[R_LAST_DATA];
+	result data_r_rx_remote[R_LAST_DATA];
+	result data_r_tx_local[R_LAST_DATA];
+	result data_r_tx_remote[R_LAST_DATA];
+	uint32_t data_tx_seq_num;
+
+	uint8_t sid[SOCKETID_SIZE];
+	MsgType mt;
+	SocketIdMt h_dst;
+
+	ExecutionList mids_local;
+	ExecutionList mids_remote;
+} DestinationSocketIdMtData;
 
 
-typedef std::tr1::unordered_map<MsgType,struct pkt_result *> ResultPktListMsgType;
-typedef std::tr1::unordered_map<MsgType,struct data_result *> ResultDataListMsgType;
-typedef std::tr1::unordered_map<MsgType,DestinationMsgTypeData*> DispatcherListMsgType;
-
-typedef struct {
-	DispatcherListMsgType rx_pkt;
-	DispatcherListMsgType tx_pkt;
-	DispatcherListMsgType rx_data;
-	DispatcherListMsgType tx_data;
-
-	ResultPktListMsgType r_pkt;
-	ResultDataListMsgType r_data;
-
-	char *sid;
-
-} DestinationSocketIdData;
-
-typedef std::tr1::unordered_map<SocketId,DestinationSocketIdData*,socketIdHash,socketIdCompare> DispatcherListSocketId;
-
+typedef std::tr1::unordered_map<struct SocketIdMt, DestinationSocketIdMtData*, socketIdMtHash, socketIdMtCompare> DispatcherListSocketIdMt;
 
 class MeasureDispatcher {
 
 	/* Execution lists for the message layer hooks */
-	DispatcherListSocketId dispatcherList;
+	DispatcherListSocketIdMt dispatcherList;
 	
-	int addMeasureToExecList(DispatcherListMsgType &dl, class MonMeasure *m, MsgType mt);
-	int delMeasureFromExecList(DispatcherListMsgType &dl, class MonMeasure *m, MsgType mt);
+	void addMeasureToExecLists(SocketIdMt h_dst, class MonMeasure *m);
+	void delMeasureFromExecLists(MonMeasure *m);
+	int stopMeasure(class MonMeasure *m);
 
-	class MonMeasure* findDep(DispatcherListMsgType &dl, MeasurementCapabilities flags, MsgType mt, MeasurementId mid);
-	class MonMeasure* findMeasureFromId(DestinationSocketIdData *dsid, MeasurementCapabilities flags, MeasurementId mid, MsgType mt);
-	int checkDeps(DestinationSocketIdData *dsid, MeasurementCapabilities flags, MeasurementId mid, MsgType mt);
+	void createDestinationSocketIdMtData(struct SocketIdMt h_dst);
+	void destroyDestinationSocketIdMtData(SocketId dst, MsgType mt);
+
+	class MonMeasure* findMeasureFromId(DestinationSocketIdMtData *dd, MeasurementCapabilities flags, MeasurementId mid);
 
 	int sendCtrlMsg(SocketId dst, Buffer &buffer);
 	int receiveCtrlMsg(SocketId sid, MsgType mt, char *cbuf, int length);
@@ -176,7 +146,7 @@ public:
 			initial_ttl = 0;
 	};
 
-	int activateMeasure(class MonMeasure *m, SocketId dst, MsgType mt,int autoload = 1);
+	int activateMeasure(class MonMeasure *m, SocketId dst, MsgType mt, int autoload = 1);
 	int deactivateMeasure(class MonMeasure *m);
 
 	int oobDataTx(class MonMeasure *m, char *buf, int buf_len);

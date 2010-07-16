@@ -30,8 +30,6 @@ MonMeasure::MonMeasure(class MeasurePlugin *mp, MeasurementCapabilities mc, clas
 	mh_remote = -1;
 	ptrDispatcher = ptrDisp;
 
-	dst_socketid = NULL;
-
 	/* Initialise default values */
 	int i;
 	status = STOPPED;
@@ -92,7 +90,7 @@ void MonMeasure::debugInit(const char *name) {
 	}
 
 	if(dst_socketid != NULL) {
-		if(mlSocketIDToString(dst_socketid, sid_string, sizeof(sid_string)) == 0) {
+		if(mlSocketIDToString((SocketId) dst_socketid, sid_string, sizeof(sid_string)) == 0) {
 			output_name += "-B:";
 			output_name += sid_string;
 		}

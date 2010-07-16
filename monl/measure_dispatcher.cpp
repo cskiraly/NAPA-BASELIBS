@@ -45,90 +45,112 @@ void open_con_cb (int con_id, void *arg) {
 	delete msg;
 }
 
-int MeasureDispatcher::addMeasureToExecList(DispatcherListMsgType &dl, class MonMeasure *m, MsgType mt) {
+void MeasureDispatcher::addMeasureToExecLists(SocketIdMt h_dst, class MonMeasure *m) {
 	class MeasurePlugin *mp = m->measure_plugin;
-	ExecutionList *el;
-	int32_t *n_el;
 
-	/* Create an execution list if necessary */
-	if(dl.find(mt) == dl.end()) {
-		dl[mt] = new DestinationMsgTypeData;
-		dl[mt]->n_el_local = 0;
-		dl[mt]->n_el_remote = 0;
+	/* IN_BAND  measurments added to hook executionlists */
+	if(m->flags & IN_BAND) {
+		/* TXLOC */
+		if(m->flags & TXLOC) {
+			if(m->flags & PACKET) {
+				if(m->flags & REMOTE)
+					dispatcherList[h_dst]->el_tx_pkt_remote[mp->getId()] = m;
+				else
+					dispatcherList[h_dst]->el_tx_pkt_local[mp->getId()] = m;
+			}
+			if(m->flags & DATA) {
+				if(m->flags & REMOTE)
+					dispatcherList[h_dst]->el_tx_data_remote[mp->getId()] = m;
+				else
+					dispatcherList[h_dst]->el_tx_data_local[mp->getId()] = m;
+			}
+		}
+		/* RXLOC */
+		if(m->flags & RXLOC) {
+			if(m->flags & PACKET)  {
+				if(m->flags & REMOTE)
+					dispatcherList[h_dst]->el_rx_pkt_remote[mp->getId()] = m;
+				else
+					dispatcherList[h_dst]->el_rx_pkt_local[mp->getId()] = m;
+			}
+			if(m->flags & DATA) {
+				if(m->flags & REMOTE)
+					dispatcherList[h_dst]->el_rx_data_remote[mp->getId()] = m;
+				else
+					dispatcherList[h_dst]->el_rx_data_local[mp->getId()] = m;
+			}
+		}
 	}
-
-	if(m->flags & REMOTE) {
-		n_el = &(dl[mt]->n_el_remote);
-		el = &(dl[mt]->el_remote);
-	} else {
-		n_el = &(dl[mt]->n_el_local);
-		el = &(dl[mt]->el_local);
-	}
-	/* Check if this measure is already in the list */
-	if(el->find(mp->getId()) != el->end())
-		return -EEXISTS;
-
-	/* Check for all dependencies */
-	std::vector<MeasurementId>::iterator it;
-	std::vector<MeasurementId> deps = mp->getDeps();
-	for(it = deps.begin(); it != deps.end(); it++) {
-		if(el->find(*it) == el->end())
-			return -EUNRESOLVEDDEP;
-	}
-
-	/* update counters */
-	for(it = deps.begin(); it != deps.end(); it++) {
-		(*el)[*it]->used_counter++;
-	}
-
-	/* Add measure to execution list */
-	(*el)[mp->getId()] = m;
-	(*n_el)++;
-
-	return EOK;
 }
 
-int MeasureDispatcher::delMeasureFromExecList(DispatcherListMsgType &dl, class MonMeasure *m, MsgType mt) {
+void MeasureDispatcher::delMeasureFromExecLists(MonMeasure *m) {
+	SocketIdMt h_dst;
 	class MeasurePlugin *mp = m->measure_plugin;
-	ExecutionList *el;
-	int32_t *n_el;
+	ExecutionList::iterator it;
 
-	/* Create an execution list if necessary */
-	if(dl.find(mt) == dl.end())
-		return -EINVAL;
+	h_dst.sid = (SocketId) m->dst_socketid;
+	h_dst.mt = m->msg_type;
 
-	if(m->flags & REMOTE) {
-		n_el = &(dl[mt]->n_el_remote);
-		el = &(dl[mt]->el_remote);
-	} else {
-		n_el = &(dl[mt]->n_el_local);
-		el = &(dl[mt]->el_local);
+	/* IN_BAND  measurments added to hook executionlists */
+	if(m->flags & IN_BAND) {
+		/* TXLOC */
+		if(m->flags & TXLOC) {
+			if(m->flags & PACKET) {
+				if(m->flags & REMOTE) {
+					it = dispatcherList[h_dst]->el_tx_pkt_remote.find(mp->getId());
+					if(it != dispatcherList[h_dst]->el_tx_pkt_remote.end())
+						dispatcherList[h_dst]->el_tx_pkt_remote.erase(it);
+				} else {
+					it = dispatcherList[h_dst]->el_tx_pkt_local.find(mp->getId());
+					if(it != dispatcherList[h_dst]->el_tx_pkt_local.end())
+						dispatcherList[h_dst]->el_tx_pkt_local.erase(it);
+				}
+			}
+			if(m->flags & DATA) {
+				if(m->flags & REMOTE) {
+					it = dispatcherList[h_dst]->el_tx_data_remote.find(mp->getId());
+					if(it != dispatcherList[h_dst]->el_tx_data_remote.end())
+						dispatcherList[h_dst]->el_tx_data_remote.erase(it);
+				} else {
+					it = dispatcherList[h_dst]->el_tx_data_local.find(mp->getId());
+					if(it != dispatcherList[h_dst]->el_tx_data_local.end())
+						dispatcherList[h_dst]->el_tx_data_local.erase(it);
+				}
+			}
+		}
+		/* RXLOC */
+		if(m->flags & RXLOC) {
+			if(m->flags & PACKET) {
+				if(m->flags & REMOTE) {
+					it = dispatcherList[h_dst]->el_rx_pkt_remote.find(mp->getId());
+					if(it != dispatcherList[h_dst]->el_rx_pkt_remote.end())
+						dispatcherList[h_dst]->el_rx_pkt_remote.erase(it);
+				} else {
+					it = dispatcherList[h_dst]->el_rx_pkt_local.find(mp->getId());
+					if(it != dispatcherList[h_dst]->el_rx_pkt_local.end())
+						dispatcherList[h_dst]->el_rx_pkt_local.erase(it);
+				}
+			}
+			if(m->flags & DATA) {
+				if(m->flags & REMOTE) {
+					it = dispatcherList[h_dst]->el_rx_data_remote.find(mp->getId());
+					if(it != dispatcherList[h_dst]->el_rx_data_remote.end())
+						dispatcherList[h_dst]->el_rx_data_remote.erase(it);
+				} else {
+					it = dispatcherList[h_dst]->el_rx_data_local.find(mp->getId());
+					if(it != dispatcherList[h_dst]->el_rx_data_local.end())
+						dispatcherList[h_dst]->el_rx_data_local.erase(it);
+				}
+			}
+		}
 	}
-
-	/* update counters */
-	/* Check for all dependencies */
-	std::vector<MeasurementId>::iterator it;
-	std::vector<MeasurementId> deps = mp->getDeps();
-	for(it = deps.begin(); it != deps.end(); it++) {
-		(*el)[*it]->used_counter--;
-	}
-
-	el->erase(el->find(mp->getId()));
-	*(n_el)--;
-
-	if(dl[mt]->n_el_local == 0 && dl[mt]->n_el_remote == 0) {
-		delete dl[mt];
-		dl.erase(dl.find(mt));
-	}
-
-	return EOK;
 }
 
 int MeasureDispatcher::sendCtrlMsg(SocketId dst, Buffer &buffer)
 {
 	int con_id,res;
 	Message *msg;
-	send_params sparam;
+	send_params sparam = {0,0,0,0,0};
 	struct MonHeader *mheader = (MonHeader*)&buffer[0];
 	mheader->length = buffer.size();
 
@@ -144,8 +166,6 @@ int MeasureDispatcher::sendCtrlMsg(SocketId dst, Buffer &buffer)
 			return EOK;
 		}
 	}
-
-	memset(&sparam, 0, sizeof(send_params));
 
 	//otherwise open connection and delay sending data
 	msg = new Message;
@@ -214,26 +234,30 @@ int MeasureDispatcher::oobDataTx(class MonMeasure *m, char *buf, int buf_len) {
 
 	buffer.insert(buffer.end(), buf, buf + buf_len);
 
-	return sendCtrlMsg(m->dst_socketid, buffer);
+	return sendCtrlMsg((SocketId) m->dst_socketid, buffer);
 }
 
 int MeasureDispatcher::oobDataRx(SocketId sid, MsgType mt, char *cbuf, int length) {
+	struct SocketIdMt h_dst;
+	h_dst.sid = sid;
+	h_dst.mt = MSG_TYPE_MONL;
+
 	struct OobData *oobdata = (struct OobData*) cbuf;
 	result *r = NULL;
 
 	if(mm->isValidMonHandler(oobdata->mh_remote))
 		if(mm->mMeasureInstances[oobdata->mh_remote]->status == RUNNING &&
- 				mlCompareSocketIDs(mm->mMeasureInstances[oobdata->mh_remote]->dst_socketid, sid) == 0) {
+ 				mlCompareSocketIDs((SocketId) mm->mMeasureInstances[oobdata->mh_remote]->dst_socketid, sid) == 0) {
 			if(mm->mMeasureInstances[oobdata->mh_remote]->flags & DATA) {
 				if(mm->mMeasureInstances[oobdata->mh_remote]->flags & REMOTE)
-					r = dispatcherList[sid]->r_data[MSG_TYPE_MONL]->r_rx_remote;
+					r = dispatcherList[h_dst]->data_r_rx_remote;
 				else
-					r = dispatcherList[sid]->r_data[MSG_TYPE_MONL]->r_rx_local;
-			} else if (mm->mMeasureInstances[oobdata->mh_remote]->flags & PACKET){
+					r = dispatcherList[h_dst]->data_r_rx_local;
+			} else if (mm->mMeasureInstances[oobdata->mh_remote]->flags & PACKET) {
 				if(mm->mMeasureInstances[oobdata->mh_remote]->flags & REMOTE)
-					r = dispatcherList[sid]->r_pkt[MSG_TYPE_MONL]->r_rx_remote;
+					r = dispatcherList[h_dst]->pkt_r_rx_remote;
 				else
-					r = dispatcherList[sid]->r_pkt[MSG_TYPE_MONL]->r_rx_local;
+					r = dispatcherList[h_dst]->pkt_r_rx_local;
 			}
 			if(!r)
 				fatal("MONL: r is not set");
@@ -271,7 +295,7 @@ int MeasureDispatcher::remoteResultsRx(SocketId sid, MsgType mt, char *cbuf) {
 		if(mm->isValidMonHandler(rmp[i].mh)) {
 			if(mm->mMeasureInstances[rmp[i].mh]->status == RUNNING &&
 			 mm->mMeasureInstances[rmp[i].mh]->msg_type == rresults->msg_type &&
- 			 mlCompareSocketIDs(mm->mMeasureInstances[rmp[i].mh]->dst_socketid, sid) == 0) {
+ 			 mlCompareSocketIDs((SocketId) mm->mMeasureInstances[rmp[i].mh]->dst_socketid, sid) == 0) {
 				if(mm->mMeasureInstances[rmp[i].mh]->rb != NULL) {
 						mm->mMeasureInstances[rmp[i].mh]->rb->newSample(rmp[i].res);
 				}
@@ -324,14 +348,10 @@ int MeasureDispatcher::remoteMeasureResponseRx(SocketId src, MsgType mt, char* c
 			break;
 		case DEINITREMOTEMEASURE:
 			if(mresponse->status == EOK) {
-				if(m->status == STOPPING && m->auto_loaded == true) {
+				if(m->status == STOPPING) {
+					stopMeasure(m);
 					if(mm->monDestroyMeasure(m->mh_local) != EOK)
 						m->status = FAILED;
-					if(dispatcherList.find(src) != dispatcherList.end()) {
-						if(dispatcherList[src]->rx_pkt.empty() && dispatcherList[src]->tx_pkt.empty() &&
-								dispatcherList[src]->rx_data.empty() && dispatcherList[src]->tx_data.empty())
-							delete dispatcherList[src];
-					}
 				} else
 					m->status = STOPPED;
 			}
@@ -346,17 +366,21 @@ int MeasureDispatcher::initRemoteMeasureRx(SocketId src, MsgType mt, char *cbuf)
 	MonHandler mh;
 	MonParameterValue *param_vector;
 	MonMeasure *m = NULL;
-
+	struct SocketIdMt h_dst;
 	struct InitRemoteMeasure *initmeasure = (InitRemoteMeasure*) cbuf;
 
-	/* Check if a previous instance is running */
-	if(dispatcherList.find(src) != dispatcherList.end())
-		m = findMeasureFromId(dispatcherList[src], initmeasure->mc, initmeasure->mid, initmeasure->msg_type);
+	h_dst.sid = src;
+	h_dst.mt = initmeasure->msg_type;
 
-	if(m == NULL)
-		mh = mm->monCreateMeasureId(initmeasure->mid, initmeasure->mc);
-	else
-		mh = m->mh_local;
+	/* Check if a previous instance is running */
+	if(dispatcherList.find(h_dst) != dispatcherList.end())
+		m = findMeasureFromId(dispatcherList[h_dst], initmeasure->mc, initmeasure->mid);
+
+	//if so remove it, so that we can create a new one (needed if mc changed)
+	if(m != NULL)
+		mm->monDestroyMeasure(m->mh_local);
+
+	mh = mm->monCreateMeasureId(initmeasure->mid, initmeasure->mc);
 
 	if(mh < 0)
 		return remoteMeasureResponseTx(src, initmeasure->mh_local, -1, INITREMOTEMEASURE, EINVAL);
@@ -370,11 +394,8 @@ int MeasureDispatcher::initRemoteMeasureRx(SocketId src, MsgType mt, char *cbuf)
 			goto error;
 	}
 
-	if(m == NULL) {
-		if(activateMeasure(mm->mMeasureInstances[mh], src, initmeasure->msg_type) != EOK)
-			goto error;
-	} else
-		m->defaultInit();
+	if(activateMeasure(mm->mMeasureInstances[mh], src, initmeasure->msg_type) != EOK)
+		goto error;
 
 	return remoteMeasureResponseTx(src, initmeasure->mh_local, mh, INITREMOTEMEASURE, EOK);
 
@@ -424,7 +445,7 @@ int MeasureDispatcher::deinitRemoteMeasureTx(class MonMeasure *m) {
 
 	buffer.insert(buffer.end(),(char*)&deinitmeasure, ((char*)&deinitmeasure) + DEINITREMOTEMEASURE_SIZE);
 
-	return sendCtrlMsg(m->dst_socketid, buffer);
+	return sendCtrlMsg((SocketId) m->dst_socketid, buffer);
 };
 
 int MeasureDispatcher::deinitRemoteMeasureRx(SocketId src, MsgType mt, char* cbuf) {
@@ -447,79 +468,36 @@ int MeasureDispatcher::deinitRemoteMeasureRx(SocketId src, MsgType mt, char* cbu
 	return remoteMeasureResponseTx(src,  deinitmeasure->mh_local, deinitmeasure->mh_remote, DEINITREMOTEMEASURE, EOK);
 }
 
-class MonMeasure* MeasureDispatcher::findDep(DispatcherListMsgType &dl, MeasurementCapabilities flags, MsgType mt, MeasurementId mid) {
-	ExecutionList *el;
+class MonMeasure* MeasureDispatcher::findMeasureFromId(DestinationSocketIdMtData *dd,  MeasurementCapabilities flags, MeasurementId mid) {
+	ExecutionList::iterator it;
 
-	if(dl.find(mt) == dl.end()) {
-		return NULL;
-	}
-
+	//check if loaded
 	if(flags & REMOTE) {
-		el = &(dl[mt]->el_remote);
+		it = dd->mids_remote.find(mid);
+		if(it == dd->mids_remote.end())
+			return NULL;
 	} else {
-		el = &(dl[mt]->el_local);
+		it = dd->mids_local.find(mid);
+		if(it == dd->mids_local.end())
+			return NULL;
 	}
 
-	/* Check if this measure is already in the list */
-	if(el->find(mid) != el->end())
-		return (*el)[mid];
-
-	return NULL;
+	return it->second;
 }
-
-class MonMeasure* MeasureDispatcher::findMeasureFromId(DestinationSocketIdData *dsid,  MeasurementCapabilities flags, MeasurementId mid, MsgType mt) {
-	if(flags & IN_BAND) {
-		if(flags & TXLOC) {
-			if(flags & PACKET)
-				return findDep(dsid->tx_pkt, flags, mt, mid);
-			if(flags & DATA)
-				return findDep(dsid->tx_data, flags, mt, mid);
-		}
-
-		if(flags & RXLOC) {
-			if(flags & PACKET)
-				return findDep(dsid->rx_pkt, flags, mt, mid);
-			if(flags & DATA)
-				return findDep(dsid->rx_data, flags, mt, mid);
-		}
-	}
-
-	return NULL;
-}
-
-int MeasureDispatcher::checkDeps(DestinationSocketIdData *dsid, MeasurementCapabilities flags, MeasurementId mid, MsgType mt) {
-	int ret = 1;
-
-	if(flags & IN_BAND) {
-		if(flags & TXLOC) {
-			if(flags & PACKET)
-				ret &= (findDep(dsid->tx_pkt, flags, mt, mid) != NULL);
-			if(flags & DATA)
-				ret &= (findDep(dsid->tx_data, flags, mt, mid) != NULL);
-		}
-
-		if(flags & RXLOC) {
-			if(flags & PACKET)
-				ret &= (findDep(dsid->rx_pkt, flags, mt, mid) != NULL);
-			if(flags & DATA)
-				ret &= (findDep(dsid->rx_data, flags, mt, mid) != NULL);
-		}
-	}
-
-	return ret;
-}
-
 
 int MeasureDispatcher::activateMeasure(class MonMeasure *m, SocketId dst, MsgType mt, int auto_load) {
+	MeasurementId mid;
+	struct SocketIdMt h_dst;
 	int ret;
-	m->status = INITIALISING;
+
+	h_dst.sid = dst;
+	h_dst.mt = mt;
+
+	mid = m->measure_plugin->getId();
 	m->msg_type = mt;
 
 	if(dst != NULL) {
-		if(m->dst_socketid == NULL)
-			m->dst_socketid = (SocketId) new char[SOCKETID_SIZE];
-
-		memcpy((char*) m->dst_socketid, (char*) dst, SOCKETID_SIZE);
+		memcpy(m->dst_socketid, (uint8_t *) dst, SOCKETID_SIZE);
 	} else {
 		if(m->flags != 0)
 			return -EINVAL;
@@ -528,299 +506,205 @@ int MeasureDispatcher::activateMeasure(class MonMeasure *m, SocketId dst, MsgTyp
 	m->defaultInit();
 
 	if(m->flags == 0) {
-		m->status = RUNNING;
 		return EOK;
 	}
 
-	if(dispatcherList.find(dst) == dispatcherList.end()) {
-		char *c_sid = new char[SOCKETID_SIZE];
-		memcpy(c_sid, (char*) dst, SOCKETID_SIZE);
-		dst = (SocketId) c_sid;
-		dispatcherList[dst] = new DestinationSocketIdData;
-		dispatcherList[dst]->sid = c_sid;
+	//check if already present
+	if(dispatcherList.find(h_dst) != dispatcherList.end()) {
+		if(m->flags & REMOTE) {
+			if(dispatcherList[h_dst]->mids_remote.find(mid) == dispatcherList[h_dst]->mids_remote.end())
+				return -EEXISTS;
+		} else {
+			if(dispatcherList[h_dst]->mids_local.find(mid) == dispatcherList[h_dst]->mids_local.end())
+				return -EEXISTS;
+		}
+	}
+
+
+	if(dispatcherList.find(h_dst) == dispatcherList.end()) {
+		createDestinationSocketIdMtData(h_dst);
+	}
+
+	if(m->flags & OUT_OF_BAND) {
+		struct SocketIdMt h_dst2 = h_dst;
+		h_dst2.mt = MSG_TYPE_MONL;
+		if(dispatcherList.find(h_dst2) == dispatcherList.end())
+			createDestinationSocketIdMtData(h_dst2);
 	}
 
 	if(m->flags & PACKET) {
-		if(dispatcherList[dst]->r_pkt.find(mt) == dispatcherList[dst]->r_pkt.end()) {
-			dispatcherList[dst]->r_pkt[mt] = new struct pkt_result;
-			for(int i = 0; i < R_LAST_PKT; i++) {
-				dispatcherList[dst]->r_pkt[mt]->r_rx_remote[i] = NAN;
-				dispatcherList[dst]->r_pkt[mt]->r_tx_remote[i] = NAN;
-				dispatcherList[dst]->r_pkt[mt]->r_rx_local[i] = NAN;
-				dispatcherList[dst]->r_pkt[mt]->r_tx_local[i] = NAN;
-			}
-			dispatcherList[dst]->r_pkt[mt]->tx_seq_num = 0;
-		}
-		if(m->flags & OUT_OF_BAND) {
-			if(dispatcherList[dst]->r_pkt.find(MSG_TYPE_MONL) == dispatcherList[dst]->r_pkt.end()) {
-				dispatcherList[dst]->r_pkt[MSG_TYPE_MONL] = new struct pkt_result;
-				for(int i = 0; i < R_LAST_PKT; i++) {
-					dispatcherList[dst]->r_pkt[MSG_TYPE_MONL]->r_rx_remote[i] = NAN;
-					dispatcherList[dst]->r_pkt[MSG_TYPE_MONL]->r_tx_remote[i] = NAN;
-					dispatcherList[dst]->r_pkt[MSG_TYPE_MONL]->r_rx_local[i] = NAN;
-					dispatcherList[dst]->r_pkt[MSG_TYPE_MONL]->r_tx_local[i] = NAN;
-				}
-				dispatcherList[dst]->r_pkt[MSG_TYPE_MONL]->tx_seq_num = 0;
-			}
-		}
 		if(m->flags & REMOTE) {
-			m->r_rx_list = dispatcherList[dst]->r_pkt[mt]->r_rx_remote;
-			m->r_tx_list = dispatcherList[dst]->r_pkt[mt]->r_tx_remote;
+			m->r_rx_list = dispatcherList[h_dst]->pkt_r_rx_remote;
+			m->r_tx_list = dispatcherList[h_dst]->pkt_r_tx_remote;
 		} else {
-			m->r_rx_list = dispatcherList[dst]->r_pkt[mt]->r_rx_local;
-			m->r_tx_list = dispatcherList[dst]->r_pkt[mt]->r_tx_local;
+			m->r_rx_list = dispatcherList[h_dst]->pkt_r_rx_local;
+			m->r_tx_list = dispatcherList[h_dst]->pkt_r_tx_local;
 		}
-	}
-	if(m->flags & DATA) {
-		if(dispatcherList[dst]->r_data.find(mt) == dispatcherList[dst]->r_data.end()) {
-			dispatcherList[dst]->r_data[mt] = new struct data_result;
-			for(int i = 0; i < R_LAST_DATA; i++) {
-				dispatcherList[dst]->r_data[mt]->r_rx_remote[i] = NAN;
-				dispatcherList[dst]->r_data[mt]->r_tx_remote[i] = NAN;
-				dispatcherList[dst]->r_data[mt]->r_rx_local[i] = NAN;
-				dispatcherList[dst]->r_data[mt]->r_tx_local[i] = NAN;
-			}
-			dispatcherList[dst]->r_data[mt]->tx_seq_num = 0;
-		}
-		if(m->flags & OUT_OF_BAND) {
-			if(dispatcherList[dst]->r_data.find(MSG_TYPE_MONL) == dispatcherList[dst]->r_data.end()) {
-				dispatcherList[dst]->r_data[MSG_TYPE_MONL] = new struct data_result;
-				for(int i = 0; i < R_LAST_DATA; i++) {
-					dispatcherList[dst]->r_data[MSG_TYPE_MONL]->r_rx_remote[i] = NAN;
-					dispatcherList[dst]->r_data[MSG_TYPE_MONL]->r_tx_remote[i] = NAN;
-					dispatcherList[dst]->r_data[MSG_TYPE_MONL]->r_rx_local[i] = NAN;
-					dispatcherList[dst]->r_data[MSG_TYPE_MONL]->r_tx_local[i] = NAN;
-				}
-				dispatcherList[dst]->r_data[MSG_TYPE_MONL]->tx_seq_num = 0;
-			}
-		}
+	} else {
 		if(m->flags & REMOTE) {
-			m->r_rx_list = dispatcherList[dst]->r_data[mt]->r_rx_remote;
-			m->r_tx_list = dispatcherList[dst]->r_data[mt]->r_tx_remote;
+			m->r_rx_list = dispatcherList[h_dst]->data_r_rx_remote;
+			m->r_tx_list = dispatcherList[h_dst]->data_r_tx_remote;
 		} else {
-			m->r_rx_list = dispatcherList[dst]->r_data[mt]->r_rx_local;
-			m->r_tx_list = dispatcherList[dst]->r_data[mt]->r_tx_local;
+			m->r_rx_list = dispatcherList[h_dst]->data_r_rx_local;
+			m->r_tx_list = dispatcherList[h_dst]->data_r_tx_local;
 		}
 	}
+	//TODO: check deps
 
-	//try to automatically load dependencies
-	if(auto_load) {
-		class MeasurePlugin *mp = m->measure_plugin;
-		/* Check for all dependencies */
-		std::vector<MeasurementId>::iterator it;
-		std::vector<MeasurementId> deps = mp->getDeps();
-		for(it = deps.begin(); it != deps.end(); it++) {
-			if(checkDeps(dispatcherList[dst], m->flags, *it, mt) == 0) {
-				MonHandler mh;
-				mh = mm->monCreateMeasureId(*it, m->flags);
-				if(mh > 0){
-					if(activateMeasure(mm->mMeasureInstances[mh], dst, mt) == EOK)
-						mm->mMeasureInstances[mh]->auto_loaded = true;
-					else {
-						mm->monDestroyMeasure(mh);
-						ret = -EUNRESOLVEDDEP;
-						goto error;
-					}
-				} else
-					ret = -EUNRESOLVEDDEP;
-					goto error;
-			}
-		}
-	}
+	// add it to loaded measure list
+	if(m->flags & REMOTE)
+		dispatcherList[h_dst]->mids_remote[mid] = m;
+	else
+		dispatcherList[h_dst]->mids_local[mid] = m;
 
-	/* IN_BAND  measurmente added to hook executionlists */
-	if(m->flags & IN_BAND) {
-		/* TXLOC */
-		if(m->flags & TXLOC) {
-			if(m->flags & PACKET) {
-				ret = addMeasureToExecList(dispatcherList[dst]->tx_pkt,m,mt);
-				if(ret != EOK)
-					goto error;
-			}
-			if(m->flags & DATA) {
-				ret = addMeasureToExecList(dispatcherList[dst]->tx_data,m,mt);
-				if(ret != EOK)
-					goto error;
-			}
-		}
-		/* RXLOC */
-		if(m->flags & RXLOC) {
-			if(m->flags & PACKET) {
-				ret = addMeasureToExecList(dispatcherList[dst]->rx_pkt,m,mt);
-				if(ret != EOK)
-					goto error;
-			}
-			if(m->flags & DATA) {
-				ret = addMeasureToExecList(dispatcherList[dst]->rx_data,m,mt);
-				if(ret != EOK)
-					goto error;
-			}
-		}
-		/* Remote counterparts ? */
-		if(m->flags & TXREM || m->flags & RXREM) {
-			/* Yes, initialise them */
-			ret = initRemoteMeasureTx(m,dst,mt);
-			if(ret != EOK)
-				goto error;
-			else
-				return ret;
-		}
-	}
+	//Handle IN_BAND measures
+	addMeasureToExecLists(h_dst, m);
 
+	//Handle OUT_OF_BAND measures
 	if(m->flags & OUT_OF_BAND) {
 		struct timeval tv = {0,0};
-		/* TXLOC need only a local instance */
-		if(m->flags & TXLOC) {
-			ret = m->scheduleNextIn(&tv);
-			if(ret != EOK)
-				goto error;
-		}
-
-		/* Remote counterparts ? */
-		if(m->flags & TXREM || m->flags & RXREM) {
-			/* Yes, initialise them */
-			ret = initRemoteMeasureTx(m,dst,mt);
-			if(ret != EOK)
-				goto error;
-			else
-				return ret;
-		} else {
-			/* No, we are done */
-			ret = m->scheduleNextIn(&tv);
-			if(ret != EOK)
-				goto error;
-		}
+		//if only local
+		if(!(m->flags & TXREM) && !(m->flags & RXREM))
+			m->scheduleNextIn(&tv); //start it!
 	}
 
-	m->status = RUNNING;
+	/* Remote counterparts ? */
+	if(m->flags & TXREM || m->flags & RXREM) {
+		/* Yes, initialise them */
+		m->status = INITIALISING;
+		ret = initRemoteMeasureTx(m,dst,mt);
+		if(ret != EOK)
+			goto error;
+	} else {
+		m->status = RUNNING;
+	}
+
+	if(m->dst_socketid == NULL)
+		info("bla1");
 	return EOK;
 
 error:
-	m->status = FAILED;
-	m->r_tx_list = m->r_rx_list = NULL;
+	if(m->dst_socketid == NULL)
+		info("bla2");
+
+	stopMeasure(m);
+	if(m->dst_socketid == NULL)
+		info("bla3");
+
 	return ret;
-};
+}
+
+void MeasureDispatcher::createDestinationSocketIdMtData(struct SocketIdMt h_dst) {
+	DestinationSocketIdMtData *dd;
+	
+	dd = new DestinationSocketIdMtData;
+
+	memcpy(dd->sid, (uint8_t*) h_dst.sid, SOCKETID_SIZE);
+	dd->h_dst.sid = (SocketId) &(dd->sid);
+	dd->h_dst.mt = h_dst.mt;
+
+	dispatcherList[dd->h_dst] = dd;
+
+	//initialize
+	for(int i = 0; i < R_LAST_PKT; i++) {
+		dispatcherList[dd->h_dst]->pkt_r_rx_local[i] = NAN;
+		dispatcherList[dd->h_dst]->pkt_r_rx_remote[i] = NAN;
+		dispatcherList[dd->h_dst]->pkt_r_tx_local[i] = NAN;
+		dispatcherList[dd->h_dst]->pkt_r_tx_remote[i] = NAN;
+	}
+	dispatcherList[dd->h_dst]->pkt_tx_seq_num = 0;
+
+	for(int i = 0; i < R_LAST_DATA; i++) {
+		dispatcherList[dd->h_dst]->data_r_rx_local[i] = NAN;
+		dispatcherList[dd->h_dst]->data_r_rx_remote[i] = NAN;
+		dispatcherList[dd->h_dst]->data_r_tx_local[i] = NAN;
+		dispatcherList[dd->h_dst]->data_r_tx_remote[i] = NAN;
+	}
+	dispatcherList[dd->h_dst]->data_tx_seq_num = 0;
+}
+
+void MeasureDispatcher::destroyDestinationSocketIdMtData(SocketId dst, MsgType mt) {
+	DestinationSocketIdMtData *dd;
+	DispatcherListSocketIdMt::iterator it;
+	struct SocketIdMt h_dst;
+
+	h_dst.sid = dst;
+	h_dst.mt = mt;
+
+	it = dispatcherList.find(h_dst);
+	if(it != dispatcherList.end()) {
+		dd = it->second;
+		dispatcherList.erase(it);
+		delete dd;
+	}
+	else
+		fatal("Trying to erase non existent DestinationSocketIdMtData");
+}
 
 int MeasureDispatcher::deactivateMeasure(class MonMeasure *m) {
-	int ret;
-	SocketId dst = m->dst_socketid;
-	
-	class MeasurePlugin *mp = m->measure_plugin;
-	std::vector<MeasurementId>::iterator it;
-	std::vector<MeasurementId> deps = mp->getDeps();
+	SocketIdMt h_dst;
+
+	h_dst.sid = (SocketId) m->dst_socketid;
+	h_dst.mt = m->msg_type;
 
 	if(m->status == STOPPED)
 		return EOK;
-	
+
 	if(m->used_counter > 0)
 		return -EINUSE;
 
-	if(m->status != FAILED)
+	if(m->flags == 0) {
 		m->defaultStop();
+		m->status = STOPPED;
+		return EOK;
+	}
 
-	m->status = STOPPED;
+	if(dispatcherList.find(h_dst) == dispatcherList.end())
+		return EINVAL;
+
+	//remove it from the loaded list
+	if(m->flags & REMOTE) {
+		if(dispatcherList[h_dst]->mids_remote.find(m->measure_plugin->getId()) == dispatcherList[h_dst]->mids_remote.end())
+			return -EINVAL;
+	} else {
+		if(dispatcherList[h_dst]->mids_local.find(m->measure_plugin->getId()) == dispatcherList[h_dst]->mids_local.end())
+			return -EINVAL;
+	}
+
+	return stopMeasure(m);
+}
+
+int MeasureDispatcher::stopMeasure(class MonMeasure *m) {
+	SocketIdMt h_dst;
+
+	h_dst.sid = (SocketId) m->dst_socketid;
+	h_dst.mt = m->msg_type;
+
+	m->defaultStop();
+
+	//Handle IN_BAND measures
+	delMeasureFromExecLists(m);
+	//Handle OUT_OF:BAND measures
+	//TODO: Anything to do at all?
+
+	//Handle remote counterpart
+	if(m->flags & TXREM || m->flags & RXREM) {
+			m->status = STOPPING;
+			deinitRemoteMeasureTx(m);
+	} else
+		m->status = STOPPED;
 	m->r_tx_list = m->r_rx_list = NULL;
 
-	/* IN_BAND  measurments added to hook executionlists*/
-	if(m->flags & IN_BAND) {
-		/* TXLOC */
-		if(m->flags & TXLOC) {
-			if(m->flags & PACKET) {
-				ret = delMeasureFromExecList(dispatcherList[dst]->tx_pkt,m,m->msg_type);
-				if(ret != EOK)
-					goto error;
-			}
-			if(m->flags & DATA) {
-				ret = delMeasureFromExecList(dispatcherList[dst]->tx_data,m,m->msg_type);
-				if(ret != EOK)
-					goto error;
-			}
-		}
+	//remove it from the loaded list
+	if(m->flags & REMOTE)
+		dispatcherList[h_dst]->mids_remote.erase(dispatcherList[h_dst]->mids_remote.find(m->measure_plugin->getId()));
+	else
+		dispatcherList[h_dst]->mids_local.erase(dispatcherList[h_dst]->mids_local.find(m->measure_plugin->getId()));
 
-		/* RXLOC */
-		if(m->flags & RXLOC) {
-			if(m->flags & PACKET) {
-				ret = delMeasureFromExecList(dispatcherList[dst]->rx_pkt,m,m->msg_type);
-				if(ret != EOK)
-					goto error;
-			}
-			if(m->flags & DATA) {
-				ret = delMeasureFromExecList(dispatcherList[dst]->rx_data,m,m->msg_type);
-				if(ret != EOK)
-					goto error;
-			}
-		}
-
-		/* Remote counterparts ? */
-		if(m->flags & TXREM) {
-				m->status = STOPPING;
-				ret = deinitRemoteMeasureTx(m);
-				if(ret != EOK)
-						goto error;
-		}
-	}
-	//TODO out of band measures check this!!!
-	if(m->flags & OUT_OF_BAND) {
-		m->status = STOPPING;
-		if(m->flags & TXREM) {
-				ret = deinitRemoteMeasureTx(m);
-				if(ret != EOK)
-						goto error;
-		}
-	}
-
-	//remove automatically loaded ones
-	for(it = deps.begin(); it != deps.end(); it++) {
-		class MonMeasure *md = findMeasureFromId(dispatcherList[dst], m->flags, *it, m->msg_type);
-		if(md != NULL) {
-			if(md->used_counter == 0 && md->auto_loaded == true) {
-				ret = deactivateMeasure(md);
-				if(ret != EOK)
-						goto error;
-				if(md->status == STOPPED) {
-					ret = mm->monDestroyMeasure(md->mh_local);
-					if(ret != EOK)
-							goto error;
-				}
-			}
-		}
-	}
-
-	if(dispatcherList[dst]->rx_pkt.find(m->msg_type) == dispatcherList[dst]->rx_pkt.end() &&
-		dispatcherList[dst]->tx_pkt.find(m->msg_type) == dispatcherList[dst]->tx_pkt.end()) {
-			delete dispatcherList[dst]->r_pkt[m->msg_type];
-			dispatcherList[dst]->r_pkt.erase(m->msg_type);
-	}
-
-	if(dispatcherList[dst]->rx_data.find(m->msg_type) == dispatcherList[dst]->rx_data.end() &&
-		dispatcherList[dst]->tx_data.find(m->msg_type) == dispatcherList[dst]->tx_data.end()) {
-			delete dispatcherList[dst]->r_data[m->msg_type];
-			dispatcherList[dst]->r_data.erase(m->msg_type);
-	}
-
-	if(dispatcherList[dst]->rx_pkt.empty() && dispatcherList[dst]->tx_pkt.empty() &&
-			dispatcherList[dst]->rx_data.empty() && dispatcherList[dst]->tx_data.empty()) {
-		ResultPktListMsgType::iterator it;
-		for(it = dispatcherList[dst]->r_pkt.begin(); it != dispatcherList[dst]->r_pkt.end(); it++)
-			delete it->second;
-		ResultDataListMsgType::iterator it2;
-		for(it2 = dispatcherList[dst]->r_data.begin(); it2 != dispatcherList[dst]->r_data.end(); it2++)
-			delete it2->second;
-		delete[] dispatcherList[dst]->sid;
-		delete dispatcherList[dst];
-	}
-
-	if(m->dst_socketid) {
-		delete[] (char *) m->dst_socketid;
-		m->dst_socketid = NULL;
-	}
-	return EOK;
-
-error:
-	m->status = FAILED;
-
-};
-
+	//check if we can remove also the DistinationSocektIdMtData
+	if(dispatcherList[h_dst]->mids_remote.empty() && dispatcherList[h_dst]->mids_local.empty())
+		destroyDestinationSocketIdMtData((SocketId) m->dst_socketid, m->msg_type);
+}
 
 
 void MeasureDispatcher::cbRxPkt(void *arg) {
@@ -830,23 +714,23 @@ void MeasureDispatcher::cbRxPkt(void *arg) {
 	int i,j;
 	mon_pkt_inf *pkt_info = (mon_pkt_inf *)arg;
 	struct MonPacketHeader *mph = (MonPacketHeader*) pkt_info->monitoringHeader;
-	SocketId sid = pkt_info->remote_socketID;
-	MsgType mt = pkt_info->msgtype;
+	struct SocketIdMt h_dst;
+	h_dst.sid = pkt_info->remote_socketID;
+	h_dst.mt = pkt_info->msgtype;
+
+	if(pkt_info->remote_socketID == NULL)
+		return;
 
 	/* something to do? */
 	if(dispatcherList.size() == 0)
 		return;
 
-	if(dispatcherList.find(sid) == dispatcherList.end())
+	if(dispatcherList.find(h_dst) == dispatcherList.end())
 		return;
-
-	if(dispatcherList[sid]->r_pkt.find(mt) == dispatcherList[sid]->r_pkt.end()) {
-		return;
-	}
 
 	//we have a result vector to fill
-	r_loc = dispatcherList[sid]->r_pkt[mt]->r_rx_local;
-	r_rem = dispatcherList[sid]->r_pkt[mt]->r_rx_remote;
+	r_loc = dispatcherList[h_dst]->pkt_r_rx_local;
+	r_rem = dispatcherList[h_dst]->pkt_r_rx_remote;
 
 	//TODO: add standard fields
 	if(mph != NULL) {
@@ -866,34 +750,31 @@ void MeasureDispatcher::cbRxPkt(void *arg) {
 	r_rem[R_RECEIVE_TIME] = r_loc[R_RECEIVE_TIME] += pkt_info->arrival_time.tv_sec;
 
 
-	// are there in band measures?
-	if (dispatcherList[sid]->rx_pkt.size() == 0)
-		return;
-
-	if(dispatcherList[sid]->rx_pkt.find(mt) == dispatcherList[sid]->rx_pkt.end())
-		return;
-
-	/* yes! */
-	/* Locals first */
-	ExecutionList *el_ptr_loc = &(dispatcherList[sid]->rx_pkt[mt]->el_local);
-
-	/* Call measures in order */
-	for( it = el_ptr_loc->begin(); it != el_ptr_loc->end(); it++)
+	// are there local in band measures?
+	if (dispatcherList[h_dst]->el_rx_pkt_local.size() > 0) {
+		/* yes! */
+		ExecutionList *el_ptr_loc = &(dispatcherList[h_dst]->el_rx_pkt_local);
+	
+		/* Call measures in order */
+		for( it = el_ptr_loc->begin(); it != el_ptr_loc->end(); it++)
 			if(it->second->status == RUNNING)
-					it->second->RxPktLocal(el_ptr_loc);
+				it->second->RxPktLocal(el_ptr_loc);
+	}
 
-	/* And remotes */
-	ExecutionList *el_ptr_rem = &(dispatcherList[sid]->rx_pkt[mt]->el_remote);
-
-	/* Call measurees in order */
-	j = 0;
-	for( it = el_ptr_rem->begin(); it != el_ptr_rem->end(); it++)
-		if(it->second->status == RUNNING)
-			it->second->RxPktRemote(rmp,j,el_ptr_rem);
-
-	/* send back results */
-	if(j > 0)
-		remoteResultsTx(sid, rmp, j, mt);
+	if (dispatcherList[h_dst]->el_rx_pkt_remote.size() > 0) {
+		/* And remotes */
+		ExecutionList *el_ptr_rem = &(dispatcherList[h_dst]->el_rx_pkt_remote);
+	
+		/* Call measurees in order */
+		j = 0;
+		for( it = el_ptr_rem->begin(); it != el_ptr_rem->end(); it++)
+			if(it->second->status == RUNNING)
+				it->second->RxPktRemote(rmp,j,el_ptr_rem);
+	
+		/* send back results */
+		if(j > 0)
+		remoteResultsTx(h_dst.sid, rmp, j, h_dst.mt);
+	}
 }
 
 void MeasureDispatcher::cbRxData(void *arg) {
@@ -903,22 +784,23 @@ void MeasureDispatcher::cbRxData(void *arg) {
 	int i,j;
 	mon_data_inf *data_info = (mon_data_inf *)arg;
 	struct MonDataHeader *mdh = (MonDataHeader*) data_info->monitoringDataHeader;
-	SocketId sid = data_info->remote_socketID;
-	MsgType mt = data_info->msgtype;
+	struct SocketIdMt h_dst;
+	h_dst.sid = data_info->remote_socketID;
+	h_dst.mt = data_info->msgtype;
+
+	if(data_info->remote_socketID == NULL)
+		return;
 
 	/* something to do? */
 	if(dispatcherList.size() == 0)
 		return;
 
-	if(dispatcherList.find(sid) == dispatcherList.end())
+	if(dispatcherList.find(h_dst) == dispatcherList.end())
 		return;
 
-	if(dispatcherList[sid]->r_data.find(mt) == dispatcherList[sid]->r_data.end()) {
-		return;
-	}
-
-	r_loc = dispatcherList[sid]->r_data[mt]->r_rx_local;
-	r_rem = dispatcherList[sid]->r_data[mt]->r_rx_remote;
+	//we have a result vector to fill
+	r_loc = dispatcherList[h_dst]->data_r_rx_local;
+	r_rem = dispatcherList[h_dst]->data_r_rx_remote;
 
 	//TODO: add standard fields
 	if(mdh != NULL) {
@@ -932,37 +814,35 @@ void MeasureDispatcher::cbRxData(void *arg) {
 	r_rem[R_RECEIVE_TIME] = r_loc[R_RECEIVE_TIME] = data_info->arrival_time.tv_usec / 1000000.0;
 	r_rem[R_RECEIVE_TIME] = r_loc[R_RECEIVE_TIME] += data_info->arrival_time.tv_sec;
 
-	if (dispatcherList[sid]->rx_data.size() == 0)
-		return;
-
-	if(dispatcherList[sid]->rx_data.find(mt) == dispatcherList[sid]->rx_data.end())
-		return;
-
-	/* yes! */
-	/* Locals first */
-	ExecutionList *el_ptr_loc = &(dispatcherList[sid]->rx_data[mt]->el_local);
-
-
-	/* Call measurees in order */
-	for( it = el_ptr_loc->begin(); it != el_ptr_loc->end(); it++){
-		MonMeasure *m = it->second;
-		if(it->second->status == RUNNING)
-			it->second->RxDataLocal(el_ptr_loc);
+	if (dispatcherList[h_dst]->el_rx_data_local.size() > 0) {
+		/* yes! */
+		/* Locals first */
+		ExecutionList *el_ptr_loc = &(dispatcherList[h_dst]->el_rx_data_local);
+	
+	
+		/* Call measurees in order */
+		for( it = el_ptr_loc->begin(); it != el_ptr_loc->end(); it++){
+			MonMeasure *m = it->second;
+			if(it->second->status == RUNNING)
+				it->second->RxDataLocal(el_ptr_loc);
+		}
 	}
 
-	/* And remotes */
-
-	ExecutionList *el_ptr_rem = &(dispatcherList[sid]->rx_data[mt]->el_remote);
-
-	/* Call measurees in order */
-	j = 0;
-	for( it = el_ptr_rem->begin(); it != el_ptr_rem->end(); it++)
-		if(it->second->status == RUNNING)
-			it->second->RxDataRemote(rmp,j,el_ptr_rem);
-
-	/* send back results */
-	if(j > 0)
-		remoteResultsTx(sid, rmp, j, mt);
+	if (dispatcherList[h_dst]->el_rx_data_remote.size() > 0) {
+		/* And remotes */
+	
+		ExecutionList *el_ptr_rem = &(dispatcherList[h_dst]->el_rx_data_remote);
+	
+		/* Call measurees in order */
+		j = 0;
+		for( it = el_ptr_rem->begin(); it != el_ptr_rem->end(); it++)
+			if(it->second->status == RUNNING)
+				it->second->RxDataRemote(rmp,j,el_ptr_rem);
+	
+		/* send back results */
+		if(j > 0)
+			remoteResultsTx(h_dst.sid, rmp, j, h_dst.mt);
+	}
 }
 
 void MeasureDispatcher::cbTxPkt(void *arg) {
@@ -972,47 +852,48 @@ void MeasureDispatcher::cbTxPkt(void *arg) {
 	int i,j;
 	mon_pkt_inf *pkt_info = (mon_pkt_inf *)arg;
 	struct MonPacketHeader *mph = (MonPacketHeader*) pkt_info->monitoringHeader;
-	SocketId sid = pkt_info->remote_socketID;
-	MsgType mt = pkt_info->msgtype;
 	struct timeval ts;
+	struct SocketIdMt h_dst;
+	h_dst.sid = pkt_info->remote_socketID;
+	h_dst.mt = pkt_info->msgtype;
 
-	
+	if(pkt_info->remote_socketID == NULL)
+		return;
+
 	/* something to do? */
 	if(dispatcherList.size() == 0)
 		return;
 
-	if(dispatcherList.find(sid) == dispatcherList.end())
+	if(dispatcherList.find(h_dst) == dispatcherList.end())
 		return;
-
-	if(dispatcherList[sid]->r_pkt.find(mt) == dispatcherList[sid]->r_pkt.end()) {
-		return;
-	}
 
 	/* yes! */
 
-	r_loc = dispatcherList[sid]->r_pkt[mt]->r_tx_local;
-	r_rem = dispatcherList[sid]->r_pkt[mt]->r_tx_remote;
+	r_loc = dispatcherList[h_dst]->pkt_r_tx_local;
+	r_rem = dispatcherList[h_dst]->pkt_r_tx_remote;
 
 	/* prepare initial result vector (based on header information) */
 		
-	r_rem[R_SEQNUM] = r_loc[R_SEQNUM] = ++dispatcherList[sid]->r_pkt[mt]->tx_seq_num;
+	r_rem[R_SEQNUM] = r_loc[R_SEQNUM] = ++(dispatcherList[h_dst]->pkt_tx_seq_num);
 	r_rem[R_SIZE] = r_loc[R_SIZE] = pkt_info->bufSize;
 	r_rem[R_INITIAL_TTL] = r_loc[R_INITIAL_TTL] = initial_ttl;
 	gettimeofday(&ts,NULL);	
 	r_rem[R_SEND_TIME] = r_loc[R_SEND_TIME] = ts.tv_usec / 1000000.0;
 	r_rem[R_SEND_TIME] = r_loc[R_SEND_TIME] =  r_loc[R_SEND_TIME] + ts.tv_sec;
 
-	if(dispatcherList[sid]->tx_pkt.find(mt) != dispatcherList[sid]->tx_pkt.end()) {
+	if(dispatcherList[h_dst]->el_tx_pkt_local.size() > 0) {
 
-		ExecutionList *el_ptr_loc = &(dispatcherList[sid]->tx_pkt[mt]->el_local);
-	
+		ExecutionList *el_ptr_loc = &(dispatcherList[h_dst]->el_tx_pkt_local);
+
 		/* Call measurees in order */
 		for( it = el_ptr_loc->begin(); it != el_ptr_loc->end(); it++)
 			if(it->second->status == RUNNING)
 				it->second->TxPktLocal(el_ptr_loc);
-	
+	}
+
+	if(dispatcherList[h_dst]->el_tx_pkt_remote.size() > 0) {
 		/* And remotes */
-		ExecutionList *el_ptr_rem = &(dispatcherList[sid]->tx_pkt[mt]->el_remote);
+		ExecutionList *el_ptr_rem = &(dispatcherList[h_dst]->el_tx_pkt_remote);
 	
 		/* Call measurees in order */
 		j = 0;
@@ -1022,7 +903,7 @@ void MeasureDispatcher::cbTxPkt(void *arg) {
 	
 		/* send back results */
 		if(j > 0)
-			remoteResultsTx(sid, rmp, j, mt);
+			remoteResultsTx(h_dst.sid, rmp, j, h_dst.mt);
 	}
 
 	if(mph != NULL) {
@@ -1047,46 +928,45 @@ void MeasureDispatcher::cbTxData(void *arg) {
 	int i,j;
 	mon_data_inf *data_info = (mon_data_inf *)arg;
 	struct MonDataHeader *mdh = (MonDataHeader*) data_info->monitoringDataHeader;
-	SocketId sid = data_info->remote_socketID;
-	MsgType mt = data_info->msgtype;
 	struct timeval ts;
+	struct SocketIdMt h_dst;
+	h_dst.sid = data_info->remote_socketID;
+	h_dst.mt = data_info->msgtype;
+
+	if(data_info->remote_socketID == NULL)
+		return;
 
 	/* something to do? */
 	if(dispatcherList.size() == 0)
 		return;
 
-	if(dispatcherList.find(sid) == dispatcherList.end())
+	if(dispatcherList.find(h_dst) == dispatcherList.end())
 		return;
-
-	if(dispatcherList[sid]->r_data.find(mt) == dispatcherList[sid]->r_data.end()) {
-		return;
-	}
-
 	
 	/* yes! */
-	r_loc = dispatcherList[sid]->r_data[mt]->r_tx_local;
-	r_rem = dispatcherList[sid]->r_data[mt]->r_tx_remote;
+	r_loc = dispatcherList[h_dst]->data_r_tx_local;
+	r_rem = dispatcherList[h_dst]->data_r_tx_remote;
 
 	
 	//TODO add fields
 	r_rem[R_SIZE] = r_loc[R_SIZE] = data_info->bufSize;
-	r_rem[R_SEQNUM] = r_loc[R_SEQNUM] = ++(dispatcherList[sid]->r_data[mt]->tx_seq_num);
+	r_rem[R_SEQNUM] = r_loc[R_SEQNUM] = ++(dispatcherList[h_dst]->data_tx_seq_num);
 	gettimeofday(&ts,NULL);
 	r_rem[R_SEND_TIME] = r_loc[R_SEND_TIME] = ts.tv_usec / 1000000.0;
 	r_rem[R_SEND_TIME] = r_loc[R_SEND_TIME] = r_loc[R_SEND_TIME] + ts.tv_sec;
 
-
-	if(dispatcherList[sid]->tx_data.find(mt) != dispatcherList[sid]->tx_data.end()) {
-		ExecutionList *el_ptr_loc = &(dispatcherList[sid]->tx_data[mt]->el_local);
-		
+	if(dispatcherList[h_dst]->el_tx_data_local.size() > 0) {
+		ExecutionList *el_ptr_loc = &(dispatcherList[h_dst]->el_tx_data_local);
 
 		/* Call measures in order */
 		for( it = el_ptr_loc->begin(); it != el_ptr_loc->end(); it++)
 			if(it->second->status == RUNNING)
 				it->second->TxDataLocal(el_ptr_loc);
-	
+	}
+
+	if(dispatcherList[h_dst]->el_tx_data_remote.size() > 0) {
 		/* And remote */
-		ExecutionList *el_ptr_rem = &(dispatcherList[sid]->tx_data[mt]->el_remote);
+		ExecutionList *el_ptr_rem = &(dispatcherList[h_dst]->el_tx_data_remote);
 	
 		/* Call measures in order */
 		j = 0;
@@ -1096,7 +976,7 @@ void MeasureDispatcher::cbTxData(void *arg) {
 	
 		/* send back results */
 		if(j > 0)
-			remoteResultsTx(sid, rmp, j, mt);
+			remoteResultsTx(h_dst.sid, rmp, j, h_dst.mt);
 	}
 
 	if(mdh != NULL) {
@@ -1114,15 +994,18 @@ void MeasureDispatcher::cbTxData(void *arg) {
 }
 
 int MeasureDispatcher::cbHdrPkt(SocketId sid, MsgType mt) {
+	struct SocketIdMt h_dst;
+	h_dst.sid = sid;
+	h_dst.mt = mt;
+
+	if(sid == NULL)
+		return 0;
+
 	/* something to do? */
 	if(dispatcherList.size() == 0)
 		return 0;
 
-	if(dispatcherList.find(sid) == dispatcherList.end())
-		return 0;
-
-	if(dispatcherList[sid]->tx_pkt.find(mt) == dispatcherList[sid]->tx_pkt.end() &&
-		dispatcherList[sid]->r_pkt.find(mt) == dispatcherList[sid]->r_pkt.end())
+	if(dispatcherList.find(h_dst) == dispatcherList.end())
 		return 0;
 
 	/* yes! */
@@ -1130,29 +1013,33 @@ int MeasureDispatcher::cbHdrPkt(SocketId sid, MsgType mt) {
 }
 
 int MeasureDispatcher::cbHdrData(SocketId sid, MsgType mt) {
+	struct SocketIdMt h_dst;
+	h_dst.sid = sid;
+	h_dst.mt = mt;
+
+	if(sid == NULL)
+		return 0;
+
 	/* something to do? */
 	if(dispatcherList.size() == 0)
 		return 0;
 
-	if(dispatcherList.find(sid) == dispatcherList.end())
-		return 0;
-
-	if(dispatcherList[sid]->tx_data.find(mt) == dispatcherList[sid]->tx_data.end() &&
-		dispatcherList[sid]->r_data.find(mt) == dispatcherList[sid]->r_data.end())
+	if(dispatcherList.find(h_dst) == dispatcherList.end())
 		return 0;
 
 	/* yes! return the space we need */
 	return MON_DATA_HEADER_SIZE;
 }
+
 int MeasureDispatcher::scheduleMeasure(MonHandler mh) {
 	if(mm->isValidMonHandler(mh))
 		mm->mMeasureInstances[mh]->Run();
 	return EOK;
 }
+
 int MeasureDispatcher::schedulePublish(MonHandler mh) {
 	if(mm->isValidMonHandler(mh))
 		if(mm->mMeasureInstances[mh]->rb != NULL)
 			mm->mMeasureInstances[mh]->rb->publishResults();
 	return EOK;
 }
-

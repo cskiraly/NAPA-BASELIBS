@@ -61,9 +61,6 @@ protected:
 	/* Bitmask defining the capabilities of this instance of the measure */
 	MeasurementCapabilities flags;
 
-	/* Parameter values */
-	MonParameterValue *param_values;
-
 	/* Pointer to the MeasurePlugin class describing this measure */
 	class MeasurePlugin *measure_plugin;
 
@@ -72,13 +69,16 @@ protected:
 
 	MonHandler mh_remote;
 
-	SocketId dst_socketid;
+	uint8_t dst_socketid[SOCKETID_SIZE];
 	MsgType  msg_type;
-
 
 	int used_counter;
 
 	ResultBuffer *rb;
+
+	/* Parameter values */
+	MonParameterValue *param_values;
+
 
 	void debugInit(const char *);
 	void debugStop();
@@ -128,8 +128,6 @@ public:
 
 	virtual ~MonMeasure() {
 		delete[] param_values;
-		if(dst_socketid)
-			delete[] (char *) dst_socketid;
 		if(rb != NULL)
 			delete rb;
 	};
