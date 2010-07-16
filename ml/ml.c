@@ -673,7 +673,7 @@ void recv_timeout_cb(int fd, short event, void *arg)
 
 			// send data recv callback to monitoring module
 
-			(get_Recv_data_inf_cb) ((void *) &recv_data_inf);
+//			(get_Recv_data_inf_cb) ((void *) &recv_data_inf);
 		}
 
 		// Get the right callback
@@ -689,8 +689,8 @@ void recv_timeout_cb(int fd, short event, void *arg)
 			&(connectbuf[recvdatabuf[recv_id]->connectionID]->external_socketID);
 		rParams.firstPacketArrived = recvdatabuf[recv_id]->firstPacketArrived;
 
-		(receive_data_callback) (recvdatabuf[recv_id]->recvbuf + recvdatabuf[recv_id]->monitoringDataHeaderLen, recvdatabuf[recv_id]->bufsize - recvdatabuf[recv_id]->monitoringDataHeaderLen,
-			recvdatabuf[recv_id]->msgtype, &rParams);
+// 		(receive_data_callback) (recvdatabuf[recv_id]->recvbuf + recvdatabuf[recv_id]->monitoringDataHeaderLen, recvdatabuf[recv_id]->bufsize - recvdatabuf[recv_id]->monitoringDataHeaderLen,
+// 			recvdatabuf[recv_id]->msgtype, &rParams);
 
 		//clean up
 		if (recvdatabuf[recv_id]->timeout_event) {
@@ -1999,8 +1999,9 @@ int mlConnectionExist(socketID_handle socketID, bool ready){
  * TODO might think of a better way
  */
 int mlHashSocketID(socketID_handle sock) {
-    return sock->internal_addr.udpaddr.sin_port +
-			  sock->external_addr.udpaddr.sin_port;
+	//assert(sock);
+   return sock->internal_addr.udpaddr.sin_port +
+			sock->external_addr.udpaddr.sin_port;
 }
 
 int mlCompareSocketIDs(socketID_handle sock1, socketID_handle sock2) {
