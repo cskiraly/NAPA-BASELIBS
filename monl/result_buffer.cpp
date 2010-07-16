@@ -82,7 +82,7 @@ int ResultBuffer::publishResults(void){
 	if(mlSocketIDToString(sid, sidA_string, sizeof(sidA_string)) != 0)
 		return -EFAILED;
 	if(m->dst_socketid != NULL) {
-		if(mlSocketIDToString(m->dst_socketid, sidB_string, sizeof(sidB_string)) != 0)
+		if(mlSocketIDToString((SocketId) m->dst_socketid, sidB_string, sizeof(sidB_string)) != 0)
 			return -EFAILED;
 	}
 	if(*originator_name == NULL)
@@ -257,8 +257,9 @@ int ResultBuffer::newSampleWin(result r) {
 			stats[WIN_MAX] = r;
 	}
 
-	circular_buffer[pos++] = r;
+	circular_buffer[pos] = r;
 	circular_buffer_var[pos] = var_s;
+	pos++;
 	if(pos >= size)
 		pos -= size;
 
