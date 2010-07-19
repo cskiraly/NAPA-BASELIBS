@@ -35,6 +35,7 @@
 #include "ALTOclient.h"
 #include "ALTOclient_impl.h"
 
+#include <stdarg.h>
 
 /*
  * 		Here the reference to the accessible DBs is set
@@ -56,15 +57,37 @@ struct curl_reply_buffer_t alto_rep_buf = {ALTO_REP_BUF_SIZE,0,""};
 
 static char alto_reply_buf_nano[ALTO_REP_BUF_SIZE];
 
+void alto_debugf(const char* str, ...) {
+	char msg[1024];
+	va_list args;
+	va_start(args, str);
+//#ifdef USE_DEBUG_OUTPUT
+	vsprintf(msg, str, args);
+	printf("[ALTOclient] %s", msg);
+//#endif
+	va_end(args);
+}
+
+void alto_errorf(const char* str, ...) {
+	char msg[1024];
+	va_list args;
+	va_start(args, str);
+	vsprintf(msg, str, args);
+	fprintf(stderr, "[ALTOclient] *** ERROR: '%s'", msg);
+	va_end(args);
+}
+
+#define assertCheck(expr, msg) if(!(expr)) { alto_errorf("%s - Assertion failed: '"#expr"' (%s, line: %d) -- %s\n", __FUNCTION__, __FILE__, __LINE__, msg); exit(-1); }
+
+#define returnIf(expr, msg, retval) if(expr) { alto_errorf("%s - Condition check: '"#expr"' (%s, line: %d) -- %s\n", __FUNCTION__, __FILE__, __LINE__, msg); return retval; }
+
 /*
  * 	Function to set the actual ALTO server for configuration
  */
 int set_ALTO_server(char * string){
 	// Sanity check
-	if(string == NULL){
-		fprintf(stdout, "Nothing to set here\n");
-		return -1;
-	}
+	returnIf(string == NULL, "Nothing to set here\n", -1);
+
 	strncpy(alto_server_url, string, strlen(string));
 	return 1;
 }
@@ -73,7 +96,7 @@ int set_ALTO_server(char * string){
  * 	get the address from the actual set ALTO server;
  */
 char *get_ALTO_server(void){
-	fprintf(stdout, "The ALTO server is set to: %s \n", alto_server_url);
+	alto_debugf("%s: The ALTO server is set to: %s \n", __FUNCTION__, alto_server_url);
 	return (char *) alto_server_url;
 }
 
@@ -108,7 +131,7 @@ struct in_addr get_ALTO_host_IP(char * host_string){
 		IP.s_addr = inet_addr(host_string);
 		return IP;
 	}
-	printf("No IP found\n!!!");
+	alto_debugf("%s: No IP found\n!!!", __FUNCTION__);
 	#ifdef WIN32
 	delete [] str_buff;
 	#endif
@@ -257,9 +280,7 @@ xmlDocPtr alto_create_request_XML(struct alto_db_t * db, struct in_addr rc_host,
     }
 
     // Dump for checking
-	#ifdef WIN32
-    // void
-	#else
+	#ifdef USE_DEBUG_OUTPUT
     xmlDocDump(stdout, doc);
     #endif
 
@@ -304,10 +325,7 @@ xmlDocPtr query_ALTO_server_curl(xmlDocPtr doc, char* ALTO_server_URL){
 	struct curl_httppost *lastptr=NULL;
 
 	curl = curl_easy_init();
-	if(!curl) {
-		printf("Error: couldn't get a handle from curl_easy_init(). abort.\n");
-		return NULL;
-	}
+	assertCheck(curl, "Couldn't get a handle from curl_easy_init(). abort.");
 
 //	printf("Will send HTTP POST to %s\nwith form data:\n\n%s\n", alto_server_url, ALTO_XML_query);
 
@@ -414,7 +432,7 @@ xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint){
 
 	//printf("data:\n\n%s", data);
 
-	printf("POST it\n");
+	alto_debugf("%s: POST begin...\n", __FUNCTION__);
 
 	// send it
 	ctx = POST_send(endPoint, data);
@@ -422,7 +440,7 @@ xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint){
 	free(data);
 	data = NULL;
 
-	printf("after POST it\n");
+	alto_debugf("%s: POST ok.\n", __FUNCTION__);
 /*
 	char output[10024];
 	memset(output, 0, 10024);
@@ -433,8 +451,11 @@ xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint){
 	memset(alto_reply_buf_nano, 0, ALTO_REP_BUF_SIZE);
 
 	bytesRead = xmlNanoHTTPRead(ctx, &alto_reply_buf_nano, ALTO_REP_BUF_SIZE);
-	printf("xmlNanoHTTPRead: %d bytes read.\n", bytesRead);
-//	printf("ALTO reply (%d bytes):\n\n%s", bytesRead, alto_reply_buf_nano);
+
+	#ifdef USE_DEBUG_OUTPUT
+//	printf("xmlNanoHTTPRead: %d bytes read.\n", bytesRead);
+	printf("ALTO reply (%d bytes):\n\n%s", bytesRead, alto_reply_buf_nano);
+	#endif
 
 	// dump to file
 /*	f = fopen("http_reply.txt", "wt");
@@ -479,9 +500,9 @@ xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint){
 */
 
 	if (!result) {
-		printf("ERROR: XML parsing failed (result == NULL)!\n");
+		alto_errorf("%s - XML parsing failed (result == NULL)!\n", __FUNCTION__);
 	} else {
-		printf("XML parsing ok.\n");
+		alto_debugf("%s: XML parsing ok.\n", __FUNCTION__);
 	}
 
 	xmlNanoHTTPClose(ctx);
@@ -501,7 +522,7 @@ xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint){
  * 	Initialize a ALTO DB structure
  */
 struct alto_db_t * alto_db_init(void){
-	fprintf(stdout, "Initialize an ALTO database! \n");
+	alto_debugf("%s: Initialize an ALTO database! \n", __FUNCTION__);
 	struct alto_db_t * db;
 	db = malloc(sizeof(struct alto_db_t));
 //	db = (alto_db_t *)malloc(sizeof(struct alto_db_element_t));
@@ -515,11 +536,8 @@ struct alto_db_t * alto_db_init(void){
  *  Kill the DB structure
  */
 int alto_free_db(struct alto_db_t * db){
-	fprintf(stdout, "Clean and free ALTO database (%p)! \n", db);
-	if(db == NULL){
-		printf("No DB to be killed! ABORT \n");
-		return -1;
-	}
+	alto_debugf("%s: Clean and free ALTO database (%p)! \n", __FUNCTION__, db);
+	returnIf(db == NULL, "No DB to be killed! ABORT", -1);
 
 	// Now kill every single element
 	struct alto_db_element_t * cur;
@@ -541,23 +559,22 @@ int alto_free_db(struct alto_db_t * db){
  */
 void alto_dump_element(struct alto_db_element_t * cur){
 	// Sanity check
-	if(cur == NULL){
-		fprintf(stderr, "No element to print values from! ABORT \n");
-	}
+	assertCheck(cur == NULL, "No element to print values from! ABORT");
+
 	// normal case, print everything
 //	fprintf(stdout, "---> Internal Data\t");
 //	fprintf(stdout, "Element ptr  : %p \t", cur);
 //	fprintf(stdout, "DB   pointer : %p \t", cur->alto_db);
 //	fprintf(stdout, "next pointer : %p \t", cur->next);
 //	fprintf(stdout, "prev pointer : %p \t", cur->prev);
-	fprintf(stdout, "---> User Data\t");
-	fprintf(stdout, "host  : %s \t", inet_ntoa(cur->host));
-	fprintf(stdout, "prefix: %d \t", cur->host_mask);
-	fprintf(stdout, "rating: %d \t", cur->rating);
+	alto_debugf("---> User Data\t");
+	alto_debugf("host  : %s \t", inet_ntoa(cur->host));
+	alto_debugf("prefix: %d \t", cur->host_mask);
+	alto_debugf("rating: %d \t", cur->rating);
 //	fprintf(stdout, "---> Additional Data\n");
 //	fprintf(stdout, "Subnet       : %s \t", inet_ntoa(cur->subnet));
 //	fprintf(stdout, "bit mask     : %d \t", cur->subnet_mask);
-	fprintf(stdout, "\n");
+	alto_debugf("\n");
 	return;
 }
 
@@ -565,18 +582,15 @@ void alto_dump_element(struct alto_db_element_t * cur){
  * 	Helper function to print values of one ALTO DB element
  */
 void alto_dump_db(struct alto_db_t *db){
-	fprintf(stdout, "Dump what's in the DB \n");
+	alto_debugf("Dump what's in the DB \n");
 
 	// Security Check
-	if(db == NULL){
-		fprintf(stderr, "Failure in DB structure! ABORT \n");
-		return;
-	}
+	assertCheck(db, "Failure in DB structure! ABORT");
 
 	// General Data
-	fprintf(stdout,"Number of elements in DB: %d \n", db->num_of_elements);
-	fprintf(stdout,"DB->first: %p \n", db->first);
-	fprintf(stdout,"DB->last:  %p \n", db->last);
+	alto_debugf("Number of elements in DB: %d \n", db->num_of_elements);
+	alto_debugf("DB->first: %p \n", db->first);
+	alto_debugf("DB->last:  %p \n", db->last);
 
 	// List the elements
     struct alto_db_element_t * cur;
@@ -600,10 +614,7 @@ int alto_add_element(struct alto_db_t * db, struct alto_db_element_t * element){
 //	fprintf(stdout, "Add an element to the ALTO DB! \n");
 
 	// Error handling
-	if(db == NULL || element == NULL){
-		fprintf(stderr, "Error in appending element on the DB! ABORT \n");
-		return -1;
-	}
+	returnIf((db == NULL || element == NULL), "Error in appending element on the DB! ABORT", -1);
 
 	// Special case, first element in DB
 	if(db->first == NULL && db->last == NULL){
@@ -644,10 +655,7 @@ int alto_add_element(struct alto_db_t * db, struct alto_db_element_t * element){
 int alto_rem_element(struct alto_db_element_t * element){
 
 	// Sanity Check
-	if(element == NULL){
-		fprintf(stderr, "Error in removing element from DB! ABORT \n");
-		return -1;
-	}
+	returnIf(element == NULL, "element == NULL! ABORT", -1);
 
 	// Now get the DB where the element is in
 	struct alto_db_t *db;
@@ -707,7 +715,7 @@ int alto_rem_element(struct alto_db_element_t * element){
 
 	// Just in case something went wrong
 	// what NEVER will happen
-	fprintf(stderr, "Error in removing element function!\n");
+	alto_errorf("%s - Error in removing element function!\n", __FUNCTION__);
 	return -1;
 }
 
@@ -737,17 +745,9 @@ struct in_addr compute_subnet(struct in_addr host, int prefix){
  */
 int get_ALTO_rating_for_host(struct in_addr add, ALTO_DB_T * db){
 
-	// Sanity chekc I
-	if(add.s_addr == 0){
-		fprintf(stderr, "Couldn't read the ALTO host IP to query! ABORT\n");
-		return 0;
-	}
-
-	// Sanity Check II
-	if(db == NULL){
-		fprintf(stderr, "Couldn't access the DB! ABORT\n");
-		return 0;
-	}
+	// Sanity checks
+	returnIf(add.s_addr == 0, "Couldn't read the ALTO host IP to query! ABORT", 0);
+	returnIf(db == NULL, "Couldn't access the DB! ABORT", 0);
 
 	// walk through the DB until you find the element
     struct alto_db_element_t * cur;
@@ -838,13 +838,10 @@ int get_alto_subnet_mask(ALTO_DB_ELEMENT_T * element, ALTO_DB_T * db){
  * 	return:	1			Success
  */
 int alto_do_the_magic(ALTO_DB_T * ALTO_db_req, ALTO_DB_T * ALTO_db_res){
-	fprintf(stdout, "ALTO do the magic!!! Find the rating and assign to IPs \n");
+	alto_debugf("%s: Find the rating and assign to IPs\n", __FUNCTION__);
 
 	// Sanity check
-	if(ALTO_db_req == NULL || ALTO_db_res == NULL){
-		fprintf(stderr, "Errors in accessing the DBs! ABORT \n");
-		return 0;
-	}
+	returnIf((ALTO_db_req == NULL || ALTO_db_res == NULL), "Errors in accessing the DBs! ABORT", 0);
 
 	// Now iterate through the hosts and find the corresponding rating
 	ALTO_DB_ELEMENT_T * cur;
@@ -868,7 +865,7 @@ int alto_do_the_magic(ALTO_DB_T * ALTO_db_req, ALTO_DB_T * ALTO_db_res){
 
 
 int alto_parse_from_file(altoDbPtr db, char *file_name){
-	fprintf(stdout, "Read hosts from file (%s) and store it in the Request-DB\n", file_name);
+	alto_debugf("%s: Read hosts from file (%s) and store it in the Request-DB\n", __FUNCTION__, file_name);
 
 	FILE *file;
 	char line[256];
@@ -876,15 +873,8 @@ int alto_parse_from_file(altoDbPtr db, char *file_name){
 	char * ptr;
 
 	// Sanity checks
-	if(db == NULL){
-		fprintf(stderr, "No DB select! ABORT \n");
-		return 0;
-	}
-
-	if(file == NULL){
-		fprintf(stderr, "Can't open the file! ABORT \n");
-		return 0;
-	}
+	returnIf(db == NULL, "No DB selected! ABORT", 0);
+	returnIf(file == NULL, "Can't open the file! ABORT", 0);
 
 	// Now read the lines in
 	while(fgets(line, sizeof(line), file) != NULL ) {
@@ -904,13 +894,10 @@ int alto_parse_from_file(altoDbPtr db, char *file_name){
 
 
 int alto_parse_from_XML(altoDbPtr db, xmlDocPtr doc){
-	fprintf(stdout, "Parse an XML element into the DB structure\n");
+	alto_debugf("%s: Parse an XML element into the DB structure\n", __FUNCTION__);
 
 	// Sanity check
-	if(db == NULL || doc == NULL){
-		fprintf(stderr, "couldn't access XML or DB! ABORT \n");
-		return -1;
-	}
+	returnIf((db == NULL || doc == NULL), "Couldn't access XML or DB! ABORT", -1);
 
 	xmlNode *cur = NULL;
 	cur = xmlDocGetRootElement(doc);
@@ -958,13 +945,10 @@ int alto_parse_from_XML(altoDbPtr db, xmlDocPtr doc){
  * 	ret:	1/-1	for success failuire
  */
 int alto_parse_from_list(struct alto_db_t *db, struct alto_guidance_t *list, int num_of_elements){
-	fprintf(stdout, "Convert given list into internal DB structure\n");
+	alto_debugf("%s: Convert given list into internal DB structure\n", __FUNCTION__);
 
-	// Sanity checks
-	if(db == NULL || list == NULL){
-		fprintf(stderr, "No lists to parse from / parse in, ABORT! \n");
-		return -1;
-	}
+	// Sanity check
+	returnIf((db == NULL || list == NULL), "No lists to parse from / parse in, ABORT!", -1);
 
 	// and now will the elements in the DB
 	int i;
@@ -993,19 +977,11 @@ int alto_parse_from_list(struct alto_db_t *db, struct alto_guidance_t *list, int
 
 
 int alto_write_to_file(altoDbPtr db, char *file_name){
-	fprintf(stdout, "Write hosts to file (%s.out) \n", file_name);
+	alto_debugf("%s: Write hosts to file (%s.out) \n", __FUNCTION__, file_name);
 
-	// Sanity Check
-	if(file_name == NULL){
-		fprintf(stderr, "Can't open the file! ABORT \n");
-		return -1;
-	}
-
-	// Sanity Check DB
-	if(db == NULL){
-		fprintf(stderr, "No DB select! ABORT \n");
-		return -1;
-	}
+	// Sanity checks
+	returnIf(file_name == NULL, "Can't open the file! ABORT",-1);
+	returnIf(db == NULL, "No DB select! ABORT", -1);
 
 	// Create the new file
 	char * str_out;
@@ -1016,10 +992,7 @@ int alto_write_to_file(altoDbPtr db, char *file_name){
 	// create the output filename
 	FILE *file;
 	file = fopen(str_out, "a+");
-	if(file == NULL){
-		fprintf(stderr, "Can't create the file! ABORT \n");
-		return 0;
-	}
+	returnIf(file == NULL, "Can't create the file! ABORT", 0);
 
 	// Write everything to the file
 	int count = 0;
@@ -1043,7 +1016,7 @@ int alto_write_to_file(altoDbPtr db, char *file_name){
  * 	Start & Innitialize the ALTO client
  */
 void start_ALTO_client(){
-	fprintf(stdout, "START ALTO client! \n");
+	alto_debugf("START ALTO client! \n");
 
 	// initialize the DBs
 	ALTO_DB_req = alto_db_init();
@@ -1064,7 +1037,7 @@ void start_ALTO_client(){
  * 	Stop & CleanUp the ALTO client
  */
 void stop_ALTO_client(){
-	fprintf(stdout, "STOP ALTO client! \n");
+	alto_debugf("STOP ALTO client! \n");
 
 	// Kill the DBs
 	alto_free_db(ALTO_DB_req);
@@ -1091,31 +1064,13 @@ void stop_ALTO_client(){
  * 	return:		1/0		Success/Erros
  */
 int get_ALTO_guidance_for_txt(char * txt, struct in_addr rc_host, int pri_rat, int sec_rat){
-	fprintf(stdout, "get_ALTO_guidance_txt(%s) was called \n", txt);
+	alto_debugf("get_ALTO_guidance_txt(%s) was called \n", txt);
 
-	// Sanity checks 1
-	if(txt == NULL){
-		fprintf(stderr, "Can't access the file! ABORT!\n");
-		return 0;
-	}
-
-	// Sanity checks 1
-	if(rc_host.s_addr == NULL){
-			fprintf(stderr, "Can't read the rc_host! ABORT!\n");
-			return 0;
-		}
-
-	// Sanity check 2
-	if(pri_rat < 1 || pri_rat > 3){
-		fprintf(stderr, "Primary Rating Criteria wrong! ABORT\n");
-		return 0;
-	}
-
-	if(sec_rat < 1 || sec_rat > 8){
-		fprintf(stderr, "Secondary Rating Criteria(s) wrong! ABORT\n");
-		return 0;
-	}
-
+	// Sanity checks 
+	returnIf(txt == NULL, "Can't access the file! ABORT!", 0);
+	returnIf(rc_host.s_addr == NULL, "Can't read the rc_host! ABORT!", 0);
+	returnIf((pri_rat < 1 || pri_rat > 3), "Primary Rating Criteria wrong! ABORT!", 0);
+	returnIf((sec_rat < 1 || sec_rat > 8), "Secondary Rating Criteria(s) wrong! ABORT", 0);
 
 	// Step 1: fill the txt into the DB
 	alto_parse_from_file(ALTO_DB_req, txt);
@@ -1142,21 +1097,15 @@ int get_ALTO_guidance_for_txt(char * txt, struct in_addr rc_host, int pri_rat, i
  * 	return:		count	Number of sucessfully processed hosts
  */
 int get_ALTO_guidance_for_list(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int pri_rat, int sec_rat){
-	fprintf(stdout, "get_ALTO_guidance(list, num_of_elements) was called \n");
+	alto_debugf("get_ALTO_guidance(list, num_of_elements) was called \n");
 
 	int count = 0;
 
 	// Sanity checks (list)
-	if(list == NULL){
-		fprintf(stderr, "Can't access the list! ABORT!\n");
-		return 0;
-	}
+	returnIf(list == NULL, "Can't access the list!", 0);
 
 	// Sanity checks (num of elements)
-	if(num < 0){
-		fprintf(stderr, "<0 elements? Can't be! ABORT!\n");
-		return 0;
-	}
+	returnIf(num < 0, "<0 elements?", 0);
 
 	// Step 1 (read struct into DB)
 	alto_parse_from_list(ALTO_DB_req, list, num);
