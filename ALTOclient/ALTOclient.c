@@ -286,7 +286,8 @@ xmlDocPtr alto_create_request_XML(struct alto_db_t * db, struct in_addr rc_host,
 
 
     // Free the global variables that may have been allocated by the parser.
-    xmlCleanupParser();
+    //xmlCleanupParser(); // armin 22-jul-2010: Should only be done upon exit
+    // see libxml2 docu
 
     // return the finsihed XML
     return doc;
@@ -1047,6 +1048,7 @@ void stop_ALTO_client(){
     xmlFreeDoc(ALTO_XML_req);
     xmlFreeDoc(ALTO_XML_res);
 
+	xmlCleanupParser();
 }
 
 
