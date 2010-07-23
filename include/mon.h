@@ -436,6 +436,16 @@ result monRetrieveResult(MonHandler mh, enum stat_types st);
 */
 int monNewSample(MonHandler mh, result r);
 
+/**
+  Set peer's publish name
+
+   This name will be used as originator in all subsequent
+   publish operations.
+
+   @param[in] name the name
+   @return 0 on success, != 0 on failure
+*/
+int monSetPeerName(char *name);
 
 /**
    Deactivate measure
