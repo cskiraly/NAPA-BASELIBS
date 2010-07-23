@@ -329,7 +329,7 @@ public:
 
 	void monParseConfig(void *);
 
-	int monSetPeerName(char *pn);
+	int monSetPeerName(const char *pn);
 };
 
 #endif /* _MEASURE_MANAGER_H */

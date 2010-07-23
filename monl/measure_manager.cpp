@@ -57,7 +57,7 @@ int MeasureManager::loadMeasurePlugins() {
 	return EOK;
 };
 
-int MeasureManager::monSetPeerName(char *pn) {
+int MeasureManager::monSetPeerName(const char *pn) {
 	int s;	
 	if(pn == NULL)
 		return -EINVAL;

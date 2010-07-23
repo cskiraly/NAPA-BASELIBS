@@ -445,7 +445,7 @@ int monNewSample(MonHandler mh, result r);
    @param[in] name the name
    @return 0 on success, != 0 on failure
 */
-int monSetPeerName(char *name);
+int monSetPeerName(const char *name);
 
 /**
    Deactivate measure

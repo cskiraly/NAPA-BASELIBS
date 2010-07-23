@@ -255,6 +255,6 @@ int monNewSample(MonHandler mh, result r){
 	return man->monNewSample(mh,r);
 }
 
-int monSetPeerName(char *name){
+int monSetPeerName(const char *name){
 	return man->monSetPeerName(name);
 }
