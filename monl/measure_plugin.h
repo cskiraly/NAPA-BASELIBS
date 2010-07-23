@@ -54,7 +54,7 @@ public:
 		addParameter(new MinParameter("Window Size","The size of sliding window over which to computer statistics",2,100), P_WINDOW_SIZE);
 		addParameter(new MinMaxParameter("Publishing packet or time based","Publishing based on packets [#] (0) or on time [s] (1)",0,1,1), P_PUBLISHING_PKT_TIME_BASED);
 		addParameter(new MinParameter("Publishing Rate","Rate in # of samples or [s] to publish results",1,120), P_PUBLISHING_RATE);
-		addParameter(new MinMaxParameter("Publishing Rate Time-spread","Spread factor to avoid result publish syncronisation", 0, 100, 10), P_PUBLISHING_TIME_SPREAD);
+		addParameter(new MinMaxParameter("Publishing Rate Time-spread","Spread factor to avoid result publish syncronisation", 0, 100, 0), P_PUBLISHING_TIME_SPREAD);
 		addParameter(new MinMaxParameter("Publishing new or all","Publish only new results or everything", 0, 1, 0), P_PUBLISHING_NEW_ALL);
 		addParameter(new MinMaxParameter("Init NAN or 0","Initialize stats to NAN or to 0", 0, 1, 0), P_INIT_NAN_ZERO);
 		addParameter(new MinMaxParameter("Debug Output","Activate/deactive debug output to file (1), to log (2) or both (3)", 0, 3, 0), P_DEBUG_FILE);
