@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
+#include <limits.h>
 
 #include "ml.h"
 #include "mon.h"
