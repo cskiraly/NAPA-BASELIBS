@@ -15,5 +15,5 @@ main: ALTOclient.o
 
 clean:
 		rm -f *.o
-		rm *.a
-		rm main
+		rm -f *.a
+		rm -f main
