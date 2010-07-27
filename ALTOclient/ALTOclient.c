@@ -40,35 +40,36 @@
 /*
  * 		Here the reference to the accessible DBs is set
  */
-altoDbPtr ALTO_DB_req;		// Pointer to the ALTO DB for the Request
-altoDbPtr ALTO_DB_res;		// Pointer to the ALTO DB for the Resposne
+static altoDbPtr ALTO_DB_req = NULL;		// Pointer to the ALTO DB for the Request
+static altoDbPtr ALTO_DB_res = NULL;		// Pointer to the ALTO DB for the Resposne
 
-xmlDocPtr ALTO_XML_req;		// Pointer to the XML for the Request
-xmlDocPtr ALTO_XML_res;		// Pointer to the XML for the Request
+static xmlDocPtr ALTO_XML_req = NULL;		// Pointer to the XML for the Request
+static xmlDocPtr ALTO_XML_res = NULL;		// Pointer to the XML for the Request
 
 
 // This is the varaiable where the ALTO server can be found
-char alto_server_url[256];
+static char alto_server_url[256];
 
 // And this is the struct where the XML buffer for CURL is cached
 #ifdef USE_CURL
-struct curl_reply_buffer_t alto_rep_buf = {ALTO_REP_BUF_SIZE,0,""};
+static struct curl_reply_buffer_t alto_rep_buf = {ALTO_REP_BUF_SIZE,0,""};
 #endif
 
 static char alto_reply_buf_nano[ALTO_REP_BUF_SIZE];
 
-void alto_debugf(const char* str, ...) {
+static void alto_debugf(const char* str, ...) {
 	char msg[1024];
 	va_list args;
 	va_start(args, str);
 //#ifdef USE_DEBUG_OUTPUT
 	vsprintf(msg, str, args);
-	printf("[ALTOclient] %s", msg);
+	//printf("[ALTOclient] %s", msg);
+	fprintf(stderr, "[ALTOclient] %s", msg);
 //#endif
 	va_end(args);
 }
 
-void alto_errorf(const char* str, ...) {
+static void alto_errorf(const char* str, ...) {
 	char msg[1024];
 	va_list args;
 	va_start(args, str);
@@ -432,6 +433,7 @@ xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint){
 	POST_end(data);
 
 	//printf("data:\n\n%s", data);
+	xmlFree(doctxt);	// free temp buffer
 
 	alto_debugf("%s: POST begin...\n", __FUNCTION__);
 
@@ -537,8 +539,23 @@ struct alto_db_t * alto_db_init(void){
  *  Kill the DB structure
  */
 int alto_free_db(struct alto_db_t * db){
+	int res = 1;
 	alto_debugf("%s: Clean and free ALTO database (%p)! \n", __FUNCTION__, db);
-	returnIf(db == NULL, "No DB to be killed! ABORT", -1);
+	returnIf(db == NULL, "No DB to be free'd.", -1);
+
+	res = alto_purge_db(db);
+
+	// Free the DB struct & Goodby!
+	free(db);
+	return res;
+}
+
+/*
+ *  Clean/Remove all elements from the DB structure
+ */
+int alto_purge_db(struct alto_db_t * db){
+//	alto_debugf("%s: Purge the ALTO database (%p)! \n", __FUNCTION__, db);
+	returnIf(db == NULL, "No DB to be purged.", -1);
 
 	// Now kill every single element
 	struct alto_db_element_t * cur;
@@ -548,8 +565,6 @@ int alto_free_db(struct alto_db_t * db){
 		cur = db->first; //cur->next;	// armin 12-jul-2010, bug reported by Andrzej
 	}
 
-	// Free the DB struct & Goodby!
-	free(db);
 	return 1;
 }
 
@@ -719,6 +734,7 @@ int alto_rem_element(struct alto_db_element_t * element){
 	alto_errorf("%s - Error in removing element function!\n", __FUNCTION__);
 	return -1;
 }
+
 
 struct in_addr compute_subnet(struct in_addr host, int prefix){
 	struct in_addr subn;
@@ -1045,8 +1061,8 @@ void stop_ALTO_client(){
 	alto_free_db(ALTO_DB_res);
 
 	// Kill the XML
-    xmlFreeDoc(ALTO_XML_req);
-    xmlFreeDoc(ALTO_XML_res);
+    if (ALTO_XML_req) { xmlFreeDoc(ALTO_XML_req); ALTO_XML_req = NULL; }
+    if (ALTO_XML_res) { xmlFreeDoc(ALTO_XML_res); ALTO_XML_res = NULL; }
 
 	xmlCleanupParser();
 }
@@ -1073,6 +1089,9 @@ int get_ALTO_guidance_for_txt(char * txt, struct in_addr rc_host, int pri_rat, i
 	returnIf(rc_host.s_addr == NULL, "Can't read the rc_host! ABORT!", 0);
 	returnIf((pri_rat < 1 || pri_rat > 3), "Primary Rating Criteria wrong! ABORT!", 0);
 	returnIf((sec_rat < 1 || sec_rat > 8), "Secondary Rating Criteria(s) wrong! ABORT", 0);
+
+	// first purge existing DB entries
+	alto_purge_db(ALTO_DB_req);
 
 	// Step 1: fill the txt into the DB
 	alto_parse_from_file(ALTO_DB_req, txt);
@@ -1108,6 +1127,9 @@ int get_ALTO_guidance_for_list(ALTO_GUIDANCE_T * list, int num, struct in_addr r
 
 	// Sanity checks (num of elements)
 	returnIf(num < 0, "<0 elements?", 0);
+
+	// first purge existing DB entries
+	alto_purge_db(ALTO_DB_req);
 
 	// Step 1 (read struct into DB)
 	alto_parse_from_list(ALTO_DB_req, list, num);
@@ -1156,6 +1178,14 @@ void do_ALTO_update(struct in_addr rc_host, int pri_rat, int sec_rat){
 	// And now check for the corresponding rating
 	alto_do_the_magic(ALTO_DB_req, ALTO_DB_res);
 
+	// free xml data
+	xmlFreeDoc(ALTO_XML_req);
+	xmlFreeDoc(ALTO_XML_res);
+	ALTO_XML_req = NULL;
+	ALTO_XML_res = NULL;
+
+	// purge the intermediate DB
+	alto_purge_db(ALTO_DB_res);
 }
 
 
