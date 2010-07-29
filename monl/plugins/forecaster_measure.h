@@ -65,7 +65,7 @@ class ForecasterMeasurePlugin : public MeasurePlugin {
 
 
 	virtual MeasurementCapabilities getCaps() {
-		return OUT_OF_BAND | PACKET | DATA | TXRXUNI;
+		return OUT_OF_BAND | IN_BAND | PACKET | DATA | TXRXUNI;
 	};
 
 	virtual MonMeasure* createMeasure (MeasurementCapabilities mc, class MeasureDispatcher *md) {
