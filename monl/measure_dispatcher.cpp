@@ -512,10 +512,10 @@ int MeasureDispatcher::activateMeasure(class MonMeasure *m, SocketId dst, MsgTyp
 	//check if already present
 	if(dispatcherList.find(h_dst) != dispatcherList.end()) {
 		if(m->flags & REMOTE) {
-			if(dispatcherList[h_dst]->mids_remote.find(mid) == dispatcherList[h_dst]->mids_remote.end())
+			if(dispatcherList[h_dst]->mids_remote.find(mid) != dispatcherList[h_dst]->mids_remote.end())
 				return -EEXISTS;
 		} else {
-			if(dispatcherList[h_dst]->mids_local.find(mid) == dispatcherList[h_dst]->mids_local.end())
+			if(dispatcherList[h_dst]->mids_local.find(mid) != dispatcherList[h_dst]->mids_local.end())
 				return -EEXISTS;
 		}
 	}
