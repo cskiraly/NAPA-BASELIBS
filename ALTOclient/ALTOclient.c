@@ -149,30 +149,21 @@ struct in_addr get_ALTO_host_IP(char * host_string){
  * 	return:	port	struct where the IP and prefix is encoded
  */
 int16_t get_ALTO_host_mask(char * host_string){
-	#ifdef WIN32
-	char * str_buff = new char[strlen(host_string)];
-	#else
-	char str_buff[strlen(host_string)];
-	#endif
-	int16_t res;
-	strncpy(str_buff,host_string,strlen(host_string));
-	char *result = NULL;
-	result = strchr(str_buff, '/');
-	if(result != NULL) {
-		result++;
-		res = atoi(result);
-		#ifdef WIN32
-		delete [] str_buff;
-		#endif
-		return res;
-	}
-	// if it can't be found, it was a single host so mask is 32 bit
-	#ifdef WIN32
-	delete [] str_buff;
-	#endif
-	return 32;
-}
+    int16_t res;
+    char *result = NULL;
+    char str_buff[256];
 
+    memset(str_buff, 0, 256);
+    strncpy(str_buff,host_string,strlen(host_string));
+    result = strchr(str_buff, '/');
+    if(result != NULL) {
+        result++;
+        res = atoi(result);
+        return res;
+    }
+    // if it can't be found, it was a single host so mask is 32 bit
+    return 32;
+}
 
 
 /*
