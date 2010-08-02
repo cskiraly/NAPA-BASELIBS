@@ -15,12 +15,13 @@
 
 #define MSG_TYPE 3
 
-char request[] = "APing";
+char request[] = "APingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPing";
+
 char reply[] = "BPong";
 //Note first characters identifies Request form Replies and must be maintaned (it is not printed out)
 
 struct peer_info {
-	MonHandler m_list[10];
+	MonHandler m_list[15];
 	int m_list_len;
 	int con_id;
 	socketID_handle rem_peer;
@@ -38,15 +39,18 @@ HANDLE repoclient;
 int cycle = 500;
 char *channel = "MonTestDist";
 
-double avg_pause = 10000000; // [us]
+int avg_pause = 1000; // [ms]
 
 void gen_pause(struct timeval *t) {
 	/*generate random ipg*/
 	double p = (double) random() / (double) INT_MAX;
-	p = -1 * avg_pause * log(1-p);
+	p = -1 * avg_pause * log(1-p) * 1000.0;
 	t->tv_sec = (unsigned long)p / 1000000;
 	t->tv_usec = (unsigned long)fmod(p, 100000.0);
 }
+
+int generic = -1;
+int sn = 0;
 
 
 /* Event to send periodically traffic after the connection has been established */
@@ -65,6 +69,9 @@ void send_data_cb(int fd, short event,void *arg){
 
 	mlSendData(peer->con_id, request, strlen(request) + 1, MSG_TYPE, NULL);
 
+	if(generic >= 0)
+		monNewSample(generic, sn++);
+
 	gen_pause(&t);
 	//reschedule
 	event_base_once(eventbase, -1, EV_TIMEOUT, &send_data_cb, arg, &t);
@@ -76,7 +83,8 @@ void open_conn_cb_active (int connectionID, void *arg){
 	struct timeval t = {0,0};
 	struct peer_info *peer = (struct peer_info *) arg;
 	enum stat_types st[] = {AVG, MIN, MAX};
-	int i;
+	enum stat_types st2[] = {RATE};
+	int i=0, ret;
 
 	peer->con_id = connectionID;
 
@@ -89,59 +97,80 @@ void open_conn_cb_active (int connectionID, void *arg){
 	/*         In band measures are taken on the above generated traffic */
 
 	/* HopCount */
-	i=0;
- 	peer->m_list[i] = monCreateMeasure(HOPCOUNT, TXRXUNI | PACKET | IN_BAND);
- 	monPublishStatisticalType(peer->m_list[i], NULL, channel, st , sizeof(st)/sizeof(enum stat_types), repoclient);
- 	monSetParameter (peer->m_list[i], P_PUBLISHING_RATE, 60);
- 	monActivateMeasure(peer->m_list[i], peer->rem_peer, MSG_TYPE);
+	ret = peer->m_list[i] = monCreateMeasure(HOPCOUNT, PACKET | IN_BAND);
+	ret = monPublishStatisticalType(peer->m_list[i], NULL, channel, st , sizeof(st)/sizeof(enum stat_types), repoclient);
+//	monSetParameter (peer->m_list[i], P_PUBLISHING_RATE, 30);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+	ret = monActivateMeasure(peer->m_list[i], peer->rem_peer, MSG_TYPE);
 	i++;
 
-// 	/* Clickdrift (not published) */
-// 	peer->m_list[i] = monCreateMeasure(CLOCKDRIFT, TXRX | DATA | IN_BAND);
-// 	monSetParameter (peer->m_list[i], P_CLOCKDRIFT_ALGORITHM, 1);
-// 	monSetParameter (peer->m_list[i], P_PUBLISHING_RATE, 100);
-// 	monActivateMeasure(peer->m_list[i], peer->rem_peer,12);
-// 	i++;
-//
-// 	/* Capacity */
-// 	peer->m_list[i] = monCreateMeasure(CAPACITY_CAPPROBE, TXRX | DATA | OUT_OF_BAND);
-// 	monSetParameter (peer->m_list[i], P_CAPPROBE_DELAY_TH, 100);
-// 	monSetParameter (peer->m_list[i], P_CAPPROBE_PKT_TH, 100);
-// 	monSetParameter (peer->m_list[i], P_CAPPROBE_IPD_TH, 60);
-// 	monPublishStatisticalType(peer->m_list[i], NULL, st , sizeof(st)/sizeof(enum stat_types), repoclient);
-// 	monActivateMeasure(peer->m_list[i], peer->rem_peer, 12);
-// 	i++;
-// 
-// 	/* Loss */
-// 	peer->m_list[i] = monCreateMeasure(LOSS, TXRX | DATA | IN_BAND);
+	/* Clockdrift and capacity */
+	ret = peer->m_list[i] = monCreateMeasure(CLOCKDRIFT, PACKET | IN_BAND);
+	ret = monSetParameter (peer->m_list[i], P_CLOCKDRIFT_ALGORITHM, 1);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+	ret = monActivateMeasure(peer->m_list[i],peer->rem_peer, MSG_TYPE);
+	i++;
+
+	ret = peer->m_list[i] = monCreateMeasure(CORRECTED_DELAY, PACKET | IN_BAND);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+	ret = monActivateMeasure(peer->m_list[i],peer->rem_peer, MSG_TYPE);
+	i++;
+
+	ret = peer->m_list[i] = monCreateMeasure(CAPACITY_CAPPROBE, PACKET | IN_BAND);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+	ret = monSetParameter (peer->m_list[i], P_CAPPROBE_DELAY_TH, -1);
+// 	monSetParameter (mh, P_CAPPROBE_PKT_TH, 100);
+// 	monSetParameter (mh, P_CAPPROBE_IPD_TH, 60);
+// 	monPublishStatisticalType(mh, NULL, channel, st , sizeof(st)/sizeof(enum stat_types), repoclient);
+ 	ret = monActivateMeasure(peer->m_list[i],peer->rem_peer, MSG_TYPE);
+	i++;
+
+	ret = peer->m_list[i] = monCreateMeasure(TX_BYTE, PACKET | IN_BAND);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+	ret = monPublishStatisticalType(peer->m_list[i], NULL, channel, st2, sizeof(st2)/sizeof(enum stat_types), repoclient);
+	ret = monActivateMeasure(peer->m_list[i], peer->rem_peer, MSG_TYPE);
+	i++;
+
+	ret = peer->m_list[i] = monCreateMeasure(RX_BYTE, PACKET | IN_BAND);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+	ret = monPublishStatisticalType(peer->m_list[i], NULL, channel, st2, sizeof(st2)/sizeof(enum stat_types), repoclient);
+	ret = monActivateMeasure(peer->m_list[i], peer->rem_peer, MSG_TYPE);
+	i++;
+
+	/* Seqwin */
+	ret = peer->m_list[i] = monCreateMeasure(SEQWIN, DATA | IN_BAND);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
 // 	monSetParameter (peer->m_list[i], P_WINDOW_SIZE, 100);
 // 	monSetParameter (peer->m_list[i], P_PUBLISHING_RATE, 100);
-// 	monPublishStatisticalType(peer->m_list[i], NULL, st , sizeof(st)/sizeof(enum stat_types), repoclient);
-// 	monActivateMeasure(peer->m_list[i], peer->rem_peer, 12);
-// 	i++;
-// 
-// 	/* Loss Burst */
-// //	peer->m_list[i] = monCreateMeasure(LOSS_BURST, TXRX | DATA | IN_BAND);
-// //	monSetParameter (peer->m_list[i], P_WINDOW_SIZE, 100);
-// //	monSetParameter (peer->m_list[i], P_PUBLISHING_RATE, 100);
-// //	monPublishStatisticalType(peer->m_list[i], NULL, st , sizeof(st)/sizeof(enum stat_types), repoclient);
-// //	monActivateMeasure(peer->m_list[i], peer->rem_peer, 12);
-// //	i++;
-// 
-// 	/* Round trip time */
-// 	peer->m_list[i] = monCreateMeasure(RTT, TXRX | DATA | IN_BAND);
+// 	monPublishStatisticalType(peer->m_list[i], NULL, channel, st , sizeof(st)/sizeof(enum stat_types), repoclient);
+	ret = monActivateMeasure(peer->m_list[i], peer->rem_peer, MSG_TYPE);
+	i++;
+
+	/* Loss */
+	ret = peer->m_list[i] = monCreateMeasure(LOSS, DATA | IN_BAND);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+// 	monSetParameter (peer->m_list[i], P_WINDOW_SIZE, 100);
 // 	monSetParameter (peer->m_list[i], P_PUBLISHING_RATE, 100);
-// 	monPublishStatisticalType(peer->m_list[i], NULL, st , sizeof(st)/sizeof(enum stat_types), repoclient);
-// 	monActivateMeasure(peer->m_list[i], peer->rem_peer, 12);
-// 	i++;
-// 
-	/* Available Bandwith */
-// 	peer->m_list[i] = monCreateMeasure(AVAILABLE_BW_FORECASTER, TXRX | DATA | OUT_OF_BAND);
-// 	monSetParameter (peer->m_list[i], P_FORCASTER_PKT_TH, 500);
-// 	monSetParameter (peer->m_list[i], P_FORCASTER_DELAY_TH, 100);
-// 	monPublishStatisticalType(peer->m_list[i], NULL, st , sizeof(st)/sizeof(enum stat_types), repoclient);
-// 	monActivateMeasure(peer->m_list[i], peer->rem_peer, 12);
-// 	i++;
+// 	monPublishStatisticalType(peer->m_list[i], NULL, channel, st , sizeof(st)/sizeof(enum stat_types), repoclient);
+	ret = monActivateMeasure(peer->m_list[i], peer->rem_peer, MSG_TYPE);
+	i++;
+
+	/* Loss Burst */
+	ret = peer->m_list[i] = monCreateMeasure(LOSS_BURST, DATA | IN_BAND);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+//	monSetParameter (peer->m_list[i], P_WINDOW_SIZE, 100);
+//	monSetParameter (peer->m_list[i], P_PUBLISHING_RATE, 100);
+//	monPublishStatisticalType(peer->m_list[i], NULL, channel, st , sizeof(st)/sizeof(enum stat_types), repoclient);
+	ret = monActivateMeasure(peer->m_list[i], peer->rem_peer, MSG_TYPE);
+	i++;
+
+	/* Round trip time */
+	ret = peer->m_list[i] = monCreateMeasure(RTT, DATA | IN_BAND);
+//	monSetParameter (peer->m_list[i], P_PUBLISHING_RATE, 100);
+//	monPublishStatisticalType(peer->m_list[i], NULL, channel, st , sizeof(st)/sizeof(enum stat_types), repoclient);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+	ret = monActivateMeasure(peer->m_list[i], peer->rem_peer, MSG_TYPE);
+	i++;
 
 	peer->m_list_len = i;
 
@@ -169,9 +198,15 @@ const char *print_list(char **list, int n, bool should_free) {
 
 void start_measures(char **peers ,int p_len, int should_free) {
 	char str[SOCKETID_STRING_SIZE];
-	int i;
+	int i, ret;
 	send_params sParams;
 	struct peer_info *t;
+	enum stat_types st[] = {MIN, MAX};
+
+	generic = monCreateMeasure(GENERIC, 0);
+	ret = monSetParameter (generic, P_DEBUG_FILE, 1);
+	ret = monPublishStatisticalType(generic, "GenericTest", channel, st , sizeof(st)/sizeof(enum stat_types), repoclient);
+	ret = monActivateMeasure(generic, NULL, MSG_TYPE);
 
 	for(i=0; i < p_len; i++) {
 		if(strcmp(local_id, peers[i]) == 0)
@@ -205,6 +240,10 @@ void start_measures(char **peers ,int p_len, int should_free) {
 void stop_measures(void) {
 	int i;
 	struct peer_info *t;
+
+	monDestroyMeasure(generic);
+	generic = -1;
+	sn = 0;
 
 	/* Stop any running measurments and free up memory */
 	while(peers_head != NULL) {
@@ -242,7 +281,7 @@ void check_for_new_peers(int fd, short event,void *arg){
 	cons.minValue = SOCKETID_PUBLISH_VALUE;
 	cons.maxValue = SOCKETID_PUBLISH_VALUE;
 
-	repGetPeers(repoclient, get_peers_cb, NULL, 10, &cons, 1, NULL, 0, NULL);
+	repGetPeers(repoclient, get_peers_cb, NULL, 10, &cons, 1, NULL, 0, channel);
 
 	// reschedule next measurement session
 	struct timeval tv = {cycle, 0};
@@ -311,7 +350,7 @@ void receive_local_socketID_cb(socketID_handle local_socketID, int status){
 	MeasurementRecord mr;
 	mr.originator = mr.targetA = mr.targetB = local_id;
 	mr.string_value = NULL;
-	mr.channel = NULL;
+	mr.channel = channel;
 	mr.published_name = SOCKETID_PUBLISH_NAME;
 	mr.value = SOCKETID_PUBLISH_VALUE;
 	gettimeofday(&(mr.timestamp), NULL);
@@ -328,17 +367,17 @@ void conn_fail_cb(int connectionID, void *arg){
 	error("Connection could not be established!\n");
 }
 
+void usage(char *argv[]) {
+	printf("Usage:\n\t%s [-b <bindIp>] [-r <repository:port>] [-s <stunserver>] [-v <verbosity>] [-p <port>] [-C <cycle>] [-c <channel>] [-P <avg_pause>]",argv[0]);
+	exit(1);
+}
+
 int main(int argc, char *argv[]) {
 	char *repository = "repository.napa-wine.eu:9832";
 	char *stun_server = "stun.ekiga.net";
 	char *bind_ip = NULL;
 	int verbosity = 100;
 	int port = 6666;
-
-	if(argc % 2 != 1 && argc > 15) {
-		printf("Usage:\n\t%s [-b <bindIp>] [-r <repository:port>] [-s <stunserver>] [-v <verbosity>] [-p <port>] [-C <cycle>] [-c <channel>]",argv[0]);
-		exit(1);
-	}
 
 	int i;
 	for (i = 1; i < argc; i += 2) {
@@ -363,9 +402,15 @@ int main(int argc, char *argv[]) {
 		else if (!strcmp("-c", argv[i])) {
 			channel = argv[i+1];
 		}
+		else if (!strcmp("-P", argv[i])) {
+			avg_pause = atoi(argv[i+1]);
+		}
+		else if (!strcmp("-h", argv[i])) {
+			usage(argv);
+		}
 	}
 
-	printf("Running conf:\nIP:\t\t%s\nSTUN:\t\t%s\nREPO:\t\t%s\nVERBOSITY:\t%d\nPORT:\t\t%d\nCYCLE:\t\t%d s\nCHANNEL:\t%s\n", bind_ip ? bind_ip:"auto", stun_server, repository, verbosity, port, cycle, channel);
+	printf("Running conf:\nIP:\t\t%s\nSTUN:\t\t%s\nREPO:\t\t%s\nVERBOSITY:\t%d\nPORT:\t\t%d\nCYCLE:\t\t%ds\nCHANNEL:\t%s\nPAUSE:\t\t%dms\n", bind_ip ? bind_ip:"auto", stun_server, repository, verbosity, port, cycle, channel, avg_pause);
 
 	//Init grapes: log facility and libevent
 	grapesInit(event_base_new());
