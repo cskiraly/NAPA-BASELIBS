@@ -172,7 +172,7 @@ public:
 		if(f == measure_plugin->getCaps() && f == 0)
 			return EOK;
 		/*check that f is a subset of Caps */
-		if(f & ~(measure_plugin->getCaps() | REMOTE | TXLOC | RXLOC | TXREM | RXREM))
+		if(f & ~(measure_plugin->getCaps() | TXRXBI | REMOTE))
 			return -ERANGE;
 		/* Check packet vs chunk */
 		if(!((f & PACKET)^(f & DATA)))
@@ -183,24 +183,6 @@ public:
 		else 
 			if(!((f & IN_BAND)^(f & OUT_OF_BAND)))
 				return -ERANGE;
-		/* check execution combinations (if not remote) */
-		if(f & REMOTE)
-			return EOK;
-		switch(f & (TXONLY | RXONLY | TXRXUNI | TXRXBI)) {
-		case TXONLY:
-				flags |= f | TXLOC;
-				break;
-		case RXONLY:
-				flags |= f | RXLOC;
-				break;
-		case TXRXBI:
-				flags |= f | TXREM | RXLOC;
-		case TXRXUNI:
-				flags |= f | TXLOC | RXREM;
-				break;
-		default:
-				return -ERANGE;
-		}
 		return EOK;
 	}
 

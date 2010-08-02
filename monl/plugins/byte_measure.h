@@ -36,18 +36,32 @@ public:
 	virtual result TxData(result *r,ExecutionList *el);
 };
 
-class ByteMeasurePlugin : public MeasurePlugin {
-	virtual ~ByteMeasurePlugin() {};
+class RxByteMeasurePlugin : public MeasurePlugin {
+	virtual ~RxByteMeasurePlugin() {};
 
 	virtual MeasurementCapabilities getCaps() {
-		return IN_BAND | PACKET | DATA | TXONLY | RXONLY;
+		return IN_BAND | PACKET | DATA | RXONLY;
 	};
 
 	virtual MonMeasure* createMeasure (MeasurementCapabilities mc, class MeasureDispatcher *md) {
 		return new ByteMeasure(this, mc, md);
 	};
 public:
-	ByteMeasurePlugin();
+	RxByteMeasurePlugin();
+};
+
+class TxByteMeasurePlugin : public MeasurePlugin {
+	virtual ~TxByteMeasurePlugin() {};
+
+	virtual MeasurementCapabilities getCaps() {
+		return IN_BAND | PACKET | DATA | TXONLY;
+	};
+
+	virtual MonMeasure* createMeasure (MeasurementCapabilities mc, class MeasureDispatcher *md) {
+		return new ByteMeasure(this, mc, md);
+	};
+public:
+	TxByteMeasurePlugin();
 };
 
 #endif /* _BYTE_MEASURE_H_ */

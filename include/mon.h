@@ -133,39 +133,40 @@ typedef int32_t MeasurementCapabilities;
 
 /* Codes for plugin capabilities */
 
-/** Used to advertise a TX based measurement (mutually exclusive with RXONLY, TXRXUNI and TXRXBI) */
-#define TXONLY 	1
-/** Used to advertise a RX based measurement (mutually exclusive with TXONLY, TXRXUNI and TXRXBI) */
-#define RXONLY		2
-/** Used to advertise a collaborative measurement unidirectional (mutually exclusive with RXONLY, TXONLY and TXRXBI) */
-#define TXRXUNI	4
-/** Used to advertise a collaborative measurement bidirectional (mutually exclusive with RXONLY, TXONLY and TXRXUNI) */
-#define TXRXBI		8
-
 /** Used to advertise a In-Band measurement (mutually exclusive with OUT_OF_BAND)*/
-#define IN_BAND 		16
+#define IN_BAND 		1
 /** Used to advertise a Out-Of-Band measurement (mutually exclusive with IN_BAND)*/
-#define OUT_OF_BAND 	32
+#define OUT_OF_BAND 	2
 /** Used to advertise a Timer-based measurements (mutually exclusive with above two)*/
-#define TIMER_BASED 	64
+#define TIMER_BASED 	4
 
 /** Used to advertise a packet level measurement */
-#define PACKET 	128
+#define PACKET 	8
 /** Used to advertise a chunk level measurement */
-#define DATA 		256
+#define DATA 		16
 
 
 /** The following defines are for internal use only */
 /** Used to advertise a local TX based level measurement (internal use only)*/
-#define TXLOC		512
+#define TXLOC		32
 /** Used to advertise a local RX based level measurement (internal use only)*/
-#define RXLOC		1024
+#define RXLOC		64
 /** Used to advertise a remote TX based level measurement (internal use only)*/
-#define TXREM		2048
+#define TXREM		128
 /** Used to advertise a remote RX based level measurement (internal use only)*/
-#define RXREM		4096
+#define RXREM		256
 /** Defines if this is the local (0) or remote (1) part of a measurement (internal use only)*/
-#define REMOTE		8192
+#define REMOTE		512
+
+/** Used to advertise a TX based measurement (mutually exclusive with RXONLY, TXRXUNI and TXRXBI) */
+#define TXONLY 	TXLOC
+/** Used to advertise a RX based measurement (mutually exclusive with TXONLY, TXRXUNI and TXRXBI) */
+#define RXONLY		RXLOC
+/** Used to advertise a collaborative measurement unidirectional (mutually exclusive with RXONLY, TXONLY and TXRXBI) */
+#define TXRXUNI	(TXLOC | RXREM)
+/** Used to advertise a collaborative measurement bidirectional (mutually exclusive with RXONLY, TXONLY and TXRXUNI) */
+#define TXRXBI		(TXLOC | RXREM | TXREM | RXLOC)
+
 
 #endif
 

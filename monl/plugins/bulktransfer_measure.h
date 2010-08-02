@@ -40,18 +40,32 @@ public:
 	virtual void Run();
 };
 
-class BulktransferMeasurePlugin : public MeasurePlugin {
-	virtual ~BulktransferMeasurePlugin() {};
+class RxBulktransferMeasurePlugin : public MeasurePlugin {
+	virtual ~RxBulktransferMeasurePlugin() {};
 
 	virtual MeasurementCapabilities getCaps() {
-		return TIMER_BASED | PACKET | DATA | TXONLY | RXONLY;
+		return TIMER_BASED | PACKET | DATA | RXONLY;
 	};
 
 	virtual MonMeasure* createMeasure (MeasurementCapabilities mc, class MeasureDispatcher *md) {
 		return new BulktransferMeasure(this, mc, md);
 	};
 public:
-	BulktransferMeasurePlugin();
+	RxBulktransferMeasurePlugin();
+};
+
+class TxBulktransferMeasurePlugin : public MeasurePlugin {
+	virtual ~TxBulktransferMeasurePlugin() {};
+
+	virtual MeasurementCapabilities getCaps() {
+		return TIMER_BASED | PACKET | DATA | TXONLY;
+	};
+
+	virtual MonMeasure* createMeasure (MeasurementCapabilities mc, class MeasureDispatcher *md) {
+		return new BulktransferMeasure(this, mc, md);
+	};
+public:
+	TxBulktransferMeasurePlugin();
 };
 
 #endif /* _BULKTRANSFER_MEASURE_H_ */

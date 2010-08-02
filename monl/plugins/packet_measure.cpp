@@ -17,41 +17,49 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA 
  ***********************************************************************/
 
-#include "counter_measure.h"
+#include "packet_measure.h"
 
-CounterMeasure::CounterMeasure(class MeasurePlugin *m, MeasurementCapabilities mc, class MeasureDispatcher *md): MonMeasure(m,mc,md) {
+PacketMeasure::PacketMeasure(class MeasurePlugin *m, MeasurementCapabilities mc, class MeasureDispatcher *md): MonMeasure(m,mc,md) {
 };
 
-CounterMeasure::~CounterMeasure() {
+PacketMeasure::~PacketMeasure() {
 }
 
 
-result CounterMeasure::RxPkt(result *r, ExecutionList *el) {
+result PacketMeasure::RxPkt(result *r, ExecutionList *el) {
 	char dbg[512];
 	snprintf(dbg, sizeof(dbg), "Ts: %f", r[R_RECEIVE_TIME]);
 	debugOutput(dbg);
 	return 1;
 }
 
-result CounterMeasure::RxData(result *r, ExecutionList *el) {
+result PacketMeasure::RxData(result *r, ExecutionList *el) {
 	return RxPkt(r,el);
 }
 
-result CounterMeasure::TxPkt(result *r, ExecutionList *el) {
+result PacketMeasure::TxPkt(result *r, ExecutionList *el) {
 	char dbg[512];
 	snprintf(dbg, sizeof(dbg), "Ts: %f", r[R_SEND_TIME]);
 	debugOutput(dbg);
 	return 1;
 }
 
-result CounterMeasure::TxData(result *r, ExecutionList *el) {
+result PacketMeasure::TxData(result *r, ExecutionList *el) {
 	return TxPkt(r,el);
 }
 
-CounterMeasurePlugin::CounterMeasurePlugin() {
+RxPacketMeasurePlugin::RxPacketMeasurePlugin() {
 	/* Initialise properties: MANDATORY! */
-	name = "Counter";
-	desc = "Pkts/chunks transmitted/received";
-	id = COUNTER;
+	name = "Rx Packet";
+	desc = "Received pkts/chunks";
+	id = RX_PACKET;
+	/* end of mandatory properties */
+}
+
+TxPacketMeasurePlugin::TxPacketMeasurePlugin() {
+	/* Initialise properties: MANDATORY! */
+	name = "Tx Packet";
+	desc = "Transmitted pkts/chunks";
+	id = TX_PACKET;
 	/* end of mandatory properties */
 }

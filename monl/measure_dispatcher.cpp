@@ -506,6 +506,7 @@ int MeasureDispatcher::activateMeasure(class MonMeasure *m, SocketId dst, MsgTyp
 	m->defaultInit();
 
 	if(m->flags == 0) {
+		m->status = RUNNING;
 		return EOK;
 	}
 

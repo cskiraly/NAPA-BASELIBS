@@ -89,10 +89,18 @@ result BulktransferMeasure::TxData(result *r, ExecutionList *el) {
 }
 
 
-BulktransferMeasurePlugin::BulktransferMeasurePlugin() {
+RxBulktransferMeasurePlugin::RxBulktransferMeasurePlugin() {
 	/* Initialise properties: MANDATORY! */
-	name = "Bulk Transfer";
-	desc = "Traffic volume in [kbit/s]";
-	id = BULK_TRANSFER;
+	name = "Received Bulk Transfer";
+	desc = "Received traffic volume in [kbit/s]";
+	id = RX_BULK_TRANSFER;
+	/* end of mandatory properties */
+}
+
+TxBulktransferMeasurePlugin::TxBulktransferMeasurePlugin() {
+	/* Initialise properties: MANDATORY! */
+	name = "Trasnmitted Bulk Transfer";
+	desc = "Transmitted traffic volume in [kbit/s]";
+	id = TX_BULK_TRANSFER;
 	/* end of mandatory properties */
 }

@@ -31,7 +31,7 @@
 #include "plugins/capprobe_measure.h"
 #include "plugins/clockdrift_measure.h"
 #include "plugins/corrected_delay_measure.h"
-#include "plugins/counter_measure.h"
+#include "plugins/packet_measure.h"
 #include "plugins/byte_measure.h"
 #include "plugins/generic_measure.h"
 #include "plugins/bulktransfer_measure.h"
@@ -50,10 +50,13 @@ int MeasureManager::loadMeasurePlugins() {
 	loadMeasurePlugin(new CapprobeMeasurePlugin);
 	loadMeasurePlugin(new ClockdriftMeasurePlugin);
 	loadMeasurePlugin(new CorrecteddelayMeasurePlugin);
-	loadMeasurePlugin(new ByteMeasurePlugin);
-	loadMeasurePlugin(new CounterMeasurePlugin);
+	loadMeasurePlugin(new RxByteMeasurePlugin);
+	loadMeasurePlugin(new TxByteMeasurePlugin);
+	loadMeasurePlugin(new RxPacketMeasurePlugin);
+	loadMeasurePlugin(new TxPacketMeasurePlugin);
 	loadMeasurePlugin(new GenericMeasurePlugin);
-	loadMeasurePlugin(new BulktransferMeasurePlugin);
+	loadMeasurePlugin(new RxBulktransferMeasurePlugin);
+	loadMeasurePlugin(new TxBulktransferMeasurePlugin);
 	return EOK;
 };
 

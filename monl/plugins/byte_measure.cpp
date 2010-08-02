@@ -48,10 +48,18 @@ result ByteMeasure::TxData(result *r, ExecutionList *el) {
 }
 
 
-ByteMeasurePlugin::ByteMeasurePlugin() {
+RxByteMeasurePlugin::RxByteMeasurePlugin() {
 	/* Initialise properties: MANDATORY! */
-	name = "Byte";
-	desc = "Bytes transmitted/received";
-	id = BYTE;
+	name = "Rx Byte";
+	desc = "Bytes received [bytes]";
+	id = RX_BYTE;
+	/* end of mandatory properties */
+}
+
+TxByteMeasurePlugin::TxByteMeasurePlugin() {
+	/* Initialise properties: MANDATORY! */
+	name = "Tx Byte";
+	desc = "Bytes transmitted [bytes]";
+	id = TX_BYTE;
 	/* end of mandatory properties */
 }

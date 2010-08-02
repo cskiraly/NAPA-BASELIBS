@@ -23,6 +23,7 @@
 #include "ids.h"
 #include <string.h>
 #include <string>
+#include <algorithm>
 #include <math.h>
 #include "ml.h"
 #include "mon.h"
@@ -92,6 +93,8 @@ public:
 		else
 			publish_name = default_name;
 		name_size = publish_name.size();
+
+		std::replace(publish_name.begin(), publish_name.end(), ' ', '_');
 
 		if(channel != NULL)
 			cnl = channel;

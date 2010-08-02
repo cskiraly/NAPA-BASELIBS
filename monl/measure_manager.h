@@ -149,6 +149,9 @@ public:
 		if(mMonMeasuresName.find(t) == mMonMeasuresName.end())
 			return -EINVAL;
 
+		if(!(mc & REMOTE))
+			mc |= (mMonMeasuresName[t]->getCaps() & TXRXBI);
+
 		m = mMonMeasuresName[t]->createMeasure(mc, &cDispatcher);
 
 		ret = m->setFlags(mc);
@@ -174,6 +177,9 @@ public:
 
 		if(mMonMeasuresId.find(id) == mMonMeasuresId.end())
 			return -EINVAL;
+
+		if(!(mc & REMOTE))
+			mc |= (mMonMeasuresId[id]->getCaps() & TXRXBI);
 
 		m = mMonMeasuresId[id]->createMeasure(mc, &cDispatcher);
 

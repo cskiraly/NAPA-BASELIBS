@@ -65,21 +65,6 @@ void MonMeasure::debugInit(const char *name) {
 
 	output_name = name;
 
-	switch(flags & (TXONLY | RXONLY | TXRXUNI | TXRXBI)) {
-	case TXONLY:
-			output_name += "TXONLY";
-			break;
-	case RXONLY:
-			output_name += "RXONLY";
-			break;
-	case TXRXBI:
-			output_name += "TXRXBI";
-			break;
-	case TXRXUNI:
-			output_name += "TXRXUNI";
-			break;
-	}
-
 	output_name += "-MT:" + msg_type;
 
 	sid = mlGetLocalSocketID(&errorstatus);

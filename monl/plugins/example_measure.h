@@ -55,11 +55,11 @@ class ExampleMeasurePlugin : public MeasurePlugin {
 
 
 	virtual MeasurementCapabilities getCaps() {
-		return IN_BAND | PACKET | DATA | RXONLY;
+		return IN_BAND | PACKET | DATA;
 	};
 
 	virtual MonMeasure* createMeasure (MeasurementCapabilities mc, class MeasureDispatcher *md) {
-		return new ExampleMeasure(this, mc, md);
+		return new ExampleMeasure(this, mc | RXONLY, md);
 	};
 public:
 	ExampleMeasurePlugin(): MeasurePlugin() {
