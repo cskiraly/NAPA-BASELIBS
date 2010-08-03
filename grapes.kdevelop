@@ -17,7 +17,7 @@
   <kdevautoproject>
     <general>
       <useconfiguration>default</useconfiguration>
-      <activetarget>tests/MonTest/MonTest</activetarget>
+      <activetarget>tests/MonTestDist/MonTestDist</activetarget>
     </general>
     <run>
       <mainprogram/>
@@ -35,18 +35,21 @@
         <mon_test>192.168.1.4 -a 130.192.9.140:9000-130.192.9.140:9000</mon_test>
         <libmon.so/>
         <MonTest/>
+        <MonTestDist/>
       </runarguments>
       <debugarguments>
         <echoServer>1</echoServer>
         <mon_test>-v 3 -a 192.168.85.88:9000-130.192.86.20:9000</mon_test>
         <libmon.so/>
         <MonTest>-a 192.168.85.133:9000-130.192.86.20:3317 -v 2</MonTest>
+        <MonTestDist>-r 130.192.86.30:9832 -v 2</MonTestDist>
       </debugarguments>
       <cwd>
         <echoServer>/lipar/birke/NapaWine/WP4/napawine-software/trunk/GRAPES/./ml</echoServer>
         <mon_test>/lipar/birke/NapaWine/WP4/napawine-software/trunk/GRAPES/tests/monl</mon_test>
         <libmon.so>/lipar/birke/NapaWine/WP4/napawine-software/trunk/GRAPES/./tests/monl</libmon.so>
         <MonTest>/root/napawine-software/trunk/GRAPES/./tests/MonTest</MonTest>
+        <MonTestDist>/home/birke/napawine-software/trunk/NAPA-BASELIBS/./tests/MonTestDist</MonTestDist>
       </cwd>
     </run>
     <configurations>
