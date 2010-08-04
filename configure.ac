@@ -98,7 +98,6 @@ AC_OUTPUT( [ Makefile \
 	tests/peer/Makefile \
 	tests/neighborlist/Makefile \
 	tests/Broadcaster/Makefile \
-	tests/ExternalBroadcaster/Makefile \
 	tests/nvtest1/Makefile \
 	tests/nvtest2/Makefile ] )
 

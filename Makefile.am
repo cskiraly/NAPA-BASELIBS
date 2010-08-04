@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = foreign no-dist no-installinfo
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = . common dclog ml rep monl ul tests ALTOclient
+SUBDIRS = . common dclog ml rep monl tests ALTOclient
 
 #include aminclude.am
 
