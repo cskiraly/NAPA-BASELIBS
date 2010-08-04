@@ -89,7 +89,7 @@ fi
 AC_OUTPUT( [ Makefile \
 	common/Makefile \
 	dclog/Makefile \
-	monl/Makefile rep/Makefile ul/Makefile\
+	monl/Makefile rep/Makefile \
 	tests/Makefile \
 	tests/log/Makefile \
 	tests/RepoClient/Makefile \
