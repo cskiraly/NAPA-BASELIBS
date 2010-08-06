@@ -38,6 +38,10 @@ Minimum boundary for latency.
 */
 #define MIN_BOUN	4
 
+/** Current state of asynchronous ALTO server query */
+#define ALTO_QUERY_READY		0
+#define ALTO_QUERY_INPROGRESS	1
+
 /**
  * This is the struct of one element for the internal interface. Make lists out of it to interact with the client.
  */
@@ -137,6 +141,16 @@ int get_ALTO_guidance_for_txt(char * txt, struct in_addr rc_host, int pri_rat, i
  */
 int get_ALTO_guidance_for_list(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int pri_rat, int sec_rat);
 
+/**
+ *	Asynchronous/threaded ALTO query.
+ *	@see get_ALTO_guidance_for_list
+ */
+int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int pri_rat, int sec_rat);
 
+/**
+ *	Returns current state of query (asynchronous processing).
+ *	@return				ALTO_QUERY_READY / ALTO_QUERY_INPROGRESS
+ */
+int ALTO_query_state();
 
 #endif /* ALTOCLIENT_H */

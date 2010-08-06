@@ -36,6 +36,7 @@
 #include "ALTOclient_impl.h"
 
 #include <stdarg.h>
+#include <pthread.h>
 
 /*
  * 		Here the reference to the accessible DBs is set
@@ -1097,10 +1098,6 @@ int get_ALTO_guidance_for_txt(char * txt, struct in_addr rc_host, int pri_rat, i
 	return 1;
 }
 
-
-
-
-
 /*
  * 	Function:	gets for a list of elements the correct rating
  *
@@ -1136,6 +1133,80 @@ int get_ALTO_guidance_for_list(ALTO_GUIDANCE_T * list, int num, struct in_addr r
 	// This should be it
 	return 1;
 }
+
+/*==================================
+    Multi-Threaded Query
+  ==================================*/
+
+static int queryState = ALTO_QUERY_READY;
+
+static pthread_t threadId;
+
+typedef struct {
+	ALTO_GUIDANCE_T* list;
+	int num;	// number of elements in list
+	struct in_addr rc_host;
+	int pri_rat;
+	int sec_rat;
+} ALTO_ThreadArgs_t;
+
+ALTO_ThreadArgs_t threadArgs;
+
+void* alto_query_thread_func(void* thread_args)
+{
+	int count = 0;
+	ALTO_ThreadArgs_t* args = (ALTO_ThreadArgs_t*) thread_args;
+
+	// this will block at some point
+	do_ALTO_update(args->rc_host, args->pri_rat, args->sec_rat);
+
+	// write values back
+	for(count = 0; count < args->num; count++){
+		args->list[count].rating = get_ALTO_rating_for_host(args->list[count].alto_host, ALTO_DB_req);
+	}
+
+	// signal that query is ready
+	queryState = ALTO_QUERY_READY;
+
+	return thread_args;
+}
+
+int ALTO_query_state() {
+	return queryState;
+}
+
+int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int pri_rat, int sec_rat){
+	alto_debugf("ALTO_query_exec\n");
+
+	// Sanity checks (list)
+	returnIf(list == NULL, "Can't access the list!", 0);
+
+	// Sanity checks (num of elements)
+	returnIf(num < 0, "<0 elements?", 0);
+
+	// set new state
+	queryState = ALTO_QUERY_INPROGRESS;
+
+	// first purge existing DB entries
+	alto_purge_db(ALTO_DB_req);
+
+	// Step 1 (read struct into DB)
+	alto_parse_from_list(ALTO_DB_req, list, num);
+
+	//ALTO_XML_req = alto_create_request_XML(ALTO_DB_req, rc_host, pri_rat, sec_rat);
+
+	threadArgs.list = list;
+	threadArgs.num = num;
+
+	assertCheck(
+		pthread_create(&threadId, NULL, alto_query_thread_func, &threadArgs), 
+		"pthread_create failed!"
+	);
+
+	// This should be it
+	return 1;
+}
+
 
 
 /*
