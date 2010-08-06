@@ -38,24 +38,16 @@ Minimum boundary for latency.
 */
 #define MIN_BOUN	4
 
+/** Current state of asynchronous ALTO server query */
+#define ALTO_QUERY_READY		0
+#define ALTO_QUERY_INPROGRESS	1
+
 /**
- * @brief A single element for the internal interface.
- *
  * This is the struct of one element for the internal interface. Make lists out of it to interact with the client.
  */
 typedef struct alto_guidance_t{
-	/**
-	 * @brief The address of the host.
-	 */
 	struct in_addr alto_host;
-	/**
-	 * @brief The prefix associated to the host.
-	 */
 	int prefix;
-
-/**
- * @brief The rating associated to the host.
- */
 	int rating;
 }ALTO_GUIDANCE_T;
 
@@ -63,8 +55,6 @@ typedef struct alto_guidance_t{
 // external API functions
 
 /**
- * @brief Start the ALTO client.
- *
  * 	It starts the ALTO client, initialize the internal DB and provide the API
  * 	for upcoming requests.
  */
@@ -72,15 +62,11 @@ void start_ALTO_client();
 
 
 /**
- * @brief Stop the ALTO client.
- *
- * 	It stops the ALTO client and clean-up the internal DB.
+ * 	It stops the ALTO server and clean-up the internal DB.
  */
 void stop_ALTO_client();
 
 /**
- * @brief Update the internal state.
- *
  * 	This function starts the synchronization of the internal peer list
  *  with the ALTO server.
  *  This function can be called after every dedicated request to the
@@ -97,8 +83,7 @@ void stop_ALTO_client();
 void do_ALTO_update(struct in_addr rc_host, int pri_rat, int sec_rat);
 
 /**
- * 	@brief Set the URI for the ALTO server.
- *
+ * 	Set the URI for teh ALTO server
  * 	After calling the function, all upcoming requests are sent to the given
  * 	URI from this call.
  * 	Be careful, it is not tested if the ALTO server can be really reached
@@ -110,8 +95,7 @@ int set_ALTO_server(char * string);
 
 
 /**
- * 	@brief Get the actual URI of the ALTO server.
- *
+ * 	Geck the actual URI of the ALTO server
  * 	To assure that the settings for the upcoming ALTOrequests are right, use
  * 	this function to assure the the actual given ALTO server is the right one.
  * 	@return	Pointer to a string where the URI of the ALTO server is stored.
@@ -119,15 +103,13 @@ int set_ALTO_server(char * string);
 char *get_ALTO_server(void);
 
 /**
- *	@brief Rate a list of hosts given in a text file.
- *	@brief
  *	With this function a given list of hosts in a txt file will be ALTOrated
  *	This function will read from a text file all given hosts, transform them into
  *	the internal ALTO structure and get the alto rating for them. Afterwards it
  *	will write teh ALTO results in a new text file which will be the same name,
  *	but with the ending .out.
  *
- *	This function is used for functionality tests, it is not recommended
+ *	ATTENTION: This function is used for functionality tests, it is not recommended
  *	to use it in a real ALTOclient implementation.
  *
  * 	@param	rc_host		The host IP from the client to which the Server
@@ -141,8 +123,6 @@ char *get_ALTO_server(void);
 int get_ALTO_guidance_for_txt(char * txt, struct in_addr rc_host, int pri_rat, int sec_rat);
 
 /**
- *	@brief Rate a list of hosts.
- *	@brief
  *	With this function a given list of hosts in the ALTOstruct (alto_guidance_t) gets
  *	ALTO rated.
  *	This function will use the given struct, transform it into the internal ALTO structure
@@ -161,6 +141,16 @@ int get_ALTO_guidance_for_txt(char * txt, struct in_addr rc_host, int pri_rat, i
  */
 int get_ALTO_guidance_for_list(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int pri_rat, int sec_rat);
 
+/**
+ *	Asynchronous/threaded ALTO query.
+ *	@see get_ALTO_guidance_for_list
+ */
+int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int pri_rat, int sec_rat);
 
+/**
+ *	Returns current state of query (asynchronous processing).
+ *	@return				ALTO_QUERY_READY / ALTO_QUERY_INPROGRESS
+ */
+int ALTO_query_state();
 
 #endif /* ALTOCLIENT_H */
