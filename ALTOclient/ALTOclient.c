@@ -1157,6 +1157,8 @@ void* alto_query_thread_func(void* thread_args)
 	int count = 0;
 	ALTO_ThreadArgs_t* args = (ALTO_ThreadArgs_t*) thread_args;
 
+	alto_debugf("alto_query_thread_func\n");
+
 	// this will block at some point
 	do_ALTO_update(args->rc_host, args->pri_rat, args->sec_rat);
 
@@ -1199,7 +1201,7 @@ int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int
 	threadArgs.num = num;
 
 	assertCheck(
-		pthread_create(&threadId, NULL, alto_query_thread_func, &threadArgs), 
+		pthread_create(&threadId, NULL, alto_query_thread_func, &threadArgs) == 0, 
 		"pthread_create failed!"
 	);
 
