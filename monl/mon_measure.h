@@ -70,6 +70,7 @@ protected:
 	MonHandler mh_remote;
 
 	uint8_t dst_socketid[SOCKETID_SIZE];
+	bool dst_socketid_publish;
 	MsgType  msg_type;
 
 	int used_counter;

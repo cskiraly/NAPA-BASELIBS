@@ -29,6 +29,7 @@ MonMeasure::MonMeasure(class MeasurePlugin *mp, MeasurementCapabilities mc, clas
 	auto_loaded = false;
 	mh_remote = -1;
 	ptrDispatcher = ptrDisp;
+	dst_socketid_publish = false;
 
 	/* Initialise default values */
 	int i;

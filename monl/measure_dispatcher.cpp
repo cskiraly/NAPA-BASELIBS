@@ -498,9 +498,11 @@ int MeasureDispatcher::activateMeasure(class MonMeasure *m, SocketId dst, MsgTyp
 
 	if(dst != NULL) {
 		memcpy(m->dst_socketid, (uint8_t *) dst, SOCKETID_SIZE);
+		m->dst_socketid_publish = true;
 	} else {
 		if(m->flags != 0)
 			return -EINVAL;
+		m->dst_socketid_publish = false;
 	}
 
 	m->defaultInit();

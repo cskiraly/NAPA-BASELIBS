@@ -81,7 +81,7 @@ int ResultBuffer::publishResults(void){
 		return -EFAILED;
 	if(mlSocketIDToString(sid, sidA_string, sizeof(sidA_string)) != 0)
 		return -EFAILED;
-	if(m->dst_socketid != NULL) {
+	if(m->dst_socketid != NULL && m->dst_socketid_publish) {
 		if(mlSocketIDToString((SocketId) m->dst_socketid, sidB_string, sizeof(sidB_string)) != 0)
 			return -EFAILED;
 	}
