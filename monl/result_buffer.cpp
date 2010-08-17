@@ -122,7 +122,7 @@ int ResultBuffer::init() {
 	n_samples = 0; samples = 0; sum_samples = 0;
 	sum_win_samples = 0; rate_sum_samples = 0;
 	pos = 0;
-	sum_var_samples = sum_win_var_samples = 0;
+	sum_win_var_samples = 0;
 	for(i = 0; i < LAST_STAT_TYPE; i++)
 		stats[i] = (m->param_values[P_INIT_NAN_ZERO] == 0.0 ? NAN : 0);
 	for(i = 0; i < size; i++)
@@ -180,8 +180,6 @@ int ResultBuffer::newSample(result r) {
 	stats[AVG] = ((samples - 1) * stats[AVG] + r) / samples;
 
 	/* Variance */
-	sum_var_samples += pow(r - stats[AVG],2);
-
 	if(samples < 2)
 		stats[VAR] = 0;
 	else

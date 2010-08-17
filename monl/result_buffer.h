@@ -48,7 +48,6 @@ private:
 	result sum_win_samples;
 	result rate_sum_samples;
 
-	result sum_var_samples;
 	result sum_win_var_samples;
 
 	char **originator_name;
