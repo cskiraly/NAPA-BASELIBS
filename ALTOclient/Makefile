@@ -1,4 +1,4 @@
-XMLSRC ?= /usr/include/libxml2
+XMLSRC ?= $(LIBXML2_DIR)/include/libxml2
 
 CPPFLAGS += -I$(XMLSRC)
 LDLIBS += -lxml2 -lpthread
