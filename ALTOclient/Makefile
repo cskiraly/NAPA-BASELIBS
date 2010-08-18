@@ -1,6 +1,8 @@
 XMLSRC ?= $(LIBXML2_DIR)/include/libxml2
+XMLLIB ?= $(LIBXML2_DIR)/lib
 
 CPPFLAGS += -I$(XMLSRC)
+LDFLAGS += -L$(XMLLIB)
 LDLIBS += -lxml2 -lpthread
 
 # libcurl is now obsolete
