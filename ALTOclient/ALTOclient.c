@@ -1141,6 +1141,7 @@ int get_ALTO_guidance_for_list(ALTO_GUIDANCE_T * list, int num, struct in_addr r
 static int queryState = ALTO_QUERY_READY;
 
 static pthread_t threadId;
+static pthread_attr_t attr;
 
 typedef struct {
 	ALTO_GUIDANCE_T* list;
@@ -1199,11 +1200,13 @@ int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int
 
 	threadArgs.list = list;
 	threadArgs.num = num;
-
-	assertCheck(
-		pthread_create(&threadId, NULL, alto_query_thread_func, &threadArgs) == 0, 
-		"pthread_create failed!"
-	);
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+	if (pthread_create(&threadId, &attr, alto_query_thread_func, &threadArgs) != 0) {
+		fprintf(stderr,"[ALTOclient] pthread_create failed!\n");
+		queryState = ALTO_QUERY_READY;
+		return 0;
+	}
 
 	// This should be it
 	return 1;
