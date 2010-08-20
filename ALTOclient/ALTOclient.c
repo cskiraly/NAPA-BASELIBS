@@ -75,7 +75,7 @@ static void alto_errorf(const char* str, ...) {
 	va_list args;
 	va_start(args, str);
 	vsprintf(msg, str, args);
-	fprintf(stderr, "[ALTOclient] *** ERROR: '%s'", msg);
+	fprintf(stderr, "[ALTOclient] *** ERROR: %s", msg);
 	va_end(args);
 }
 
@@ -389,10 +389,14 @@ void POST_end(char* buf) {
 
 void* POST_send(const char* url, const char* data) {
 	void* ctx;
+	char header[] = "Connection: close\r\n";
 	char contentType[512] = "multipart/form-data; boundary="POST_BOUNDARY;
 	char* ct = contentType;
 
-	ctx = xmlNanoHTTPMethod(url, "POST", data, &ct, NULL, strlen(data));
+	//ctx = xmlNanoHTTPMethod(url, "POST", data, &ct, NULL, strlen(data));
+	ctx = xmlNanoHTTPMethod(url, "POST", data, &ct, header, strlen(data));
+
+	assertCheck(ctx, "xmlNanoHTTPMethod failed! Make sure ALTO server is reachable (NAT issue?)..");
 
 	free(ct);
 	return ctx;
@@ -401,14 +405,15 @@ void* POST_send(const char* url, const char* data) {
 // nano
 xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint){
 	xmlDocPtr result = NULL;
-	int       size;
-	xmlChar*  doctxt;
-	int       doclen;
-	int       bytesRead;
-	size = 0;
-	char*	data;
+	xmlChar*  doctxt = NULL;
+	int		size = 0;
+	int		doclen = 0;
+	int		bytesRead = 0;
+	int		bytesSum = 0;
+	char*	data = NULL;
 	size_t  dataLen = 0;
 	void*	ctx = NULL;
+	char*   alto_reply_buffer_ptr = alto_reply_buf_nano;
 //	int		errorcode = 0;
 //	FILE*	f = NULL;
 
@@ -436,20 +441,22 @@ xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint){
 	data = NULL;
 
 	alto_debugf("%s: POST ok.\n", __FUNCTION__);
-/*
-	char output[10024];
-	memset(output, 0, 10024);
 
-	bytesRead = xmlNanoHTTPRead(ctx,&output,10024);
-//	output[bytesRead] = '\n';
-*/
 	memset(alto_reply_buf_nano, 0, ALTO_REP_BUF_SIZE);
 
-	bytesRead = xmlNanoHTTPRead(ctx, &alto_reply_buf_nano, ALTO_REP_BUF_SIZE);
+	//bytesRead = xmlNanoHTTPRead(ctx, &alto_reply_buf_nano, ALTO_REP_BUF_SIZE);
+	#define BLOCK_SIZE 4096
+	bytesRead = xmlNanoHTTPRead(ctx, alto_reply_buffer_ptr, BLOCK_SIZE);
+	bytesSum += bytesRead;
+	while (bytesRead) {
+		alto_reply_buffer_ptr += bytesRead;
+		bytesRead = xmlNanoHTTPRead(ctx, alto_reply_buffer_ptr, BLOCK_SIZE);
+		bytesSum += bytesRead;
+	}
 
 	#ifdef USE_DEBUG_OUTPUT
 //	printf("xmlNanoHTTPRead: %d bytes read.\n", bytesRead);
-	printf("ALTO reply (%d bytes):\n\n%s", bytesRead, alto_reply_buf_nano);
+	printf("ALTO reply (%d bytes):\n\n%s", bytesSum, alto_reply_buf_nano);
 	#endif
 
 	// dump to file
@@ -495,6 +502,7 @@ xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint){
 */
 
 	if (!result) {
+		printf("*** ERROR: ALTO XML reply (%d bytes):\n\n%s", bytesSum, alto_reply_buf_nano);
 		alto_errorf("%s - XML parsing failed (result == NULL)!\n", __FUNCTION__);
 	} else {
 		alto_debugf("%s: XML parsing ok.\n", __FUNCTION__);
