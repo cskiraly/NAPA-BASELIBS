@@ -20,15 +20,15 @@ int main(){
 	//rc_addr.s_addr = inet_addr("95.37.70.39");
 	//rc_addr.s_addr = inet_addr("195.37.70.39");
 	rc_addr.s_addr = inet_addr("195.116.53.31");	// Warszawa
-//	rc_addr.s_addr = inet_addr("10.1.6.41");
+	//rc_addr.s_addr = inet_addr("10.1.6.41");
 
 	// start ALTO client
 	start_ALTO_client();
 
 	// Configure set the ALTO server URL
 	//set_ALTO_server("http://10.10.251.107/cgi-bin/alto-server.cgi");
-	set_ALTO_server("http://10.10.251.125/cgi-bin/alto-server.cgi");
-//	set_ALTO_server("http://www.napa-wine-alto.eu/cgi-bin/alto-server.cgi");
+	//set_ALTO_server("http://10.10.251.125/cgi-bin/alto-server.cgi");
+	set_ALTO_server("http://www.napa-wine-alto.eu/cgi-bin/alto-server.cgi");
 
 	// And now get the result for this list
 	get_ALTO_guidance_for_txt("ip.list", rc_addr, REL_PREF, 7);

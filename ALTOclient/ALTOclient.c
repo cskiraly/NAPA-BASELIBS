@@ -920,11 +920,26 @@ int alto_parse_from_XML(altoDbPtr db, xmlDocPtr doc){
 	cur = xmlDocGetRootElement(doc);
 	xmlChar *overall_rating = NULL;
 	xmlChar *ipprefix = NULL;
+	xmlChar *status_code = NULL;
+	int ratings_done = 0;
 
 	while(cur!=NULL){
-		if(!xmlStrcmp(cur->name, BAD_CAST "cnd_hla")){
+		if (!xmlStrcmp(cur->name, BAD_CAST "group_rating_reply")) {
+			status_code = xmlGetProp(cur, BAD_CAST "statuscode");
+			if (status_code) alto_debugf("*** ALTO reply statuscode = %s\n", status_code);
+		}
+		if (!xmlStrcmp(cur->name, BAD_CAST "statustext")) {
+			xmlChar* str;
+			str = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
+			alto_debugf("***********************************************************************\n");
+			alto_debugf("*** ALTO reply statustext = '%s'\n", str);
+			alto_debugf("***********************************************************************\n");
+			xmlFree(str);
+		}
+		if (!xmlStrcmp(cur->name, BAD_CAST "cnd_hla")) {
 			overall_rating = xmlGetProp(cur, BAD_CAST "overall_rating");
-		}if(!xmlStrcmp(cur->name, BAD_CAST "ipprefix")){
+		}
+		if (!xmlStrcmp(cur->name, BAD_CAST "ipprefix")) {
 			ipprefix = xmlGetProp(cur, BAD_CAST "prefix");
 			if (!ipprefix) {
 				alto_debugf("Couldn't find ipprefix!\n");
@@ -938,25 +953,37 @@ int alto_parse_from_XML(altoDbPtr db, xmlDocPtr doc){
 			element->host_mask = get_ALTO_host_mask((char*) ipprefix);
 			if (overall_rating) {
 				element->rating = atoi(overall_rating);
-				alto_debugf("rating %s = %d\n", ipprefix, overall_rating);
+				alto_debugf("rating %s = %d\n", ipprefix, element->rating);
 			} else {
-				overall_rating = 0;
-				alto_debugf("rating %s = %d (DEFAULT, host not in DB!)\n", ipprefix, overall_rating);
+				element->rating = 0;
+				alto_debugf("rating %s = %d (DEFAULT, host not in DB!)\n", ipprefix, element->rating);
 			}
+			ratings_done = 1;
 
 			// and add this element to the db
 			alto_add_element(db, element);
 
-		} if(cur->children != NULL){
+		} 
+		if (cur->children != NULL) {
 //			printf("cur->children == NULL \n");
 			cur = cur->children;
-		} if(cur->children == NULL && cur->next != NULL){
+		} 
+		if (cur->children == NULL && cur->next != NULL) {
 //			printf("cur->children == NULL && cur->next != NULL \n");
 			cur = cur->next;
-		} if(cur->children == NULL && cur->next == NULL){
+		} 
+		if (cur->children == NULL && cur->next == NULL) {
 //			printf("cur->children == NULL && cur->next == NULL \n");
 			cur = cur->parent->next;
 		}
+	}
+
+	if (!ratings_done) {
+		alto_debugf("WARNING: ALTO XML reply didn't contain rating info, no peers were rated!\n");
+		xmlChar* text = NULL;
+		int sz = 0;
+		xmlDocDumpMemory(doc, &text, &sz);
+		//fprintf(stderr, "ALTO XML reply was: (%d bytes)\n%s", sz, text);
 	}
 
 	return 1;
