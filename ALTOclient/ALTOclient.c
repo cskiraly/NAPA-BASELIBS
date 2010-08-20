@@ -444,7 +444,7 @@ xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint){
 
 	memset(alto_reply_buf_nano, 0, ALTO_REP_BUF_SIZE);
 
-	//bytesRead = xmlNanoHTTPRead(ctx, &alto_reply_buf_nano, ALTO_REP_BUF_SIZE);
+//	bytesSum = xmlNanoHTTPRead(ctx, &alto_reply_buf_nano, ALTO_REP_BUF_SIZE);
 	#define BLOCK_SIZE 4096
 	bytesRead = xmlNanoHTTPRead(ctx, alto_reply_buffer_ptr, BLOCK_SIZE);
 	bytesSum += bytesRead;
@@ -464,7 +464,7 @@ xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint){
 	fwrite(output, 1, strlen(output), f);
 	fclose(f);*/
 
-	result = xmlRecoverMemory(alto_reply_buf_nano, bytesRead);
+	result = xmlRecoverMemory(alto_reply_buf_nano, bytesSum);
 //
 // TODO: PushParser doesn't work yet somehow..
 //
@@ -918,20 +918,31 @@ int alto_parse_from_XML(altoDbPtr db, xmlDocPtr doc){
 
 	xmlNode *cur = NULL;
 	cur = xmlDocGetRootElement(doc);
-	xmlChar *overall_rating, *ipprefix = NULL;
+	xmlChar *overall_rating = NULL;
+	xmlChar *ipprefix = NULL;
 
 	while(cur!=NULL){
 		if(!xmlStrcmp(cur->name, BAD_CAST "cnd_hla")){
 			overall_rating = xmlGetProp(cur, BAD_CAST "overall_rating");
 		}if(!xmlStrcmp(cur->name, BAD_CAST "ipprefix")){
 			ipprefix = xmlGetProp(cur, BAD_CAST "prefix");
+			if (!ipprefix) {
+				alto_debugf("Couldn't find ipprefix!\n");
+				break;
+			}
 
 			// create the ALTO element
 			struct alto_db_element_t *element;
 			element = malloc(sizeof(ALTO_DB_ELEMENT_T));
 			element->host = get_ALTO_host_IP((char*) ipprefix);
 			element->host_mask = get_ALTO_host_mask((char*) ipprefix);
-			element->rating = atoi(overall_rating);
+			if (overall_rating) {
+				element->rating = atoi(overall_rating);
+				alto_debugf("rating %s = %d\n", ipprefix, overall_rating);
+			} else {
+				overall_rating = 0;
+				alto_debugf("rating %s = %d (DEFAULT, host not in DB!)\n", ipprefix, overall_rating);
+			}
 
 			// and add this element to the db
 			alto_add_element(db, element);
