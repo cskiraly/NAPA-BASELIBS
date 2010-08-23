@@ -175,11 +175,14 @@ int16_t get_ALTO_host_mask(char * host_string){
  *  ret:	XML_doc		the XML where the request is stored in
  */
 xmlDocPtr alto_create_request_XML(struct alto_db_t * db, struct in_addr rc_host, int pri_rat, int sec_rat){
+	assertCheck(db, "internal db ptr is NULL!");
 
 	// Creates a new document
 	// <?xml version="1.0" encoding="UTF-8"?>
 	xmlDocPtr doc = NULL;       /* document pointer */
 	doc = xmlNewDoc(BAD_CAST "1.0");
+
+	assertCheck(doc, "xmlNewDoc failed! Out of memory?");
 
 	// Create the root node and name it with the correct name space
 	// <alto xmlns='urn:ietf:params:xml:ns:p2p:alto'>
@@ -388,10 +391,13 @@ void POST_end(char* buf) {
 }
 
 void* POST_send(const char* url, const char* data) {
-	void* ctx;
+	void* ctx = NULL;
 	char header[] = "Connection: close\r\n";
 	char contentType[512] = "multipart/form-data; boundary="POST_BOUNDARY;
 	char* ct = contentType;
+
+	assertCheck(url, "ALTO server URL is NULL!");
+	assertCheck(data, "POST data is NULL!");
 
 	//ctx = xmlNanoHTTPMethod(url, "POST", data, &ct, NULL, strlen(data));
 	ctx = xmlNanoHTTPMethod(url, "POST", data, &ct, header, strlen(data));
@@ -417,11 +423,15 @@ xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint){
 //	int		errorcode = 0;
 //	FILE*	f = NULL;
 
+	assertCheck(doc, "xml doc ptr is NULL!");
+	assertCheck(endPoint, "ALTO server URL is NULL!");
+
 	xmlNanoHTTPInit();
 	xmlDocDumpFormatMemoryEnc(doc,&doctxt,&doclen,"utf-8",1);
 
 	dataLen = doclen + 2048;
 	data = malloc(dataLen);
+	assertCheck(data, "Couldn't allocate data buffer! Out of memory?");
 	memset(data, 0, dataLen);
 
 	// build the mime multipart contents
@@ -529,6 +539,8 @@ struct alto_db_t * alto_db_init(void){
 	struct alto_db_t * db;
 	db = malloc(sizeof(struct alto_db_t));
 //	db = (alto_db_t *)malloc(sizeof(struct alto_db_element_t));
+	assertCheck(db, "Couldn't allocate internal db! Out of memory?");
+
 	db->first = NULL;
 	db->last = NULL;
 	db->num_of_elements = 0;
@@ -1268,6 +1280,7 @@ int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int
 
 
 void do_ALTO_update(struct in_addr rc_host, int pri_rat, int sec_rat){
+	assertCheck(ALTO_DB_req, "ALTO_DB_req is NULL!");
 
 	// Step 2: create an XML from the DB entries
 	ALTO_XML_req = alto_create_request_XML(ALTO_DB_req, rc_host, pri_rat, sec_rat);
