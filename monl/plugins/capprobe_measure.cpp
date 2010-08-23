@@ -33,6 +33,7 @@ bool double_sort_function (double i,double j) { return (i<j); }
 
 CapprobeMeasure::CapprobeMeasure(class MeasurePlugin *m, MeasurementCapabilities mc, class MeasureDispatcher *md): MonMeasure(m,mc,md) {
 	pkt = NULL;
+	max_size = 0;
 }
 
 CapprobeMeasure::~CapprobeMeasure() {

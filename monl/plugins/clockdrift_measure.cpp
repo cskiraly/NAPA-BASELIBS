@@ -39,6 +39,9 @@ ClockdriftMeasure::ClockdriftMeasure(class MeasurePlugin *m, MeasurementCapabili
 		samples.reserve((int)param_values[P_CLOCKDRIFT_WIN_SIZE]);
 	} else
 		n = NULL;
+	a = 0;
+	b = 0;
+	first_tx = 0;
 }
 
 ClockdriftMeasure::~ClockdriftMeasure() {
