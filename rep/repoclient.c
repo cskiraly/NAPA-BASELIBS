@@ -96,21 +96,30 @@ void make_request(const char *uri, void (*callback)(struct evhttp_request *, voi
         }
 }
 
-void make_post_request(const char *uri, const char *data, void (*callback)(struct evhttp_request *, void *), void *cb_arg) {
+int make_post_request(const char *uri, const char *data, void (*callback)(struct evhttp_request *, void *), void *cb_arg) {
 	struct evhttp_request *req = evhttp_request_new(callback, cb_arg);
 	struct reposerver *rep = (struct reposerver *)cb_arg;
 	
         if (!req) {
                 error("Failed to create request object");
-		return;
+		return -1;
 	}
-        evhttp_add_header(req->output_headers, "Connection", "close");
 
-	evbuffer_add(req->output_buffer, data, strlen(data) + 1);
-
-        if (evhttp_make_request(rep->evhttp_conn, req, EVHTTP_REQ_POST, uri)) {
-                warn("evhttp_make_request failed");
+        if (evhttp_add_header(req->output_headers, "Connection", "close") < 0) {
+                error("Failed to add header");
+		return -2;
         }
+
+	if (evbuffer_add(req->output_buffer, data, strlen(data) + 1) < 0) {
+                error("Failed to add data to request");
+		return -3;
+	}
+
+        if (evhttp_make_request(rep->evhttp_conn, req, EVHTTP_REQ_POST, uri) < 0) {
+                warn("evhttp_make_request failed");
+		return -4;
+        }
+        return 0;
 }
 
 /** Parse a server specification of the form addr:port */

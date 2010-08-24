@@ -111,8 +111,9 @@ void make_request(const char *uri, void (*callback)(struct evhttp_request *, voi
   @param data POST DATA (as 0-terminated string)
   @param callback callback function
   @param cb_arg callback arg
+  @retun 0 on success, <0 on error
 */
-void make_post_request(const char *uri, const char *data, void (*callback)(struct evhttp_request *, void *), void *cb_arg);
+int make_post_request(const char *uri, const char *data, void (*callback)(struct evhttp_request *, void *), void *cb_arg);
 
 /** Parse a measurement record from the HTTP encoding 
 
