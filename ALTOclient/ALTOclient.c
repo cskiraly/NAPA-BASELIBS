@@ -391,16 +391,20 @@ void POST_end(char* buf) {
 }
 
 void* POST_send(const char* url, const char* data) {
+	int i;
 	void* ctx = NULL;
 	char header[] = "Connection: close\r\n";
-	char contentType[512] = "multipart/form-data; boundary="POST_BOUNDARY;
+	char contentType[] = "multipart/form-data; boundary="POST_BOUNDARY;
 	char* ct = contentType;
 
 	assertCheck(url, "ALTO server URL is NULL!");
 	assertCheck(data, "POST data is NULL!");
 
 	//ctx = xmlNanoHTTPMethod(url, "POST", data, &ct, NULL, strlen(data));
-	ctx = xmlNanoHTTPMethod(url, "POST", data, &ct, header, strlen(data));
+	for (i=0; i < 3; i++) {
+		ctx = xmlNanoHTTPMethod(url, "POST", data, &ct, header, strlen(data)+1);
+		if (ctx) break;
+	}
 
 	assertCheck(ctx, "xmlNanoHTTPMethod failed! Make sure ALTO server is reachable (NAT issue?)..");
 
@@ -519,6 +523,7 @@ xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint){
 	}
 
 	xmlNanoHTTPClose(ctx);
+	xmlNanoHTTPCleanup();
 	return result;
 }
 
