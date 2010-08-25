@@ -406,6 +406,11 @@ void* POST_send(const char* url, const char* data) {
 		if (ctx) break;
 	}
 
+	if (!ctx) {
+		alto_debugf("*** WARNING: xmlNanoHTTPMethod failed! Make sure ALTO server is reachable (NAT issue?)..");
+		fprintf(stderr, "URL was '%s'.", url);
+		return NULL;
+	}
 	assertCheck(ctx, "xmlNanoHTTPMethod failed! Make sure ALTO server is reachable (NAT issue?)..");
 
 	free(ct);
@@ -453,6 +458,8 @@ xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint){
 
 	free(data);
 	data = NULL;
+
+	if (!ctx) return NULL;
 
 	alto_debugf("%s: POST ok.\n", __FUNCTION__);
 
@@ -1251,6 +1258,10 @@ int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int
 	returnIf(num < 0, "<0 elements?", 0);
 
 	// set new state
+	if (queryState == ALTO_QUERY_INPROGRESS) {
+		alto_debugf("*** WARNING: Calling ALTO_query_exec while query is still in progress! Race condition?!\n");
+		return 0;
+	}
 	queryState = ALTO_QUERY_INPROGRESS;
 
 	// first purge existing DB entries
@@ -1302,28 +1313,24 @@ void do_ALTO_update(struct in_addr rc_host, int pri_rat, int sec_rat){
 	ALTO_XML_res = xmlReadFile("reply.xml",NULL,XML_PARSE_RECOVER);
 #endif
 
-	// Step 3: Parse the XML to the DB
-	alto_parse_from_XML(ALTO_DB_res, ALTO_XML_res);
+	if (ALTO_XML_res) {
+		// Step 3: Parse the XML to the DB
+		alto_parse_from_XML(ALTO_DB_res, ALTO_XML_res);
 
-	// ###### Big Magic ######
-	// And now check for the corresponding rating
-	alto_do_the_magic(ALTO_DB_req, ALTO_DB_res);
+		// ###### Big Magic ######
+		// And now check for the corresponding rating
+		alto_do_the_magic(ALTO_DB_req, ALTO_DB_res);
+
+		xmlFreeDoc(ALTO_XML_res);
+		ALTO_XML_res = NULL;
+	}
 
 	// free xml data
 	xmlFreeDoc(ALTO_XML_req);
-	xmlFreeDoc(ALTO_XML_res);
 	ALTO_XML_req = NULL;
-	ALTO_XML_res = NULL;
 
 	// purge the intermediate DB
 	alto_purge_db(ALTO_DB_res);
 }
-
-
-
-
-
-
-
 
 
