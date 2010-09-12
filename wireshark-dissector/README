@@ -3,7 +3,8 @@ GRAPES Wireshark Plugin
 ----------------------------------------
 I) Installation
 
-1) Install glib-devel; on Debian this can be done with 'sudo apt-get install libgtk2.0-dev 
+1) Install glib-devel; on Debian this can be done with 'sudo apt-get install libgtk2.0-dev'
+   On some systems the package is called 'libglib2.0-dev'
 2) Install wireshark v1.0.0 or greater
 3) make
 4) sudo make install
