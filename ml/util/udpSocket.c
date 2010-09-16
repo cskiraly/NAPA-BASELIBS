@@ -40,8 +40,6 @@
 #include <fcntl.h>
 
 
-#define MAC_OS
-
 #include <event2/event.h>
 
 #include <stdio.h>
