@@ -1,6 +1,12 @@
 #ifndef ALTOCLIENT_H
 #define ALTOCLIENT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+
 /**
 * @file ALTOclient.h
 *
@@ -152,5 +158,9 @@ int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int
  *	@return				ALTO_QUERY_READY / ALTO_QUERY_INPROGRESS
  */
 int ALTO_query_state();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ALTOCLIENT_H */
