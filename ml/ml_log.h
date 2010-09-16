@@ -10,7 +10,7 @@
 
 #define DPRINT(format, ... )  {struct timeval tnow; gettimeofday(&tnow,NULL); fprintf(stderr, "%ld.%03ld "format, tnow.tv_sec, tnow.tv_usec/1000, ##__VA_ARGS__ );}
 
-#define debug(format, ... ) //DPRINT(format, ##__VA_ARGS__ )
+#define debug(format, ... ) DPRINT(format, ##__VA_ARGS__ )
 /** Convenience macro to log LOG_INFO messages */
 #define info(format, ... )  DPRINT(format, ##__VA_ARGS__ )
 /** Convenience macro to log LOG_WARN messages */

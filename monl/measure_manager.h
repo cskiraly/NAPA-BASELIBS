@@ -243,7 +243,7 @@ public:
 
 	MeasurementStatus monGetStatus(MonHandler mh) {
 		if(!isValidMonHandler(mh))
-			return ERROR;
+			return MS_ERROR;
 		return mMeasureInstances[mh]->getStatus();
 	};
 

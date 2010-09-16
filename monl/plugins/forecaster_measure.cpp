@@ -21,6 +21,11 @@
 #include <sys/time.h>
 #include <limits.h>
 
+#ifdef WIN32
+#define random(x) rand(x)
+#endif
+
+
 
 ForecasterMeasure::ForecasterMeasure(class MeasurePlugin *m, MeasurementCapabilities mc, class MeasureDispatcher *md): MonMeasure(m,mc,md) {
 }

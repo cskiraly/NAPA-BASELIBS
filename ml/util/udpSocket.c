@@ -19,7 +19,7 @@
  * AND FITNESS FOR A PARTICULAR PURPOSE AND THE WARRANTY AGAINST LATENT
  * DEFECTS, WITH RESPECT TO THE PROGRAM AND THE ACCOMPANYING
  * DOCUMENTATION.
- *
+ /*
  * No Liability For Consequential Damages IN NO EVENT SHALL NEC Europe
  * Ltd., NEC Corporation OR ANY OF ITS SUBSIDIARIES BE LIABLE FOR ANY
  * DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOSS
@@ -32,21 +32,27 @@
  *     THIS HEADER MAY NOT BE EXTRACTED OR MODIFIED IN ANY WAY.
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/time.h>
+
+#include <event2/event.h>
+#ifndef WIN32
 /* For sockaddr_in */
 #include <netinet/in.h>
 /* For socket functions */
 #include <sys/socket.h>
 /* For fcntl */
 #include <fcntl.h>
-
-
-#include <event2/event.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-
+#include <sys/uio.h>
+#include <arpa/inet.h>
+#include <resolv.h>
 #include <sys/socket.h>
+#include <netdb.h>
+
 #ifdef __linux__
 #include <linux/types.h>
 #include <linux/errqueue.h>
@@ -56,21 +62,15 @@
 #define MSG_ERRQUEUE 0
 #endif
 
+#else
+#include <winsock2.h>
+#endif
 
-#include <errno.h>
-#include <string.h>
-#include <netdb.h>
-#include <netinet/in.h>
 
-#include <resolv.h>
-#include <sys/time.h>
-#include <sys/uio.h>
-#include <arpa/inet.h>
 
-#include <unistd.h>
-#include <stdlib.h>
 
 #include "udpSocket.h"
+
 #define LOG_MODULE "[ml] "
 #include "ml_log.h"
 
@@ -83,6 +83,7 @@ int createSocket(const int port,const char *ipaddr)
   struct sockaddr_in udpsrc, udpdst;
 
   int returnStatus = 0;
+fprintf(stderr,"X.CreateSock %s %d\n",ipaddr, port);
 
   //int udpSocket = 0;
   /*libevent2*/
@@ -156,10 +157,12 @@ int createSocket(const int port,const char *ipaddr)
 
 #endif
 
+fprintf(stderr,"X.CreateSock\n");
   return udpSocket;
 
 }
 
+#ifndef WIN32
 /* Information: read the standard TTL from a socket  */
 int getTTL(const int udpSocket,uint8_t *ttl){
 #ifdef MAC_OS
@@ -468,4 +471,63 @@ printf("Hostaddr: %x\n", *((unsigned int *)(he->h_addr)));
 #endif
 	return NULL;
 }
+#else  // WINDOWS
 
+int sendPacket(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr)
+{
+  char stack_buffer[1600];
+  char *buf = stack_buffer;
+  int i;
+  int total_len = 0;
+  int ret;
+  for(i = 0; i < len; i++) total_len += iov[i].iov_len;
+
+  if(outputRateControl(total_len) != OK) return THROTTLE;
+
+  if(total_len > sizeof(stack_buffer)) {
+     warn("sendPacket total_length %d requires dynamically allocated buffer", total_len);
+     buf = malloc(total_len);
+  }
+  total_len = 0;
+  for(i = 0; i < len; i++) {
+     memcpy(buf+total_len, iov[i].iov_base, iov[i].iov_len);
+     total_len += iov[i].iov_len;
+  } 
+  ret = sendto(udpSocket, buf, total_len, 0, (struct sockaddr *)socketaddr, sizeof(*socketaddr));
+debug("Sent %d bytes (%d) to %d\n",ret, WSAGetLastError(), udpSocket);
+  if(buf != stack_buffer) free(buf);
+  return ret == total_len ? OK:FAILURE; 
+}
+
+void recvPacket(const int udpSocket,char *buffer,int *recvSize,struct sockaddr_in *udpdst,icmp_error_cb icmpcb_value,int *ttl)
+{
+fprintf(stderr,"X.RECV\n");
+  int salen = sizeof(struct sockaddr_in);
+  int ret;
+  ret = recvfrom(udpSocket, buffer, *recvSize, 0, (struct sockaddr *)udpdst, &salen);
+  if(ret > 0) *recvSize = ret;
+  *ttl=10;
+}
+
+int getTTL(const int udpSocket,uint8_t *ttl){
+  return 64;
+}
+
+const char *mlAutodetectIPAddress() {
+  return NULL;
+}
+
+
+const char *inet_ntop(int af, const void *src,
+       char *dst, size_t size) {
+    char *c = inet_ntoa(*(struct in_addr *)src);
+    if(strlen(c) >= size) return NULL;
+    return strcpy(dst, c);
+}
+int inet_pton(int af, const char * src, void *dst) {
+    unsigned long l = inet_addr(src);
+    if(l == INADDR_NONE) return 0;
+    *(unsigned long *)dst = l;
+    return 1;
+}
+#endif

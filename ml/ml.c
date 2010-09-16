@@ -32,13 +32,6 @@
  *     THIS HEADER MAY NOT BE EXTRACTED OR MODIFIED IN ANY WAY.
  */
 
-#include <arpa/inet.h>
-#ifndef WIN32
-#include <netinet/in.h>
-#include <sys/socket.h>
-#endif
-#include <fcntl.h>
-#include <event2/event.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -46,12 +39,23 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <errno.h>
+#include <event2/event.h>
 #include <time.h>
 #include <math.h>
 #include <assert.h>
+#include <errno.h>
+
+#ifndef WIN32
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <fcntl.h>
+#else
+
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif
 
 #include "util/udpSocket.h"
 #include "util/stun.h"
@@ -183,10 +187,12 @@ boolean recv_data_callback;
 /*
  * helper function to get rid of a warning
  */
+#ifndef WIN32
 int min(int a, int b) {
 	if (a > b) return b;
 	return a;
 }
+#endif
 
 /*
  * convert a socketID to a string. It uses a static buffer, so either strdup is needed, or the string will get lost!
@@ -390,7 +396,11 @@ void send_conn_msg(int con_id, int buf_size, int command_type)
 	msg_header->pmtu_size = connectbuf[con_id]->pmtusize;
 
 	memcpy(&(msg_header->sock_id), loc_socketID, sizeof(socket_ID));
-
+  {
+                        char buf[SOCKETID_STRING_SIZE];
+                        mlSocketIDToString(&((struct conn_msg*)connectbuf[con_id]->ctrl_msg_buf)->sock_id,buf,sizeof(buf));
+                        debug("Local socket_address sent in INVITE: %s, sizeof msg %d\n", buf, sizeof(struct conn_msg));
+   }
 	send_msg(con_id, ML_CON_MSG, connectbuf[con_id]->ctrl_msg_buf, buf_size, true, &(connectbuf[con_id]->defaultSendParams));
 }
 
@@ -625,6 +635,11 @@ void recv_stun_msg(char *msgbuf, int recvSize)
 		NAT_traversal = true;
 		// callback to the upper layer indicating that the socketID is now
 		// ready to use
+		{
+                	char buf[SOCKETID_STRING_SIZE];
+                	mlSocketIDToString(&local_socketID,buf,sizeof(buf));
+ 			debug("received local socket_address: %s\n", buf);
+		}
 		(receive_SocketID_cb) (&local_socketID, 0);
 	}
 }
@@ -708,6 +723,7 @@ void recv_timeout_cb(int fd, short event, void *arg)
 void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 {
 	debug("ML: received packet of size %d with rconID:%d lconID:%d type:%d offset:%d\n",bufsize,msg_h->remote_con_id,msg_h->local_con_id,msg_h->msg_type,msg_h->offset);
+	fprintf(stderr,"X.ML: received packet of size %d with rconID:%d lconID:%d type:%d offset:%d\n",bufsize,msg_h->remote_con_id,msg_h->local_con_id,msg_h->msg_type,msg_h->offset);
 
 	int recv_id, free_recv_id = -1;
 
@@ -897,7 +913,7 @@ void pmtu_timeout_cb(int fd, short event, void *arg)
 	}
 
 	//error in PMTU discovery?
-	if (connectbuf[con_id]->pmtusize == ERROR) {
+	if (connectbuf[con_id]->pmtusize == P_ERROR) {
 		if (connectbuf[con_id]->internal_connect == true) {
 			//as of now we tried directly connecting, now let's try trough the NAT
 			connectbuf[con_id]->internal_connect = false;
@@ -950,7 +966,7 @@ pmtu pmtu_decrement(pmtu pmtusize)
 	case BELOWDSL:
 		return MIN;
 	case MIN:
-		return ERROR;
+		return P_ERROR;
 	default:
 		warn("ML: strange pmtu size encountered:%d, changing to some safe value:%d\n", pmtusize, MIN);
 		return MIN;
@@ -1011,7 +1027,7 @@ void pmtu_error_cb_th(char *msg, int msglen)
 
 //    connectbuf[connectionID]->pmtutrysize = new_pmtusize;
 
-    if (new_pmtusize == ERROR) {
+    if (new_pmtusize == P_ERROR) {
 		error("ML:  Could not create connection with connectionID %i !\n",
 			connectionID);
 
@@ -1126,7 +1142,7 @@ void recv_pkg(int fd, short event, void *arg)
 	unsigned short stun_bind_response = 0x0101;
 	unsigned short * msgspot = (unsigned short *) msgbuf;
 	if (*msgspot == stun_bind_response) {
-		debug("ML: recv_pkg: parse stun message called\n");
+		debug("ML: recv_pkg: parse stun message called on %d bytes\n", recvSize);
 		recv_stun_msg(msgbuf, recvSize);
 		return;
 	}
@@ -1217,12 +1233,14 @@ void try_stun();
  */
 void nat_traversal_timeout(int fd, short event, void *arg)
 {
+fprintf(stderr,"X. NatTrTo %d\n", NAT_traversal);
 	if (NAT_traversal == false) {
 		debug("ML: NAT traversal request re-send\n");
 		if(receive_SocketID_cb)
 			(receive_SocketID_cb) (&local_socketID, 2);
 		try_stun();
 	}
+fprintf(stderr,"X. NatTrTo\n");
 }
 
 //return IP address, or INADDR_NONE if can't resolve
@@ -1246,6 +1264,7 @@ int create_socket(const int port, const char *ipaddr)
 {
 	struct sockaddr_in udpaddr = {0};
 	udpaddr.sin_family = AF_INET;
+fprintf(stderr,"X. create_socket %s, %d\n", ipaddr, port);
 	if (ipaddr == NULL) {
 		/*
 		* try to guess the local IP address
@@ -1275,9 +1294,9 @@ int create_socket(const int port, const char *ipaddr)
 	ev = event_new(base, socketfd, EV_READ | EV_PERSIST, recv_pkg, NULL);
 
 	event_add(ev, NULL);
-
+fprintf(stderr,"X. create_socket\n");
 	try_stun();
-
+fprintf(stderr,"X. create_socket\n");
 	return socketfd;
 }
 
@@ -1320,6 +1339,7 @@ void try_stun()
 
 int mlInit(bool recv_data_cb,struct timeval timeout_value,const int port,const char *ipaddr,const int stun_port,const char *stun_ipaddr,receive_localsocketID_cb local_socketID_cb,void *arg){
 
+/*X*/  fprintf(stderr,"MLINIT1 %s, %d, %s, %d\n", ipaddr, port, stun_ipaddr, stun_port);
 	base = (struct event_base *) arg;
 	recv_data_callback = recv_data_cb;
 	mlSetRecvTimeout(timeout_value);
@@ -1329,6 +1349,7 @@ int mlInit(bool recv_data_cb,struct timeval timeout_value,const int port,const c
 
 	}
 	register_recv_localsocketID_cb(local_socketID_cb);
+/*X*/  fprintf(stderr,"MLINIT1\n");
 	return create_socket(port, ipaddr);
 }
 

@@ -41,22 +41,33 @@
 #include <stdio.h> 
 #include <unistd.h>
 
-#include <sys/ioctl.h>
-#include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/types.h> 
-#include <arpa/inet.h>
 
 #include <fcntl.h>
+
+#ifndef WIN32
+#include <sys/ioctl.h>
+#include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
 //#include <arpa/nameser.h>
 //#include <resolv.h>
 #include <net/if.h>
+#include <arpa/inet.h>
+
+#else
+
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
+#endif
 
 #include "ml_log.h"
 #include "stun.h"
 #include "udpSocket.h"
+
+#define STUN_VERBOSE false
 
 /// define a structure to hold a stun address             
 const UInt8  IPv4Family = 0x01;
@@ -102,7 +113,7 @@ int send_stun_request(const int udpSocket,struct sockaddr_in *stunServ)
   assert( sizeof(UInt16) == 2 );
   assert( sizeof(UInt32) == 4 );
 
-  bool verbose = false;
+  bool verbose = STUN_VERBOSE;
   
   //set the verbose mode 
   verbose = true;
@@ -131,6 +142,7 @@ int send_stun_request(const int udpSocket,struct sockaddr_in *stunServ)
   struct iovec iov;
   iov.iov_len = len;
   iov.iov_base = buf;
+debug("Sending STUN %d!!!!!\n",len); 
   sendPacket(udpSocket,&iov,1,stunServ);
 
   return 0;
@@ -153,7 +165,7 @@ int recv_stun_message(char *msgbuf,int msgLen,StunMessage *response){
   //memset(&resp, 0, sizeof(StunMessage));
   int returnValue = 0;
   //bool verbose = true;
-  bool verbose = false;
+  bool verbose = STUN_VERBOSE;
 
   //debug("still alive 4 \n ");
   //if ( verbose ) info("Got a response \n");
@@ -187,7 +199,6 @@ int recv_stun_message(char *msgbuf,int msgLen,StunMessage *response){
               response->changedAddress.ipv4.port);
 
       }
-  debug("still here");
 
   //reflexiveAddr.sin_addr.s_addr = inet_addr(changed_addr);
   //reflexiveAddr->sin_addr.s_addr = inet_addr("1.1.1.1");
@@ -278,7 +289,7 @@ stunParseMessage( char* buf, unsigned int bufLen, StunMessage *msg, bool verbose
    char* body = buf + sizeof(StunMsgHdr);
    unsigned int size = msg->msgHdr.msgLength;
 	
-   debug("bytes after header = %d",size);
+//   debug("bytes after header = %d\n",size);
 	
    while ( size > 0 )
    {

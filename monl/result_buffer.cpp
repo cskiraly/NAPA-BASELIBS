@@ -24,7 +24,9 @@
 
 #include "mon_event.h"
 
+#ifndef WIN32
 #include <arpa/inet.h>
+#endif
 
 #include <sys/time.h>
 #include <stdlib.h>

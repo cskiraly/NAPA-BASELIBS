@@ -30,7 +30,9 @@
 
 /** Struct maintaining streambuffer data. Used internally */
 struct streambuffer {
+#ifndef WINNT
 	FILE *stream;
+#endif
 	char *buffer;
 	size_t len;
 };

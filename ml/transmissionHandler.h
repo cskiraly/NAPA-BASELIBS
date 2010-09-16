@@ -46,14 +46,15 @@
 #ifndef TRANSMISSIONHANDLER_H
 #define TRANSMISSIONHANDLER_H
 #include <sys/time.h>
+#ifndef WIN32
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
+#include <sys/uio.h>
+#endif
 #include <fcntl.h>
 #include <event2/event.h>
 #include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/uio.h>
 #include "util/udpSocket.h"
 #include "util/stun.h"
 #include "ml.h"
@@ -87,7 +88,7 @@ typedef struct event *sock_event_ptr;
 /**
  * Defined a mtu size - IP size - UDP size
  */
-typedef enum {MAX = 1472, DSL = 1464, DSLMEDIUM = 1422, DSLSLIM = 1372, BELOWDSL = 1172, MIN = 472,ERROR = -1} pmtu;
+typedef enum {MAX = 1472, DSL = 1464, DSLMEDIUM = 1422, DSLSLIM = 1372, BELOWDSL = 1172, MIN = 472, P_ERROR = -1} pmtu;
 
 /**
  * Define connection command types

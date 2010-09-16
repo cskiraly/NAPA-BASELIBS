@@ -8,30 +8,65 @@
 
 struct streambuffer publish_streambuffer = { NULL, NULL, 0};
 
-const char *encode_measurementrecord(const MeasurementRecord *r) {
-	rewind(publish_streambuffer.stream);
+void bprintf(struct streambuffer *sb, const char *txt, ...) {
+	va_list str_args;
+	va_start(str_args, txt);
+#ifndef WINNT
+	vfprintf(sb->stream, txt, str_args);
+#else
+	if(sb->buffer == NULL) { sb->buffer=malloc(1000); *sb->buffer = 0; }
+	vsprintf(sb->buffer+strlen(sb->buffer), txt, str_args);
+#endif
+	va_end(str_args);
+}
 
-	fprintf(publish_streambuffer.stream, "originator=%s&", r->originator);
+void brewind(struct streambuffer *sb) {
+#ifndef WINNT
+	rewind(sb->stream);
+#else
+	if(sb->buffer == NULL) sb->buffer=malloc(1000);
+	*sb->buffer = 0;
+#endif
+}
+
+void bflush(struct streambuffer *sb) {
+#ifndef WINNT
+	    fflush(sb->stream);
+#else
+		    if(sb->buffer == NULL) { 
+				sb->buffer=malloc(1000); 
+				*sb->buffer = 0;
+
+			}
+#endif
+}
+
+
+
+const char *encode_measurementrecord(const MeasurementRecord *r) {
+	brewind(&publish_streambuffer);
+
+	bprintf(&publish_streambuffer, "originator=%s&", r->originator);
 	if (r->targetA)
-		fprintf(publish_streambuffer.stream, "targetA=%s&", r->targetA);
+		bprintf(&publish_streambuffer, "targetA=%s&", r->targetA);
 	if (r->targetB)
-		fprintf(publish_streambuffer.stream, "targetB=%s&", r->targetB);
-	fprintf(publish_streambuffer.stream, "published_name=%s", r->published_name);
+		bprintf(&publish_streambuffer, "targetB=%s&", r->targetB);
+	bprintf(&publish_streambuffer, "published_name=%s", r->published_name);
 
 	if (r->string_value)
-		fprintf(publish_streambuffer.stream, "&string_value=%s", r->string_value);
+		bprintf(&publish_streambuffer, "&string_value=%s", r->string_value);
 	else if (r->value != (0.0/0.0)) 
-		fprintf(publish_streambuffer.stream, "&value=%lf", r->value);
+		bprintf(&publish_streambuffer, "&value=%lf", r->value);
 
 	if (r->channel) 
-		fprintf(publish_streambuffer.stream, "&channel=%s", r->channel);
+		bprintf(&publish_streambuffer, "&channel=%s", r->channel);
 
 	if (r->timestamp.tv_sec + r->timestamp.tv_usec != 0) {
-		fprintf(publish_streambuffer.stream, "&timestamp=%s",
+		bprintf(&publish_streambuffer, "&timestamp=%s",
 				timeval2str(&(r->timestamp)));
 	}
 
-	fflush(publish_streambuffer.stream);
+	bflush(&publish_streambuffer);
 	/*debug("result: %s", publish_streambuffer.buffer);*/
 	return publish_streambuffer.buffer;
 }
