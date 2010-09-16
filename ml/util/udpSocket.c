@@ -161,6 +161,10 @@ int createSocket(const int port,const char *ipaddr)
 
 /* Information: read the standard TTL from a socket  */
 int getTTL(const int udpSocket,uint8_t *ttl){
+#ifdef MAC_OS
+	retrun 0;
+#else
+
 	unsigned int value;
 	unsigned int size = sizeof(value);
 
@@ -173,6 +177,7 @@ int getTTL(const int udpSocket,uint8_t *ttl){
 	if(verbose == 1) debug("TTL is %i\n",value);
 
 	return 1;
+#endif
 }
 
 int sendPacket(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr)

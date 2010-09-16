@@ -30,6 +30,8 @@
 #include <stdint.h>
 #include <sys/time.h>
 
+#include <cmath>
+
 //TODO: possible improvements:
 // - make buffer a ptr and don't make an explicit copy
 // - implement a better hash and compare for SocketId
