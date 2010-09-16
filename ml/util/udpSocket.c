@@ -39,6 +39,9 @@
 /* For fcntl */
 #include <fcntl.h>
 
+
+#define MAC_OS
+
 #include <event2/event.h>
 
 #include <stdio.h>
@@ -162,7 +165,7 @@ int createSocket(const int port,const char *ipaddr)
 /* Information: read the standard TTL from a socket  */
 int getTTL(const int udpSocket,uint8_t *ttl){
 #ifdef MAC_OS
-	retrun 0;
+	return 0;
 #else
 
 	unsigned int value;
