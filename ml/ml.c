@@ -1263,7 +1263,7 @@ int create_socket(const int port, const char *ipaddr)
 {
 	struct sockaddr_in udpaddr = {0};
 	udpaddr.sin_family = AF_INET;
-    debug(stderr,"X. create_socket %s, %d\n", ipaddr, port);
+        debug("X. create_socket %s, %d\n", ipaddr, port);
 	if (ipaddr == NULL) {
 		/*
 		* try to guess the local IP address

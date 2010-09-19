@@ -83,7 +83,7 @@ int createSocket(const int port,const char *ipaddr)
   struct sockaddr_in udpsrc, udpdst;
 
   int returnStatus = 0;
-  debug(stderr,"X.CreateSock %s %d\n",ipaddr, port);
+  debug("X.CreateSock %s %d\n",ipaddr, port);
 
   //int udpSocket = 0;
   /*libevent2*/
@@ -157,7 +157,7 @@ int createSocket(const int port,const char *ipaddr)
 
 #endif
 
-  debug(stderr,"X.CreateSock\n");
+  debug("X.CreateSock\n");
   return udpSocket;
 
 }
