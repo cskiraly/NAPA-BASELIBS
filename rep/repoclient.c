@@ -39,8 +39,8 @@ HANDLE repOpen(const char *server, int publish_delay) {
 		event_base_once(eventbase, -1, EV_TIMEOUT, deferred_publish_cb, rep, &t);
 	}
 
-    debug(stderr,"X.repOpen cclosing\n");
-       return rep;
+        debug("X.repOpen cclosing\n");
+        return rep;
 }
 
 /** Close the repoclient instance and free resources */
