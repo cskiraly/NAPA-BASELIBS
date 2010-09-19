@@ -39,7 +39,7 @@ HANDLE repOpen(const char *server, int publish_delay) {
 		event_base_once(eventbase, -1, EV_TIMEOUT, deferred_publish_cb, rep, &t);
 	}
 
-fprintf(stderr,"X.repOpen cclosing\n");
+    debug(stderr,"X.repOpen cclosing\n");
        return rep;
 }
 
