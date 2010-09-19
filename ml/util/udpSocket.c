@@ -85,6 +85,9 @@ int createSocket(const int port,const char *ipaddr)
   int returnStatus = 0;
   debug("X.CreateSock %s %d\n",ipaddr, port);
 
+  bzero((char *)&udpsrc, sizeof udpsrc);
+  bzero((char *)&udpdst, sizeof udpsrc);
+
   //int udpSocket = 0;
   /*libevent2*/
   evutil_socket_t udpSocket;
