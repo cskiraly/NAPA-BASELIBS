@@ -723,7 +723,6 @@ void recv_timeout_cb(int fd, short event, void *arg)
 void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 {
 	debug("ML: received packet of size %d with rconID:%d lconID:%d type:%d offset:%d\n",bufsize,msg_h->remote_con_id,msg_h->local_con_id,msg_h->msg_type,msg_h->offset);
-	fprintf(stderr,"X.ML: received packet of size %d with rconID:%d lconID:%d type:%d offset:%d\n",bufsize,msg_h->remote_con_id,msg_h->local_con_id,msg_h->msg_type,msg_h->offset);
 
 	int recv_id, free_recv_id = -1;
 
@@ -1233,14 +1232,14 @@ void try_stun();
  */
 void nat_traversal_timeout(int fd, short event, void *arg)
 {
-fprintf(stderr,"X. NatTrTo %d\n", NAT_traversal);
+debug("X. NatTrTo %d\n", NAT_traversal);
 	if (NAT_traversal == false) {
 		debug("ML: NAT traversal request re-send\n");
 		if(receive_SocketID_cb)
 			(receive_SocketID_cb) (&local_socketID, 2);
 		try_stun();
 	}
-fprintf(stderr,"X. NatTrTo\n");
+debug("X. NatTrTo\n");
 }
 
 //return IP address, or INADDR_NONE if can't resolve
@@ -1264,7 +1263,7 @@ int create_socket(const int port, const char *ipaddr)
 {
 	struct sockaddr_in udpaddr = {0};
 	udpaddr.sin_family = AF_INET;
-fprintf(stderr,"X. create_socket %s, %d\n", ipaddr, port);
+    debug(stderr,"X. create_socket %s, %d\n", ipaddr, port);
 	if (ipaddr == NULL) {
 		/*
 		* try to guess the local IP address
@@ -1294,9 +1293,9 @@ fprintf(stderr,"X. create_socket %s, %d\n", ipaddr, port);
 	ev = event_new(base, socketfd, EV_READ | EV_PERSIST, recv_pkg, NULL);
 
 	event_add(ev, NULL);
-fprintf(stderr,"X. create_socket\n");
+
 	try_stun();
-fprintf(stderr,"X. create_socket\n");
+
 	return socketfd;
 }
 
@@ -1339,7 +1338,7 @@ void try_stun()
 
 int mlInit(bool recv_data_cb,struct timeval timeout_value,const int port,const char *ipaddr,const int stun_port,const char *stun_ipaddr,receive_localsocketID_cb local_socketID_cb,void *arg){
 
-/*X*/  fprintf(stderr,"MLINIT1 %s, %d, %s, %d\n", ipaddr, port, stun_ipaddr, stun_port);
+/*X*/ //  fprintf(stderr,"MLINIT1 %s, %d, %s, %d\n", ipaddr, port, stun_ipaddr, stun_port);
 	base = (struct event_base *) arg;
 	recv_data_callback = recv_data_cb;
 	mlSetRecvTimeout(timeout_value);
@@ -1349,7 +1348,7 @@ int mlInit(bool recv_data_cb,struct timeval timeout_value,const int port,const c
 
 	}
 	register_recv_localsocketID_cb(local_socketID_cb);
-/*X*/  fprintf(stderr,"MLINIT1\n");
+/*X*/ //  fprintf(stderr,"MLINIT1\n");
 	return create_socket(port, ipaddr);
 }
 
