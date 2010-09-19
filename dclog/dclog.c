@@ -762,7 +762,6 @@ inline UCHAR DCLogWrite( DCLog *dclog, const UCHAR lev,
   // If the user-specified level is higher than the logging level for
   // this DCLog object, return success
   if (lev > dclog->lev) {
-fprintf(stderr, "X.dlw level skip %d > %d\n", lev, dclog->lev);
     return 1;
   }
   
