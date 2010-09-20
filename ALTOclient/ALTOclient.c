@@ -293,7 +293,6 @@ xmlDocPtr alto_create_request_XML(struct alto_db_t * db, struct in_addr rc_host,
        libCURL-based POST code
   ==================================*/
 
-// libcurl is now obsolete!
 #ifdef USE_CURL
 
 // this function will be registered with curl as a handler, which
@@ -324,22 +323,29 @@ xmlDocPtr query_ALTO_server_curl(xmlDocPtr doc, char* ALTO_server_URL){
 	curl = curl_easy_init();
 	assertCheck(curl, "Couldn't get a handle from curl_easy_init(). abort.");
 
-//	printf("Will send HTTP POST to %s\nwith form data:\n\n%s\n", alto_server_url, ALTO_XML_query);
+	//printf("Will send HTTP POST to %s\nwith form data:\n\n%s\n", alto_server_url, ALTO_XML_query);
 
 	// prepare the buffer to be send
 	xmlChar*  doctxt;
 	int       doclen;
 	xmlDocDumpFormatMemoryEnc(doc,&doctxt,&doclen,"utf-8",1);
 
+	#ifdef USE_DEBUG_OUTPUT
+	printf(stderr, "[ALTOclientCURL] Will send HTTP POST to %s\nwith XML data:\n\n%s\n", alto_server_url, doctxt);
+	#endif
+
 	// URL that receives this POST
 	curl_easy_setopt(curl, CURLOPT_URL, ALTO_server_URL);
+//	curl_easy_setopt(curl, CURLOPT_TCP_NODELAY, 1);
+//	curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1);
+	curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
 
 	// add form data
 	curl_formadd(&formpost,
 				 &lastptr,
 				 CURLFORM_COPYNAME, "alto_xml_request",
 //				 CURLFORM_COPYCONTENTS, ALTO_XML_query,
-				 CURLFORM_COPYCONTENTS, doctxt,
+				 CURLFORM_COPYCONTENTS, doctxt,		// PTRCONTENTS?
 				 CURLFORM_END);
 
 	curl_formadd(&formpost,
@@ -364,12 +370,14 @@ xmlDocPtr query_ALTO_server_curl(xmlDocPtr doc, char* ALTO_server_URL){
 	// then cleanup the form post chain
 	curl_formfree(formpost);
 
-//  printf("result of curl_easy_perform() is: %i\n", res);
-//  printf("received %i octetts. the buffer is:\n\n%s\nthat's all. bye.\n",alto_rep_buf.fill,alto_rep_buf.buffer);
+	#ifdef USE_DEBUG_OUTPUT
+	//printf("result of curl_easy_perform() is: %i\n", res);
+	fprintf(stderr, "[ALTOclientCURL] received %i octets. the buffer is:\n\n%s\nthat's all. bye.\n", alto_rep_buf.fill, alto_rep_buf.buffer);
+	#endif
 
 
 	// and last but nor least, transform it into an XML doc
-	ALTO_XML_response = xmlRecoverMemory(alto_rep_buf.buffer,sizeof(alto_rep_buf.buffer));		// <- for getting XML from memory
+	ALTO_XML_response = xmlRecoverMemory(alto_rep_buf.buffer, sizeof(alto_rep_buf.buffer));		// <- for getting XML from memory
 
 	return ALTO_XML_response;
 }
@@ -1104,11 +1112,23 @@ void start_ALTO_client(){
 	// prepare the XML environment
 	LIBXML_TEST_VERSION;
 
+#ifdef USE_CURL
+	// prepare CURL
+	// ---------------------------------------------------------------------------------
+	// XXX: NOTE:
+	// "This function is NOT THREAD SAFE. You must not call it when any other thread 
+	// in the program (i.e. a thread sharing the same memory) is running. This doesn't 
+	// just mean no other thread that is using libcurl. Because curl_global_init() calls 
+	// functions of other libraries that are similarly thread unsafe, it could conflict 
+	// with any other thread that uses these other libraries."
+	// ---------------------------------------------------------------------------------
+
+	curl_global_init(CURL_GLOBAL_ALL);
+#endif
+
 	// and Initialize the XMLs
     ALTO_XML_req = NULL;
     ALTO_XML_res = NULL;
-
-
 }
 
 
@@ -1127,6 +1147,12 @@ void stop_ALTO_client(){
     if (ALTO_XML_res) { xmlFreeDoc(ALTO_XML_res); ALTO_XML_res = NULL; }
 
 	xmlCleanupParser();
+
+#ifdef USE_CURL
+	// shutdown  libCurl
+	// XXX: NOTE: same thread un-safety warning applies!
+	curl_global_cleanup();
+#endif
 }
 
 
