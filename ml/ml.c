@@ -514,6 +514,9 @@ void recv_conn_msg(struct msg_header *msg_h, char *msgbuf, int msg_size, struct 
 				connectbuf[free_con_id]->connection_head = connectbuf[free_con_id]->connection_last = NULL;
 				connectbuf[free_con_id]->starttime = time(NULL);
 				memcpy(&(connectbuf[free_con_id]->external_socketID), &(con_msg->sock_id), sizeof(socket_ID));
+		//Workaround to support reuse of socketID
+				connectbuf[free_con_id]->external_socketID.internal_addr.udpaddr.sin_family=AF_INET;
+				connectbuf[free_con_id]->external_socketID.external_addr.udpaddr.sin_family=AF_INET;
 				connectbuf[free_con_id]->pmtusize = con_msg->pmtu_size;	// bootstrap pmtu from the other's size. Not strictly needed, but a good hint
 				connectbuf[free_con_id]->timeout_event = NULL;
 				connectbuf[free_con_id]->external_connectionID = msg_h->local_con_id;
