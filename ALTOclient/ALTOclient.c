@@ -82,6 +82,8 @@ static void alto_errorf(const char* str, ...) {
 
 #define returnIf(expr, msg, retval) if(expr) { alto_errorf("%s - Condition check: '"#expr"' (%s, line: %d) -- %s\n", __FUNCTION__, __FILE__, __LINE__, msg); return retval; }
 
+#define errorMsg(msg) alto_errorf("%s (%s, line: %d) -- %s\n", __FUNCTION__, __FILE__, __LINE__, msg);
+
 /*
  * 	Function to set the actual ALTO server for configuration
  */
@@ -403,7 +405,6 @@ void* POST_send(const char* url, const char* data) {
 		fprintf(stderr, "URL was '%s'.", url);
 		return NULL;
 	}
-	returnIf(ctx == NULL, "xmlNanoHTTPMethod failed! Make sure ALTO server is reachable (NAT issue?)..", NULL);
 
 	free(ct);
 	return ctx;
@@ -1209,12 +1210,7 @@ int ALTO_query_state() {
 }
 
 int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int pri_rat, int sec_rat){
-	alto_debugf("ALTO_query_exec\n");
-
-	// Sanity checks (list)
 	returnIf(list == NULL, "Can't access the list!", 0);
-
-	// Sanity checks (num of elements)
 	returnIf(num < 0, "<0 elements?", 0);
 
 	// set new state
@@ -1253,12 +1249,16 @@ int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int
  */
 void do_ALTO_update(struct in_addr rc_host, int pri_rat, int sec_rat){
 	if (!ALTO_DB_req) {
-		alto_debugf("ALTO_DB_req is NULL!");
+		errorMsg("ALTO_DB_req is NULL!");
 		return;
 	}
 
 	// Step 2: create an XML from the DB entries
 	ALTO_XML_req = alto_create_request_XML(ALTO_DB_req, rc_host, pri_rat, sec_rat);
+	if (!ALTO_XML_req) {
+		errorMsg("alto_create_request_XML failed!");
+		return;
+	}
 
 #ifndef USE_LOCAL_REPLY_XML
 	// Step2a: send POST request to ALTO server
@@ -1282,6 +1282,8 @@ void do_ALTO_update(struct in_addr rc_host, int pri_rat, int sec_rat){
 
 		xmlFreeDoc(ALTO_XML_res);
 		ALTO_XML_res = NULL;
+	} else {
+		alto_debugf("** WARNING: Invalid response from ALTO server! (%s)\n", __FUNCTION__);
 	}
 
 	// free xml data
