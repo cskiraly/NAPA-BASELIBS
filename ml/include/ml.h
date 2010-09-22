@@ -270,6 +270,12 @@ int mlInit(bool recv_data_cb,struct timeval timeout_value,const int port,const c
 void mlSetThrottle(int bucketsize, int drainrate);
 
 /**
+  * Configure the verbosity of messages
+  * @param log_level [0-4] the lower the less messages are printed out
+*/
+void mlSetVerbosity(int log_level);
+
+/**
  * @brief Register a received packet callback.
  * This function is to register a callback that is invoked when a messaging layer packet is received.
  * @param recv_pkt_inf_cb A function pointer to a callback function from the type get_recv_pkt_inf_cb

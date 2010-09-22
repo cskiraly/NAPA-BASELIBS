@@ -5,7 +5,7 @@ AUTOMAKE_OPTIONS = foreign no-dist no-installinfo
 INCLUDES = -I$(top_srcdir)/include/  #-I$(top_srcdir)/dclog
 noinst_LIBRARIES = libml.a
 
-libml_a_SOURCES = BUGS.txt ml.c util/stun.c \
+libml_a_SOURCES = BUGS.txt ml.c ml_log.c util/stun.c \
 	util/udpSocket.c util/rateControl.c
 # transmissionHandler.c
 

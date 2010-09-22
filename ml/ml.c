@@ -848,7 +848,7 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 
 			//clean up
 			if (recvdatabuf[recv_id]->timeout_event) {
-				debug("ML: freeing timeout for %d",recv_id);
+				debug("ML: freeing timeout for %d\n",recv_id);
 				event_del(recvdatabuf[recv_id]->timeout_event);
 				event_free(recvdatabuf[recv_id]->timeout_event);
 				recvdatabuf[recv_id]->timeout_event = NULL;
@@ -1358,7 +1358,10 @@ int mlInit(bool recv_data_cb,struct timeval timeout_value,const int port,const c
 void mlSetThrottle(int bucketsize, int drainrate) {
         setOutputRateParams(bucketsize, drainrate);
 }
-     
+
+void mlSetVerbosity (int log_level) {
+	setLogLevel(log_level);
+}
 
 /* register callbacks  */
 void mlRegisterGetRecvPktInf(get_recv_pkt_inf_cb recv_pkt_inf_cb){
