@@ -1,8 +1,9 @@
 /*
  ============================================================================
  Name        : ALTOclient.c
- Author      : T. Ewald <ewald@nw.neclab.eu>
- Version     : 243
+ Authors     : Thilo Ewald
+			   Armin Jahanpanah <jahanpanah@neclab.eu>
+ 
  Proprietary : NEC Europe Ltd. PROPRIETARY INFORMATION
 			   This software is supplied under the terms of a license
 			   agreement or nondisclosure agreement with NEC Europe Ltd. and
@@ -28,7 +29,6 @@
 			   OUT OF THE USE OF OR INABILITY TO USE THIS PROGRAM, EVEN IF NEC
 			   Europe Ltd. HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
  Modification: THIS HEADER MAY NOT BE EXTRACTED OR MODIFIED IN ANY WAY.
- Description : First try of the ALTO client
  ============================================================================
  */
 
@@ -46,7 +46,6 @@ static altoDbPtr ALTO_DB_res = NULL;		// Pointer to the ALTO DB for the Resposne
 
 static xmlDocPtr ALTO_XML_req = NULL;		// Pointer to the XML for the Request
 static xmlDocPtr ALTO_XML_res = NULL;		// Pointer to the XML for the Request
-
 
 // This is the varaiable where the ALTO server can be found
 static char alto_server_url[256];
@@ -102,13 +101,6 @@ char *get_ALTO_server(void){
 	return (char *) alto_server_url;
 }
 
-
-
-
-
-
-
-
 /*
  * 	Func:					Convert the "Baschtl" notation into a readable
  * 							format (get IP address)
@@ -140,9 +132,6 @@ struct in_addr get_ALTO_host_IP(char * host_string){
 	return IP;
 }
 
-
-
-
 /*
  * 	Func:			Convert the "Baschtl" notation into a readable format
  * 					(get prefix)
@@ -166,7 +155,6 @@ int16_t get_ALTO_host_mask(char * host_string){
     return 32;
 }
 
-
 /*
  *  Func:	Create an ALTO XML request from a given DB
  *
@@ -175,14 +163,14 @@ int16_t get_ALTO_host_mask(char * host_string){
  *  ret:	XML_doc		the XML where the request is stored in
  */
 xmlDocPtr alto_create_request_XML(struct alto_db_t * db, struct in_addr rc_host, int pri_rat, int sec_rat){
-	assertCheck(db, "internal db ptr is NULL!");
+	returnIf(db == NULL, "internal db ptr is NULL!", NULL);
 
 	// Creates a new document
 	// <?xml version="1.0" encoding="UTF-8"?>
 	xmlDocPtr doc = NULL;       /* document pointer */
 	doc = xmlNewDoc(BAD_CAST "1.0");
 
-	assertCheck(doc, "xmlNewDoc failed! Out of memory?");
+	returnIf(doc == NULL, "xmlNewDoc failed! Out of memory?", NULL);
 
 	// Create the root node and name it with the correct name space
 	// <alto xmlns='urn:ietf:params:xml:ns:p2p:alto'>
@@ -218,7 +206,6 @@ xmlDocPtr alto_create_request_XML(struct alto_db_t * db, struct in_addr rc_host,
     	xmlNewProp(node_PRI, BAD_CAST "crit", BAD_CAST "lat");
     }
 
-
     // Add the additional rating criteria
 	if((sec_rat & REL_PREF) == REL_PREF){
 		xmlNodePtr node_SEC1 = NULL;
@@ -235,7 +222,6 @@ xmlDocPtr alto_create_request_XML(struct alto_db_t * db, struct in_addr rc_host,
 		node_SEC4 = xmlNewChild(node_GRR, NULL, BAD_CAST "fur_ratcrit", NULL);
 		xmlNewProp(node_SEC4, BAD_CAST "crit", BAD_CAST "lat");
 	}
-
 
     // Now create the source of the request
     // <rc_hla><ipprefix version='4' prefix='195.37.70.39/32'/></rc_hla>
@@ -309,8 +295,6 @@ size_t curl_copy_reply_to_buf(void *ptr,size_t size,size_t nmemb,void *stream){
 }
 uint16_t prefixes = 0;
 
-
-
 xmlDocPtr query_ALTO_server_curl(xmlDocPtr doc, char* ALTO_server_URL){
 	xmlDocPtr ALTO_XML_response;
 
@@ -321,7 +305,7 @@ xmlDocPtr query_ALTO_server_curl(xmlDocPtr doc, char* ALTO_server_URL){
 	struct curl_httppost *lastptr=NULL;
 
 	curl = curl_easy_init();
-	assertCheck(curl, "Couldn't get a handle from curl_easy_init(). abort.");
+	returnIf(curl == NULL, "Couldn't get a handle from curl_easy_init(). abort.", NULL);
 
 	//printf("Will send HTTP POST to %s\nwith form data:\n\n%s\n", alto_server_url, ALTO_XML_query);
 
@@ -405,8 +389,8 @@ void* POST_send(const char* url, const char* data) {
 	char contentType[] = "multipart/form-data; boundary="POST_BOUNDARY;
 	char* ct = contentType;
 
-	assertCheck(url, "ALTO server URL is NULL!");
-	assertCheck(data, "POST data is NULL!");
+	returnIf(url == NULL, "ALTO server URL is NULL!", NULL);
+	returnIf(data == NULL, "POST data is NULL!", NULL);
 
 	//ctx = xmlNanoHTTPMethod(url, "POST", data, &ct, NULL, strlen(data));
 	for (i=0; i < 3; i++) {
@@ -419,7 +403,7 @@ void* POST_send(const char* url, const char* data) {
 		fprintf(stderr, "URL was '%s'.", url);
 		return NULL;
 	}
-	assertCheck(ctx, "xmlNanoHTTPMethod failed! Make sure ALTO server is reachable (NAT issue?)..");
+	returnIf(ctx == NULL, "xmlNanoHTTPMethod failed! Make sure ALTO server is reachable (NAT issue?)..", NULL);
 
 	free(ct);
 	return ctx;
@@ -440,15 +424,15 @@ xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint){
 //	int		errorcode = 0;
 //	FILE*	f = NULL;
 
-	assertCheck(doc, "xml doc ptr is NULL!");
-	assertCheck(endPoint, "ALTO server URL is NULL!");
+	returnIf(doc == NULL, "xml doc ptr is NULL!", NULL);
+	returnIf(endPoint == NULL, "ALTO server URL is NULL!", NULL);
 
 	xmlNanoHTTPInit();
 	xmlDocDumpFormatMemoryEnc(doc,&doctxt,&doclen,"utf-8",1);
 
 	dataLen = doclen + 2048;
 	data = malloc(dataLen);
-	assertCheck(data, "Couldn't allocate data buffer! Out of memory?");
+	returnIf(data == NULL, "Couldn't allocate data buffer! Out of memory?", NULL);
 	memset(data, 0, dataLen);
 
 	// build the mime multipart contents
@@ -542,9 +526,6 @@ xmlDocPtr ALTO_request_to_server(xmlDocPtr doc, char* endPoint){
 	return result;
 }
 
-
-
-
 /*
  *
  * 		HERE is the magic for the internal DB management
@@ -559,7 +540,7 @@ struct alto_db_t * alto_db_init(void){
 	struct alto_db_t * db;
 	db = malloc(sizeof(struct alto_db_t));
 //	db = (alto_db_t *)malloc(sizeof(struct alto_db_element_t));
-	assertCheck(db, "Couldn't allocate internal db! Out of memory?");
+	returnIf(db == NULL, "Couldn't allocate internal db! Out of memory?", NULL);
 
 	db->first = NULL;
 	db->last = NULL;
@@ -600,14 +581,12 @@ int alto_purge_db(struct alto_db_t * db){
 	return 1;
 }
 
-
-
 /*
  * 	Helper function to print values of one ALTO DB element
  */
 void alto_dump_element(struct alto_db_element_t * cur){
 	// Sanity check
-	assertCheck(cur == NULL, "No element to print values from! ABORT");
+	if (cur == NULL) return;
 
 	// normal case, print everything
 //	fprintf(stdout, "---> Internal Data\t");
@@ -633,7 +612,7 @@ void alto_dump_db(struct alto_db_t *db){
 	alto_debugf("Dump what's in the DB \n");
 
 	// Security Check
-	assertCheck(db, "Failure in DB structure! ABORT");
+	if (!db) return;
 
 	// General Data
 	alto_debugf("Number of elements in DB: %d \n", db->num_of_elements);
@@ -651,9 +630,6 @@ void alto_dump_db(struct alto_db_t *db){
     // Success!?
 	return;
 }
-
-
-
 
 /*
  *  Adds one ALTO entry to the DB
@@ -747,7 +723,6 @@ int alto_rem_element(struct alto_db_element_t * element){
 		return 1;
 	}
 
-
 	// normal handling, somwhere in the DB
 	else {
 		// update predecessor
@@ -767,7 +742,6 @@ int alto_rem_element(struct alto_db_element_t * element){
 	return -1;
 }
 
-
 struct in_addr compute_subnet(struct in_addr host, int prefix){
 	struct in_addr subn;
 	uint32_t match_host = host.s_addr;
@@ -782,8 +756,6 @@ struct in_addr compute_subnet(struct in_addr host, int prefix){
 //	printf("net   : %s  \n", inet_ntoa(subn));
 	return subn;
 }
-
-
 
 /*
  * 	Search in an ALTO DB for the match of an host
@@ -812,14 +784,6 @@ int get_ALTO_rating_for_host(struct in_addr add, ALTO_DB_T * db){
 	return 0;
 }
 
-
-
-
-
-
-
-
-
 int ask_helper_func(struct in_addr subnet, ALTO_DB_T * db){
 	ALTO_DB_ELEMENT_T * cur = db->first;
 	while(cur != NULL){
@@ -832,8 +796,6 @@ int ask_helper_func(struct in_addr subnet, ALTO_DB_T * db){
 	}
 	return 0;
 }
-
-
 
 int get_alto_rating(ALTO_DB_ELEMENT_T * element, ALTO_DB_T * db){
 
@@ -854,8 +816,6 @@ int get_alto_rating(ALTO_DB_ELEMENT_T * element, ALTO_DB_T * db){
 	return 0;
 }
 
-
-
 int get_alto_subnet_mask(ALTO_DB_ELEMENT_T * element, ALTO_DB_T * db){
 	int mask = element->host_mask;
 	struct in_addr subnet = compute_subnet(element->host, mask);
@@ -870,13 +830,6 @@ int get_alto_subnet_mask(ALTO_DB_ELEMENT_T * element, ALTO_DB_T * db){
 	}
 	return 0;
 }
-
-
-
-
-
-
-
 
 /*
  * 	Here the matching between the requested IPs and the delivered
@@ -907,11 +860,6 @@ int alto_do_the_magic(ALTO_DB_T * ALTO_db_req, ALTO_DB_T * ALTO_db_res){
 	// Aaaaaand finished!
 	return 1;
 }
-
-
-
-
-
 
 int alto_parse_from_file(altoDbPtr db, char *file_name){
 	alto_debugf("%s: Read hosts from file (%s) and store it in the Request-DB\n", __FUNCTION__, file_name);
@@ -1021,8 +969,6 @@ int alto_parse_from_XML(altoDbPtr db, xmlDocPtr doc){
 	return 1;
 }
 
-
-
 /*
  * 	Converts a given alto_list_t structure into the internal DB structure
  *
@@ -1059,10 +1005,6 @@ int alto_parse_from_list(struct alto_db_t *db, struct alto_guidance_t *list, int
 	return 1;
 }
 
-
-
-
-
 int alto_write_to_file(altoDbPtr db, char *file_name){
 	alto_debugf("%s: Write hosts to file (%s.out) \n", __FUNCTION__, file_name);
 
@@ -1095,9 +1037,6 @@ int alto_write_to_file(altoDbPtr db, char *file_name){
 	// Return the number of sucessful written lines
 	return count;
 }
-
-
-
 
 /*
  * 	Start & Innitialize the ALTO client
@@ -1154,11 +1093,6 @@ void stop_ALTO_client(){
 	curl_global_cleanup();
 #endif
 }
-
-
-
-
-
 
 /*
  * 	Function:	gets for a list in a txt file the correct rating
@@ -1312,17 +1246,16 @@ int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int
 	return 1;
 }
 
-
-
 /*
  * Function:	With this call the internal request to update the DB is triggered.
  * 				This should be done on a regual basis to keep the local ALTO-DB
  * 				up2date
  */
-
-
 void do_ALTO_update(struct in_addr rc_host, int pri_rat, int sec_rat){
-	assertCheck(ALTO_DB_req, "ALTO_DB_req is NULL!");
+	if (!ALTO_DB_req) {
+		alto_debugf("ALTO_DB_req is NULL!");
+		return;
+	}
 
 	// Step 2: create an XML from the DB entries
 	ALTO_XML_req = alto_create_request_XML(ALTO_DB_req, rc_host, pri_rat, sec_rat);
