@@ -802,7 +802,7 @@ stunParseAtrChangeRequest( char* body, unsigned int hdrLen, StunAtrChangeRequest
 {
    if ( hdrLen != 4 )
    {
-      error("hdr length = %d excepcting %d \n ",hdrLen,sizeof(result));
+      error("hdr length = %d excepcting %ld \n ",hdrLen,sizeof(result));
 
       error("Incorrect size for ChangeRequest \n ");
 
