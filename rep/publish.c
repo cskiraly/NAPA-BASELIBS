@@ -11,7 +11,7 @@ struct streambuffer publish_streambuffer = { NULL, NULL, 0};
 void bprintf(struct streambuffer *sb, const char *txt, ...) {
 	va_list str_args;
 	va_start(str_args, txt);
-#ifndef WINNT
+#ifndef WIN32
 	vfprintf(sb->stream, txt, str_args);
 #else
 	if(sb->buffer == NULL) { sb->buffer=malloc(1000); *sb->buffer = 0; }
@@ -21,7 +21,7 @@ void bprintf(struct streambuffer *sb, const char *txt, ...) {
 }
 
 void brewind(struct streambuffer *sb) {
-#ifndef WINNT
+#ifndef WIN32
 	rewind(sb->stream);
 #else
 	if(sb->buffer == NULL) sb->buffer=malloc(1000);
@@ -30,7 +30,7 @@ void brewind(struct streambuffer *sb) {
 }
 
 void bflush(struct streambuffer *sb) {
-#ifndef WINNT
+#ifndef WIN32
 	    fflush(sb->stream);
 #else
 		    if(sb->buffer == NULL) { 
