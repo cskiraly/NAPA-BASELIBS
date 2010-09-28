@@ -349,7 +349,7 @@ stunParseMessage( char* buf, unsigned int bufLen, StunMessage *msg, bool verbose
             }
             else
             {
-	      if (verbose) info("ChangeRequest = %i \n",(int)&msg->changeRequest.value);
+	      if (verbose) info("ChangeRequest = %ud \n", msg->changeRequest.value);
             }
             
 	} else if (atrType == SourceAddress)
