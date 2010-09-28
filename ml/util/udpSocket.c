@@ -19,7 +19,7 @@
  * AND FITNESS FOR A PARTICULAR PURPOSE AND THE WARRANTY AGAINST LATENT
  * DEFECTS, WITH RESPECT TO THE PROGRAM AND THE ACCOMPANYING
  * DOCUMENTATION.
- /*
+ *
  * No Liability For Consequential Damages IN NO EVENT SHALL NEC Europe
  * Ltd., NEC Corporation OR ANY OF ITS SUBSIDIARIES BE LIABLE FOR ANY
  * DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOSS
@@ -73,6 +73,9 @@
 
 #define LOG_MODULE "[ml] "
 #include "ml_log.h"
+
+#include "rateLimiter.h"
+#include "queueManagement.h"
 
 /* debug varible: set to 1 if you want debug output  */
 int verbose = 0;
@@ -191,8 +194,6 @@ int sendPacket(const int udpSocket, struct iovec *iov, int len, struct sockaddr_
 {
 	int error, ret;
 	struct msghdr msgh;
-        
-        if(outputRateControl(len) != OK) return THROTTLE;
 
 	msgh.msg_name = socketaddr;
 	msgh.msg_namelen = sizeof(struct sockaddr_in);

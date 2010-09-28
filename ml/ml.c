@@ -39,7 +39,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
-#include <event2/event.h>
 #include <time.h>
 #include <math.h>
 #include <assert.h>
@@ -60,6 +59,8 @@
 #include "util/udpSocket.h"
 #include "util/stun.h"
 #include "transmissionHandler.h"
+#include "util/rateLimiter.h"
+#include "util/queueManagement.h"
 
 #define LOG_MODULE "[ml] "
 #include "ml_log.h"
@@ -330,7 +331,9 @@ void send_msg(int con_id, int msg_type, char* msg, int msg_len, bool truncable, 
 			}
 
 			debug("ML: sending packet to %s with rconID:%d lconID:%d\n", conid_to_string(con_id), ntohl(msg_h.remote_con_id), ntohl(msg_h.local_con_id));
-			switch(sendPacket(socketfd, iov, 4, &udpgen.udpaddr)) {
+			int priority = 0; 
+			if (msg_type == ML_CON_MSG) priority = HP;
+			switch(queueOrSendPacket(socketfd, iov, 4, &udpgen.udpaddr,priority)) {
 				case MSGLEN:
 					info("ML: sending message failed, reducing MTU from %d to %d (to:%s conID:%d lconID:%d msgsize:%d offset:%d)\n", connectbuf[con_id]->pmtusize, pmtu_decrement(connectbuf[con_id]->pmtusize), conid_to_string(con_id), ntohl(msg_h.remote_con_id), ntohl(msg_h.local_con_id), msg_len, offset);
 					// TODO: pmtu decremented here, but not in the "truncable" packet. That is currently resent without changing the claimed pmtu. Might need to be changed.
@@ -399,7 +402,7 @@ void send_conn_msg(int con_id, int buf_size, int command_type)
   {
                         char buf[SOCKETID_STRING_SIZE];
                         mlSocketIDToString(&((struct conn_msg*)connectbuf[con_id]->ctrl_msg_buf)->sock_id,buf,sizeof(buf));
-                        debug("Local socket_address sent in INVITE: %s, sizeof msg %d\n", buf, sizeof(struct conn_msg));
+                        debug("Local socket_address sent in INVITE: %s, sizeof msg %ld\n", buf, sizeof(struct conn_msg));
    }
 	send_msg(con_id, ML_CON_MSG, connectbuf[con_id]->ctrl_msg_buf, buf_size, true, &(connectbuf[con_id]->defaultSendParams));
 }
@@ -1355,10 +1358,11 @@ int mlInit(bool recv_data_cb,struct timeval timeout_value,const int port,const c
 	return create_socket(port, ipaddr);
 }
 
-void mlSetThrottle(int bucketsize, int drainrate) {
+void mlSetRateLimiterParams(int bucketsize, int drainrate, int maxQueueSize, int maxQueueSizeRTX, double maxTimeToHold) {
         setOutputRateParams(bucketsize, drainrate);
+	setQueuesParams (maxQueueSize, maxQueueSizeRTX, maxTimeToHold);
 }
-
+     
 void mlSetVerbosity (int log_level) {
 	setLogLevel(log_level);
 }
