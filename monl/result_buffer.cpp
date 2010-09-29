@@ -74,6 +74,8 @@ int ResultBuffer::publishResults(void){
 		return EOK;
 	new_data = false;
 
+	updateStats();
+
 	info("MONL: publishResults called: %s value: %f (%s)", publish_name.c_str(), stats[LAST], default_name);
 	if(publish_length == 0)
 		return EOK;
@@ -121,7 +123,7 @@ int ResultBuffer::publishResults(void){
 
 int ResultBuffer::init() {
 	int i;
-	n_samples = 0; samples = 0; sum_samples = 0;
+	n_samples = 0; samples = 0;
 	sum_win_samples = 0; rate_sum_samples = 0;
 	pos = 0;
 	sum_win_var_samples = 0;
@@ -148,8 +150,9 @@ int ResultBuffer::resizeBuffer(int s) {
 	old_pos = pos;
 	old_size = size;
 
-	sum_win_samples = sum_win_var_samples = 0;
+	sum_win_var_samples = 0;
 	n_samples = 0; pos = 0; size = s;
+	stats[WIN_SUM] = 0;
 
 	for(i = 0; i < n_sam; i++) {
 		j = old_pos - n_sam + i;
@@ -164,6 +167,7 @@ int ResultBuffer::resizeBuffer(int s) {
 	return EOK;
 };
 
+/* This function is used to update internal variables with data from a new sample */
 int ResultBuffer::newSample(result r) {
 	samples++;
 
@@ -171,10 +175,12 @@ int ResultBuffer::newSample(result r) {
 
 	//TODO add statistical data like avg
 
-	sum_samples += r;
-	rate_sum_samples += r;
+	if(isnan(stats[SUM]))
+		stats[SUM] = r;
+	else
+		stats[SUM] += r;
 
-	stats[SUM] = sum_samples;
+	rate_sum_samples += r;
 
 	/* Average  */
 	if(isnan(stats[AVG]))
@@ -187,7 +193,6 @@ int ResultBuffer::newSample(result r) {
 	else
 		stats[VAR] = stats[VAR] * (samples - 2)/(samples - 1) + samples / pow(samples - 1, 2) * pow(r - stats[AVG],2);
 
-
 	/* Minimum maximum */
 	if(r < stats[MIN] || isnan(stats[MIN]))
 		stats[MIN] = r;
@@ -195,7 +200,6 @@ int ResultBuffer::newSample(result r) {
 	if(r > stats[MAX] || isnan(stats[MAX]))
 		stats[MAX] = r;
 
-	// Update window based stats
 	newSampleWin(r);
 
 	new_data = true;
@@ -209,59 +213,54 @@ int ResultBuffer::newSample(result r) {
 };
 
 int ResultBuffer::newSampleWin(result r) {
-	int i,j;
-	result var_s;
-
-	//TODO add statistical data like avg
 
 	/* sum */
 	if(n_samples < size)	{
 		n_samples++;
 	} else {
-		sum_win_samples -= circular_buffer[pos];
-		sum_win_var_samples -= circular_buffer_var[pos];
+		stats[WIN_SUM] -= circular_buffer[pos];
 	}
-	sum_win_samples += r;
 
-	stats[WIN_SUM] = sum_win_samples;	
-
-	stats[WIN_AVG] = sum_win_samples/n_samples;
-
-	var_s = pow(r - stats[WIN_AVG],2);
-	sum_win_var_samples += var_s;
-
-	if(n_samples > 1)
-		stats[WIN_VAR] = sum_win_var_samples/(n_samples - 1);
-
-	/* Minimum maximum */
-	if(isnan(stats[WIN_MIN]))
-		stats[WIN_MIN] = r;
-	if(isnan(stats[WIN_MAX]))
-		stats[WIN_MAX] = r;
-
-	if(stats[WIN_MIN] == circular_buffer[pos] || stats[WIN_MAX] == circular_buffer[pos]) {
-		circular_buffer[pos] = stats[WIN_MAX] = stats[WIN_MIN] = r;
-		for(i = 0; i <= n_samples - 1; i++) {
-			j = pos - i; // pos already incremented and last sample is starting one
-			if(j < 0)
-				j += size;
-			if(circular_buffer[j] < stats[WIN_MIN])
-				stats[WIN_MIN] = circular_buffer[j];
-			if(circular_buffer[j] > stats[WIN_MAX])
-				stats[WIN_MAX] = circular_buffer[j];
-		}
-	} else {
-		if(r < stats[WIN_MIN]) 
-			stats[WIN_MIN] = r;
-		if (r > stats[WIN_MAX])
-			stats[WIN_MAX] = r;
-	}
+	if(isnan(stats[WIN_SUM]))
+		stats[WIN_SUM] = r;
+	else
+		stats[WIN_SUM] += r;
 
 	circular_buffer[pos] = r;
-	circular_buffer_var[pos] = var_s;
+
 	pos++;
 	if(pos >= size)
 		pos -= size;
 
 	return EOK;
 };
+
+
+/*This function updates the stats vector */
+void ResultBuffer::updateStats(void) {
+	int i,j;
+
+	/* Note: some stats are already updated on the fly in newSample() */
+	/* This function is to update the more time consuming not recursive statitistics */
+
+	stats[WIN_AVG] = stats[WIN_SUM]/n_samples;
+
+	/* Minimum, maximum and variance*/
+	stats[WIN_MIN] = stats[WIN_MAX] = stats[LAST];
+	stats[WIN_VAR] = 0.0;
+	for(i = 1; i <= n_samples; i++) {
+		j = pos - i; // pos already incremented and last sample is starting one
+		if(j < 0)
+			j += size;
+		if(circular_buffer[j] < stats[WIN_MIN])
+			stats[WIN_MIN] = circular_buffer[j];
+		if(circular_buffer[j] > stats[WIN_MAX])
+			stats[WIN_MAX] = circular_buffer[j];
+		stats[WIN_VAR] += pow(stats[WIN_AVG] - circular_buffer[j], 2);
+	}
+	if(n_samples > 1)
+		stats[WIN_VAR] = stats[WIN_VAR] / (n_samples - 1);
+	else
+		stats[WIN_VAR] = NAN;
+}
+

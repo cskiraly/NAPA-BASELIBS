@@ -319,7 +319,8 @@ public:
 
 		if(mMeasureInstances[mh]->rb == NULL)
 			return NAN;
-	
+
+		mMeasureInstances[mh]->rb->updateStats();
 		return mMeasureInstances[mh]->rb->stats[st];
 	};
 
