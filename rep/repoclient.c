@@ -9,15 +9,15 @@ void deferred_publish_cb(evutil_socket_t fd, short what, void *arg);
 void repInit(const char *config) {
 #if !WIN32 && !MAC_OS
 	if ((publish_streambuffer.stream = open_memstream(&publish_streambuffer.buffer, &publish_streambuffer.len)) 
-		== NULL) fatal("Unable to initilize repoclient, file %s, line %d", __FILE__, __LINE__);
+		== NULL) {
 #else
 	publish_streambuffer.buffsize = PUBLISH_BUFFER_SIZE;
 	publish_streambuffer.buffer = malloc(publish_streambuffer.buffsize);
         if(publish_streambuffer.buffer == NULL) {
 		publish_streambuffer.buffsize = 0;
+#endif
 		fatal("Unable to initilize repoclient, file %s, line %d", __FILE__, __LINE__);
 	}
-#endif
 	else debug("The Repository client library is ready");
 }
 
