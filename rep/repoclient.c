@@ -10,13 +10,27 @@ void repInit(const char *config) {
 #if !WIN32 && !MAC_OS
 	if ((publish_streambuffer.stream = open_memstream(&publish_streambuffer.buffer, &publish_streambuffer.len)) 
 		== NULL) fatal("Unable to initilize repoclient, file %s, line %d", __FILE__, __LINE__);
+#else
+	publish_streambuffer.buffsize = PUBLISH_BUFFER_SIZE;
+	publish_streambuffer.buffer = malloc(publish_streambuffer.buffsize);
+        if(publish_streambuffer.buffer == NULL) {
+		publish_streambuffer.buffsize = 0;
+		fatal("Unable to initilize repoclient, file %s, line %d", __FILE__, __LINE__);
+	}
 #endif
-	debug("The Repository client library is ready");
+	else debug("The Repository client library is ready");
 }
 
 /** Initialize the repoclient instance by parsing the server spec string and setting up things */
 HANDLE repOpen(const char *server, int publish_delay) { 
-	struct reposerver *rep = malloc(sizeof(struct reposerver));
+	struct reposerver *rep;
+
+        if(server == NULL || strlen(server) == 0 || strcmp(server, "-") == 0) {
+                warn("Repository publishing is disabled");
+		return NULL;
+	}
+
+	rep = malloc(sizeof(struct reposerver));
 	if (!rep) fatal("Out of memory while initializing repository client for %s", server);
 	rep->magic=REPOSERVER_MAGIC;
 	rep->publish_buffer = NULL;

@@ -6,7 +6,7 @@ int check_handle(HANDLE h, const char *fn) {
         struct reposerver *r = (struct reposerver *)h;
 
 	if (!r) {
-		error("Trying to use a NULL reposerver handle in fn %s", fn);
+		debug("Using a NULL reposerver handle in fn %s", fn);
 		return 0;
 	}
 	if (r->magic != REPOSERVER_MAGIC) {
