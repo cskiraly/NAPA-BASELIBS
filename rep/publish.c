@@ -14,8 +14,24 @@ void bprintf(struct streambuffer *sb, const char *txt, ...) {
 #ifndef WIN32
 	vfprintf(sb->stream, txt, str_args);
 #else
-	if(sb->buffer == NULL) { sb->buffer=malloc(1000); *sb->buffer = 0; }
-	vsprintf(sb->buffer+strlen(sb->buffer), txt, str_args);
+	int space = sb->buffsize - sb->len;
+	while(sb->buffer) { 
+		int written = vsnprintf(sb->buffer+sb->len, space, txt, str_args);
+		char *newbuf;
+        if(written < space -1) {
+			sb->len += written;
+			break;
+		}
+		newbuf = (char *)realloc(sb->buffer, sb->buffsize +
+				SB_INCREMENT);
+		if(newbuf == 0) {
+			fprintf(stderr, "Out of memory on memstream buffer extend (to %d bytes)",
+					sb->buffsize + SB_INCREMENT); 
+			return;
+		}
+		sb->buffer = newbuf;
+		sb->buffsize += SB_INCREMENT;
+	}	
 #endif
 	va_end(str_args);
 }
@@ -24,20 +40,14 @@ void brewind(struct streambuffer *sb) {
 #ifndef WIN32
 	rewind(sb->stream);
 #else
-	if(sb->buffer == NULL) sb->buffer=malloc(1000);
-	*sb->buffer = 0;
+	if(sb->buffer != NULL) *sb->buffer = 0;
+	sb->len = 0;
 #endif
 }
 
 void bflush(struct streambuffer *sb) {
 #ifndef WIN32
 	    fflush(sb->stream);
-#else
-		    if(sb->buffer == NULL) { 
-				sb->buffer=malloc(1000); 
-				*sb->buffer = 0;
-
-			}
 #endif
 }
 
@@ -109,12 +119,11 @@ HANDLE repPublish(HANDLE h, cb_repPublish cb, void *cbarg, MeasurementRecord *r)
 		return 0;
 	}
 
-	fprintf(stderr,"abouttopublish,%s,%s,%s,%s,%lf,%s,%s,%s\n", 
+	info("abouttopublish,%s,%s,%s,%s,%f,%s,%s,%s\n", 
 		r->originator, r->targetA, r->targetB, r->published_name, r->value, 
 		r->string_value, r->channel, timeval2str(&(r->timestamp)));
 	char uri[1024];
 	char buf[1024];
-	const char *encoded = encode_measurementrecord(r);
 
 	request_data *rd = (request_data *)malloc(sizeof(request_data));
 	if (!rd) return NULL;
@@ -173,6 +182,8 @@ void _batch_publish_callback(struct evhttp_request *req,void *arg) {
 	rep->in_transit_entries = 0;
 }
 
+#define REPO_RECORD_LEN 300
+
 /** Batch publish callback */
 void deferred_publish_cb(evutil_socket_t fd, short what, void *arg) {
 	struct reposerver *rep = (struct reposerver *)arg;
@@ -180,14 +191,16 @@ void deferred_publish_cb(evutil_socket_t fd, short what, void *arg) {
 	if (rep->publish_buffer_entries) {
 		debug("Deferred publish callback: %d entries to publish",
 				rep->publish_buffer_entries);
-		char *post_data = malloc(rep->publish_buffer_entries * 256);
+		char *post_data = malloc(rep->publish_buffer_entries *
+				REPO_RECORD_LEN + 10);
 		if (!post_data) fatal("Out of memory!");
 		post_data[0] = 0;
 
 		int i;
 		for (i = 0; i != rep->publish_buffer_entries; i++) {
-			strcat(post_data,
-					encode_measurementrecord(&(rep->publish_buffer[i].r)));
+			strncat(post_data,
+				encode_measurementrecord(&(rep->publish_buffer[i].r)),
+				REPO_RECORD_LEN);
 			strcat(post_data, "\n");
 		}
 
