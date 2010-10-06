@@ -66,7 +66,7 @@ const char *encode_measurementrecord(const MeasurementRecord *r) {
 	if (r->string_value)
 		bprintf(&publish_streambuffer, "&string_value=%s", r->string_value);
 	else if (r->value != (0.0/0.0)) 
-		bprintf(&publish_streambuffer, "&value=%lf", r->value);
+		bprintf(&publish_streambuffer, "&value=%f", r->value);
 
 	if (r->channel) 
 		bprintf(&publish_streambuffer, "&channel=%s", r->channel);
@@ -99,7 +99,7 @@ void _publish_callback(struct evhttp_request *req,void *arg) {
 			response[response_len] = 0;
 			debug("Response string (len %d): %s", response_len, response);
 			free(response);
-		}
+		}	
 		if (user_cb) user_cb((HANDLE)server, id, cbdata->cbarg, req->response_code ? req->response_code : -1);
 		return;
 	}
@@ -183,7 +183,6 @@ void _batch_publish_callback(struct evhttp_request *req,void *arg) {
 }
 
 #define REPO_RECORD_LEN 300
-
 /** Batch publish callback */
 void deferred_publish_cb(evutil_socket_t fd, short what, void *arg) {
 	struct reposerver *rep = (struct reposerver *)arg;
@@ -198,10 +197,15 @@ void deferred_publish_cb(evutil_socket_t fd, short what, void *arg) {
 
 		int i;
 		for (i = 0; i != rep->publish_buffer_entries; i++) {
-			strncat(post_data,
-				encode_measurementrecord(&(rep->publish_buffer[i].r)),
-				REPO_RECORD_LEN);
-			strcat(post_data, "\n");
+			const char *enc;
+		   	enc = encode_measurementrecord(&(rep->publish_buffer[i].r));
+			if(strlen(enc) >= REPO_RECORD_LEN) {
+			 warn("Skipping publish of HUGE record of %d bytes", strlen(enc));
+			}
+			else {
+				strcat(post_data,enc);
+				strcat(post_data, "\n");
+			}
 		}
 
 		make_post_request("/BatchPublish", post_data,
@@ -223,4 +227,3 @@ void deferred_publish_cb(evutil_socket_t fd, short what, void *arg) {
 		event_base_once(eventbase, -1, EV_TIMEOUT, deferred_publish_cb, rep, &t); 
 	}
 }
-
