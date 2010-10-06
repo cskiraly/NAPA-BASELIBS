@@ -14,8 +14,10 @@
 
 #include <unistd.h>
 #include <string.h>
+#ifndef WIN32
 #include <sys/uio.h>
 #include <netinet/in.h>
+#endif
 
 #include "queueManagement.h"
 #include "udpSocket.h"

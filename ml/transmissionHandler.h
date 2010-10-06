@@ -59,9 +59,12 @@
 #include "util/stun.h"
 #include "ml.h"
 
+#ifndef WIN32
 #ifndef boolean
 typedef bool boolean;
 #endif
+#endif
+
 #ifndef TRUE
 #define TRUE ((bool)1)
 #endif
