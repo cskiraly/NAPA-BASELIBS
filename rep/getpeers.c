@@ -58,7 +58,7 @@ const char *rankings2str(Ranking *ranks, int len) {
 	char tmp[128];
 
 	if (i) strcat(tmp, ";");
-	sprintf(tmp, "%s,%lf", ranks[i].published_name, ranks[i].weight);
+	sprintf(tmp, "%s,%f", ranks[i].published_name, ranks[i].weight);
 	strcat(buf, tmp);
 	}
 return buf;
