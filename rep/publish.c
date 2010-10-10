@@ -11,7 +11,7 @@ struct streambuffer publish_streambuffer = { NULL, NULL, 0};
 void bprintf(struct streambuffer *sb, const char *txt, ...) {
 	va_list str_args;
 	va_start(str_args, txt);
-#ifndef WIN32
+#if !WIN32 && !MAC_OS
 	vfprintf(sb->stream, txt, str_args);
 #else
 	int space = sb->buffsize - sb->len;
@@ -37,7 +37,7 @@ void bprintf(struct streambuffer *sb, const char *txt, ...) {
 }
 
 void brewind(struct streambuffer *sb) {
-#ifndef WIN32
+#if !WIN32 && !MAC_OS
 	rewind(sb->stream);
 #else
 	if(sb->buffer != NULL) *sb->buffer = 0;
@@ -46,7 +46,7 @@ void brewind(struct streambuffer *sb) {
 }
 
 void bflush(struct streambuffer *sb) {
-#ifndef WIN32
+#if !WIN32 && !MAC_OS
 	    fflush(sb->stream);
 #endif
 }

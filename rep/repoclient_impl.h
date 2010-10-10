@@ -31,7 +31,7 @@
 
 /** Struct maintaining streambuffer data. Used internally */
 struct streambuffer {
-#ifndef WINNT
+#if !WIN32 && !MAC_OS
 	FILE *stream;
 #else
 	size_t buffsize;
