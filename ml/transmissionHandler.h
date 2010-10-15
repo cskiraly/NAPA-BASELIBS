@@ -72,6 +72,14 @@ typedef bool boolean;
 #define FALSE ((bool)0)
 #endif
 
+#ifdef RTX
+/**
+ * This is the maximum number of gaps RTX can keep track of inside one message
+ */
+#define RTX_MAX_GAPS 25
+
+#define ML_NACK_MSG 128
+#endif
 /**
  * This is the maximum size of the monitoring module header that can be added to the messaging layer header
  */
@@ -123,6 +131,13 @@ typedef struct _socket_ID {
   socketaddrgen external_addr; ///< external or reflexive address
 } socket_ID;
 
+#ifdef RTX
+struct gap {
+	int offsetFrom;
+	int offsetTo;
+};
+#endif
+
 /**
   * A struct that contains information about data that is being received
   */
@@ -142,6 +157,14 @@ typedef struct {
   struct event *timeout_event; ///< a timeout event
   struct timeval timeout_value; ///< the value for a libevent timeout
   time_t starttime; ///< the start time
+#ifdef RTX
+  struct event* last_pkt_timeout_event;
+  int txConnectionID;
+  int expectedOffset;
+  int gapCounter; //index of the first "free slot"
+  int firstGap;	//first gap which hasn't been handled yet (for which the NACK hasn't been sent yet)
+  struct gap gapArray[RTX_MAX_GAPS];
+#endif
 } recvdata;
 
 struct receive_connection_cb_list{
@@ -176,6 +199,7 @@ typedef struct {
 
 #define ML_CON_MSG 127
 
+
 /**
  * A struct with the messaging layer header for connection handling messages
  */
@@ -186,6 +210,19 @@ struct conn_msg {
 	int32_t pmtu_size;	/// the pmtu size 
 	socket_ID sock_id;	/// the socketId of the sender
 } __attribute__((packed));
+
+#ifdef RTX
+/************modifications-START************/
+
+struct nack_msg {
+	int32_t con_id;		///local connectionID of the transmitter
+	int32_t msg_seq_num;
+	uint32_t offsetFrom;
+	uint32_t offsetTo;
+} __attribute__((packed));
+
+/************modifications-END**************/
+#endif
 
 struct msg_header {
 	uint32_t offset;

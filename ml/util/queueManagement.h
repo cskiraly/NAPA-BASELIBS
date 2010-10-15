@@ -59,3 +59,5 @@ int isQueueEmpty();
 int getFirstPacketSize();
 
 void setQueuesParams (int TXsize, int RTXsize, double maxTimeToHold);
+
+int rtxPacketsFromTo(int connID, int msgSeqNum, int offsetFrom, int offsetTo);

@@ -22,10 +22,14 @@
 #include "queueManagement.h"
 #include "udpSocket.h"
 
-	FILE *file = NULL;
+#include "../transmissionHandler.h"
+
+FILE *file = NULL;
 
 PacketQueue TXqueue;
 PacketQueue RTXqueue;
+
+unsigned int sentRTXDataPktCounter = 0;
 
 int TXmaxSize = 6000*1500;			//bytes
 int RTXmaxSize = 6000*1500;			//bytes
@@ -87,6 +91,8 @@ int addPacketTXqueue(PacketContainer *packet) {
 }
 
 PacketContainer* takePacketToSend() {			//returns pointer to packet or NULL if queue is empty
+
+	//logQueueOccupancy();
 	if (TXqueue.head != NULL) {
 		PacketContainer *packet = TXqueue.head;
 		
@@ -128,6 +134,7 @@ void addPacketRTXqueue(PacketContainer *packet) {
 
 	//finally - adding packet
 	RTXqueue.size += packet->pktLen;
+	packet->next = NULL;
 
 	if (RTXqueue.head == NULL) {			//adding first element
 		RTXqueue.head = packet;
@@ -170,15 +177,67 @@ int getFirstPacketSize() {
 	return 0;
 }
 
-void logQueueOccupancy() {
-	struct timeval now;
-	gettimeofday(&now, NULL);
-	double time = now.tv_sec + ((double) now.tv_usec)/1000000;
-	file = fopen("./queue.txt", "a+");
-	//char *str;
-	//sprintf(str,"%f",time); 
-	//fputs(str, p);
-	fprintf(file,"%f \t %d \n",time, TXqueue.size);	
-	fprintf(stderr,"[queueManagement::logQueueOccupancy] -- Time: %f \t queueOccupancy: %d \n", time, TXqueue.size);
-	fclose(file);
+PacketContainer* searchPacketInRTX(int connID, int msgSeqNum, int offset) {
+	
+	connID = ntohl(connID);
+	msgSeqNum = ntohl(msgSeqNum);
+	offset = ntohl(offset);
+
+	//fprintf(stderr,"***************Searching for packet... connID: %d msgSeqNum: %d offset: %d\n",connID,ntohl(msgSeqNum),ntohl(offset));
+
+	PacketContainer *tmp = RTXqueue.head;
+	PacketContainer *prev = NULL;
+
+	while (tmp != NULL) {
+		struct msg_header *msg_h;
+		
+		msg_h = (struct msg_header *) tmp->iov[0].iov_base;
+
+		//fprintf(stderr,"^^^^^^^^^Searching^^^^^^^^^^^^ connID: %d msgSeqNum: %d offset: %d\n",connID,ntohl(msgSeqNum),offset);
+		//fprintf(stderr,"^^^^^^^^^In queue^^^^^^^^^^^^ connID: %d msgSeqNum: %d offset: %d\n",msg_h->local_con_id,ntohl(msg_h->msg_seq_num),ntohl(msg_h->offset));
+
+		if ((msg_h->local_con_id == connID) && (msg_h->msg_seq_num == msgSeqNum) && (msg_h->offset == offset)) {
+		//fprintf(stderr,"*****************Packet found: ConID: %d  MsgseqNum: %d Offset: %d \n", ntohl(connID),ntohl(msgSeqNum),ntohl(offset));
+			if (tmp == RTXqueue.head) RTXqueue.head = tmp->next;
+			else if (tmp == RTXqueue.tail) { RTXqueue.tail = prev; prev->next == NULL; }
+			else prev->next = tmp->next;
+			RTXqueue.size -= tmp->pktLen;
+			return tmp;
+		}
+		prev = tmp;
+		tmp = tmp->next;
+	}
+
+return NULL;
 }
+
+int rtxPacketsFromTo(int connID, int msgSeqNum, int offsetFrom, int offsetTo) {
+        int offset = offsetFrom;
+        //fprintf(stderr,"\t\t\t\t Retransmission request From: %d To: %d\n",offsetFrom, offsetTo);
+
+        while (offset < offsetTo) {
+                PacketContainer *packetToRTX = searchPacketInRTX(connID,msgSeqNum,offset);
+                if (packetToRTX == NULL) return 1;
+
+                //sending packet
+                //fprintf(stderr,"\t\t\t\t\t Retransmitting packet: %d of msg_seq_num %d.\n",offset/1349,msgSeqNum);
+                sendPacket(packetToRTX->udpSocket, packetToRTX->iov, 4, packetToRTX->socketaddr);
+                sentRTXDataPktCounter++;
+                //queueOrSendPacket(packetToRTX->udpSocket,packetToRTX->iov,packetToRTX->pktLen,packetToRTX->socketaddr,HP);
+                offset += packetToRTX->iov[3].iov_len;                  //????????????????????
+        }
+        return 0;
+}
+
+// void logQueueOccupancy() {
+// 	struct timeval now;
+// 	gettimeofday(&now, NULL);
+// 	double time = now.tv_sec + ((double) now.tv_usec)/1000000;
+// 	file = fopen("./queue.txt", "a+");
+// 	//char *str;
+// 	//sprintf(str,"%f",time); 
+// 	//fputs(str, p);
+// 	fprintf(file,"%f \t %d \n",time, TXqueue.size);	
+// 	fprintf(stderr,"[queueManagement::logQueueOccupancy] -- Time: %f \t queueOccupancy: %d \n", time, TXqueue.size);
+// 	fclose(file);
+// }
