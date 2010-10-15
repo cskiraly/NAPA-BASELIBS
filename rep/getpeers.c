@@ -18,7 +18,7 @@ HANDLE repGetPeers(HANDLE rep, cb_repGetPeers cb, void *cbarg, int maxResults, C
 
         sprintf(uri, "/GetPeers?maxresults=%d&%s%s%s",  
 		maxResults, constraints2str(cons, clen), 
-		(clen ? "&" : ""), rankings2str(ranks, rlen));
+		(rlen ? "&" : ""), rankings2str(ranks, rlen));
 	if (ch) {
 		if (clen + rlen > 0) strcat(uri, "&");
 		strcat(uri, "channel=");
