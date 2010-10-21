@@ -116,7 +116,7 @@ struct event_base *base;
 /*
  * default timeout value for a packet reception
  */
-#define PKT_RECV_TIMEOUT_DEFAULT { 0, 3000000 } // 300 ms
+#define PKT_RECV_TIMEOUT_DEFAULT { 0, 50000 } // 50 ms
 
 /*
  * default timeout value for a packet reception
@@ -951,7 +951,7 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 	if (msg_h->offset > recvdatabuf[recv_id]->expectedOffset) {
 		recvdatabuf[recv_id]->gapArray[recvdatabuf[recv_id]->gapCounter].offsetFrom = recvdatabuf[recv_id]->expectedOffset;
 		recvdatabuf[recv_id]->gapArray[recvdatabuf[recv_id]->gapCounter].offsetTo = msg_h->offset;
-		recvdatabuf[recv_id]->gapCounter++;
+		if (recvdatabuf[recv_id]->gapCounter < RTX_MAX_GAPS - 1) recvdatabuf[recv_id]->gapCounter++;
 		evtimer_add(event_new(base, -1, EV_TIMEOUT, &pkt_recv_timeout_cb, (void *) (long)recv_id), &pkt_recv_timeout);
 	}
 	
