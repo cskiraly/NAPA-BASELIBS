@@ -121,7 +121,7 @@ struct event_base *base;
 /*
  * default timeout value for a packet reception
  */
-#define LAST_PKT_RECV_TIMEOUT_DEFAULT { 1, 500000 }
+#define LAST_PKT_RECV_TIMEOUT_DEFAULT { 1, 700000 }
 
 #endif
 
@@ -238,16 +238,7 @@ static struct timeval last_pkt_recv_timeout = LAST_PKT_RECV_TIMEOUT_DEFAULT;
 
 void mlShowCounters() {
 	counters.sentRTXDataPktCtr = sentRTXDataPktCounter;
-	fprintf(stderr, "\nreceivedCompleteMsgCounter: %d\n", counters.receivedCompleteMsgCounter);
-	fprintf(stderr, "receivedIncompleteMsgCounter: %d\n", counters.receivedIncompleteMsgCounter);
-	fprintf(stderr, "receivedDataPktCounter: %d\n", counters.receivedDataPktCounter);
-	fprintf(stderr, "receivedRTXDataPktCounter: %d\n", counters.receivedRTXDataPktCounter);	
-	fprintf(stderr, "receivedNACK1PktCounter: %d\n", counters.receivedNACK1PktCounter);
-	fprintf(stderr, "receivedNACKMorePktCounter: %d\n", counters.receivedNACKMorePktCounter);
-	fprintf(stderr, "sentDataPktCounter: %d\n", counters.sentDataPktCounter);
-	fprintf(stderr, "sentRTXDataPktCtr: %d\n", counters.sentRTXDataPktCtr);
-	fprintf(stderr, "sentNACK1PktCounter: %d\n", counters.sentNACK1PktCounter);
-	fprintf(stderr, "sentNACKMorePktCounter: %d\n", counters.sentNACKMorePktCounter);		
+	fprintf(stderr, "\nreceivedCompleteMsgCounter: %d\nreceivedIncompleteMsgCounter: %d\nreceivedDataPktCounter: %d\nreceivedRTXDataPktCounter: %d\nreceivedNACK1PktCounter: %d\nreceivedNACKMorePktCounter: %d\nsentDataPktCounter: %d\nsentRTXDataPktCtr: %d\nsentNACK1PktCounter: %d\nsentNACKMorePktCounter: %d\n", counters.receivedCompleteMsgCounter, counters.receivedIncompleteMsgCounter, counters.receivedDataPktCounter, counters.receivedRTXDataPktCounter, counters.receivedNACK1PktCounter, counters.receivedNACKMorePktCounter, counters.sentDataPktCounter, counters.sentRTXDataPktCtr, counters.sentNACK1PktCounter, counters.sentNACKMorePktCounter);
 	return;
 }
 
@@ -260,8 +251,8 @@ void recv_nack_msg(struct msg_header *msg_h, char *msgbuf, int msg_size)
 	nackmsg = (struct nack_msg*) msgbuf;
 	
 	unsigned int gapSize = nackmsg->offsetTo - nackmsg->offsetFrom;
-	if (gapSize == 1349) counters.receivedNACK1PktCounter++;
-	else counters.receivedNACKMorePktCounter++;
+	//if (gapSize == 1349) counters.receivedNACK1PktCounter++;
+	//else counters.receivedNACKMorePktCounter++;
 
 	rtxPacketsFromTo(nackmsg->con_id, nackmsg->msg_seq_num, nackmsg->offsetFrom, nackmsg->offsetTo);	
 }
@@ -287,10 +278,10 @@ void pkt_recv_timeout_cb(int fd, short event, void *arg){
 	recvdatabuf[recv_id]->firstGap++;
 
 	unsigned int gapSize = nackmsg.offsetTo - nackmsg.offsetFrom;
-	if (gapSize == 1349) counters.sentNACK1PktCounter++;
-	else counters.sentNACKMorePktCounter++;
+	//if (gapSize == 1349) counters.sentNACK1PktCounter++;
+	//else counters.sentNACKMorePktCounter++;
 
-	//fprintf(stderr,"\t\t\t\t\tSending NACK for msg_seq_num: %d. Please retransmitt from: %d [%d] to: %d [%d] \n",nackmsg.msg_seq_num, nackmsg.offsetFrom,nackmsg.offsetFrom/1349, nackmsg.offsetTo, nackmsg.offsetTo/1349-1);
+	//fprintf(stderr,"Sending NACK <- msg_seq_num: %d. monitoringDataHeaderLen: %d. offsetFrom: %d offsetTo: %d \n", nackmsg.msg_seq_num, recvdatabuf[recv_id]->monitoringDataHeaderLen, nackmsg.offsetFrom, nackmsg.offsetTo);
 
 	send_msg(recvdatabuf[recv_id]->connectionID, ML_NACK_MSG, (char *) &nackmsg, sizeof(struct nack_msg), true, &(connectbuf[recvdatabuf[recv_id]->connectionID]->defaultSendParams));	
 }
@@ -299,21 +290,26 @@ void last_pkt_recv_timeout_cb(int fd, short event, void *arg){
 	int recv_id = (long) arg;
 	debug("ML: recv_timeout_cb called. Timeout for id:%d\n",recv_id);
 
-	if (recvdatabuf[recv_id] == NULL) return;
+	if (recvdatabuf[recv_id] == NULL) {
+		//fprintf(stderr,"Called last_pkt_recv_timeout_cb but there is no slot\n");
+		return;
+	}
 
-	if (recvdatabuf[recv_id]->expectedOffset == recvdatabuf[recv_id]->bufsize) return;
+	//fprintf(stderr,"Starting last_pkt_recv_timeout_cb for msg_seq_num: %d\n", recvdatabuf[recv_id]->seqnr);
+
+	if (recvdatabuf[recv_id]->expectedOffset == recvdatabuf[recv_id]->bufsize - recvdatabuf[recv_id]->monitoringDataHeaderLen) return;
 
 	struct nack_msg nackmsg;
 	nackmsg.con_id = recvdatabuf[recv_id]->txConnectionID;
 	nackmsg.msg_seq_num = recvdatabuf[recv_id]->seqnr;
 	nackmsg.offsetFrom = recvdatabuf[recv_id]->expectedOffset;
-	nackmsg.offsetTo = recvdatabuf[recv_id]->bufsize;
+	nackmsg.offsetTo = recvdatabuf[recv_id]->bufsize - recvdatabuf[recv_id]->monitoringDataHeaderLen;
 
 	unsigned int gapSize = nackmsg.offsetTo - nackmsg.offsetFrom;
-	if (gapSize == 1349) counters.sentNACK1PktCounter++;
-	else counters.sentNACKMorePktCounter++;	
+	//if (gapSize == 1349) counters.sentNACK1PktCounter++;
+	//else counters.sentNACKMorePktCounter++;	
 
-	//fprintf(stderr,"\t\t\t\t\tlast_pkt - Sending NACK for msg_seq_num: %d. Please retransmitt from: %d [%d] to: %d [%d] \n",nackmsg.msg_seq_num, nackmsg.offsetFrom,nackmsg.offsetFrom/1349, nackmsg.offsetTo,nackmsg.offsetTo/1349);
+	//fprintf(stderr,"last_pkt - Sending NACK <- msg_seq_num: %d. monitoringDataHeaderLen: %d. offsetFrom: %d offsetTo: %d \n", nackmsg.msg_seq_num, recvdatabuf[recv_id]->monitoringDataHeaderLen, nackmsg.offsetFrom, nackmsg.offsetTo);
 
 	send_msg(recvdatabuf[recv_id]->connectionID, ML_NACK_MSG, &nackmsg, sizeof(struct nack_msg), true, &(connectbuf[recvdatabuf[recv_id]->connectionID]->defaultSendParams));	
 }
@@ -850,9 +846,9 @@ void recv_timeout_cb(int fd, short event, void *arg)
 #ifdef RTX
 		counters.receivedIncompleteMsgCounter++;
 		//mlShowCounters();
+		//fprintf(stderr,"******Cleaning slot for inclomplete msg_seq_num: %d\n", recvdatabuf[recv_id]->seqnr);		
 #endif
-// 		(receive_data_callback) (recvdatabuf[recv_id]->recvbuf + recvdatabuf[recv_id]->monitoringDataHeaderLen, recvdatabuf[recv_id]->bufsize - recvdatabuf[recv_id]->monitoringDataHeaderLen,
-// 			recvdatabuf[recv_id]->msgtype, &rParams);
+ 		//(receive_data_callback) (recvdatabuf[recv_id]->recvbuf + recvdatabuf[recv_id]->monitoringDataHeaderLen, recvdatabuf[recv_id]->bufsize - recvdatabuf[recv_id]->monitoringDataHeaderLen, recvdatabuf[recv_id]->msgtype, &rParams);
 
 		//clean up
 		if (recvdatabuf[recv_id]->timeout_event) {
@@ -1042,7 +1038,7 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 			} else {
 			    warn("ML: callback not initialized for this message type: %d!\n",msg_h->msg_type);
 			}
-
+			
 			//clean up
 			if (recvdatabuf[recv_id]->timeout_event) {
 				debug("ML: freeing timeout for %d\n",recv_id);
@@ -1059,6 +1055,7 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 				event_free(recvdatabuf[recv_id]->last_pkt_timeout_event);
 				recvdatabuf[recv_id]->last_pkt_timeout_event = NULL;
 			}
+			//fprintf(stderr,"******Cleaning slot for clomplete msg_seq_num: %d\n", recvdatabuf[recv_id]->seqnr);	
 #endif
 			free(recvdatabuf[recv_id]->recvbuf);
 			free(recvdatabuf[recv_id]);
