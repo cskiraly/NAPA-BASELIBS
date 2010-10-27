@@ -123,6 +123,11 @@ struct event_base *base;
  */
 #define LAST_PKT_RECV_TIMEOUT_DEFAULT { 1, 700000 }
 
+/*
+ * default fraction of RECV_TIMEOUT_DEFAULT for a last packet(s) reception timeout
+ */
+#define LAST_PKT_RECV_TIMEOUT_FRACTION 0.7
+
 #endif
 
 
@@ -1635,7 +1640,14 @@ void mlRegisterSetMonitoringHeaderDataCb(set_monitoring_header_data_cb monitorin
 void mlSetRecvTimeout(struct timeval timeout_value){
 
 	recv_timeout = timeout_value;
-
+#ifdef RTX
+	unsigned int total_usec = recv_timeout.tv_sec * 1000000 + recv_timeout.tv_usec;
+	total_usec = total_usec * LAST_PKT_RECV_TIMEOUT_FRACTION;
+	last_pkt_recv_timeout.tv_sec = total_usec / 1000000;
+	last_pkt_recv_timeout.tv_usec = total_usec - last_pkt_recv_timeout.tv_sec * 1000000;
+	fprintf(stderr,"Timeout for receiving message: %d : %d\n", recv_timeout.tv_sec, recv_timeout.tv_usec);	
+	fprintf(stderr,"Timeout for last pkt: %d : %d\n", last_pkt_recv_timeout.tv_sec, last_pkt_recv_timeout.tv_usec);	
+#endif
 }
 
 int mlGetStandardTTL(socketID_handle socketID,uint8_t *ttl){
