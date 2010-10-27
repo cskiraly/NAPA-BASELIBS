@@ -159,8 +159,8 @@ int removeOldestPacket() {			//return 0 if success, else (queue empty) return 1
 }
 
 void setQueuesParams (int TXsize, int RTXsize, double maxTTHold) {
-	TXmaxSize = TXsize;
-	RTXmaxSize = RTXsize;
+	TXmaxSize = TXsize * 1024;
+	RTXmaxSize = RTXsize * 1024;
 	maxTimeToHold.tv_sec = (int)floor(maxTTHold);
 	maxTimeToHold.tv_usec = (int)(1000000.0 * fmod(maxTTHold, 1.0));
 }
