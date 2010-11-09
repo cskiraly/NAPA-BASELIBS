@@ -35,8 +35,11 @@
 #include "ALTOclient.h"
 #include "ALTOclient_impl.h"
 
+#include <stddef.h>
 #include <stdarg.h>
 #include <pthread.h>
+#include <sys/time.h>
+#include <time.h>
 
 /*
  * 		Here the reference to the accessible DBs is set
@@ -83,6 +86,40 @@ static void alto_errorf(const char* str, ...) {
 #define returnIf(expr, msg, retval) if(expr) { alto_errorf("%s - Condition check: '"#expr"' (%s, line: %d) -- %s\n", __FUNCTION__, __FILE__, __LINE__, msg); return retval; }
 
 #define errorMsg(msg) alto_errorf("%s (%s, line: %d) -- %s\n", __FUNCTION__, __FILE__, __LINE__, msg);
+
+typedef struct {
+	uint64_t timer_start;	/* time of init */
+	uint64_t timer_last;	/* time of last update */
+	uint64_t timer_delta;	/* timespan between last two updates */
+	uint64_t ticks;			/* microsecs since timer_start */
+	float t;				/* seconds since timer start */
+	float dt;				/* timer_delta in seconds */
+} alto_timer;
+
+void alto_timer_init(alto_timer* timer)
+{
+	struct timeval tnow;
+	gettimeofday(&tnow, NULL);
+	timer->timer_start = (tnow.tv_usec + tnow.tv_sec * 1000000ull);
+	timer->timer_last = timer->timer_start;
+	timer->timer_delta = 0;
+	timer->ticks = 0;
+	timer->t = 0.0f;
+	timer->dt = 0.0f;
+}
+
+void alto_timer_update(alto_timer* timer)
+{
+	struct timeval tnow;
+	gettimeofday(&tnow, NULL);
+	uint64_t timer_now = (tnow.tv_usec + tnow.tv_sec * 1000000ull);
+	timer->timer_delta = timer_now - timer->timer_last;
+	timer->timer_last = timer_now;
+	timer->ticks = timer_now - timer->timer_start;
+	timer->t = timer->ticks / 1000000.0f; /* in seconds */
+	timer->dt = timer->timer_delta / 1000000.0f; /* in seconds */
+}
+
 
 /*
  * 	Function to set the actual ALTO server for configuration
@@ -1170,6 +1207,7 @@ int get_ALTO_guidance_for_list(ALTO_GUIDANCE_T * list, int num, struct in_addr r
   ==================================*/
 
 static int queryState = ALTO_QUERY_READY;
+static alto_timer queryTimer;
 
 static pthread_t threadId;
 static pthread_attr_t attr;
@@ -1202,6 +1240,9 @@ void* alto_query_thread_func(void* thread_args)
 	// signal that query is ready
 	queryState = ALTO_QUERY_READY;
 
+//	alto_timer_update(&queryTimer);
+//	alto_debugf("Query took %.2f seconds.\n", queryTimer.t);
+
 	return thread_args;
 }
 
@@ -1215,10 +1256,15 @@ int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int
 
 	// set new state
 	if (queryState == ALTO_QUERY_INPROGRESS) {
-		alto_debugf("*** WARNING: Calling ALTO_query_exec while query is still in progress! Race condition?!\n");
-		return 0;
+		alto_timer_update(&queryTimer);
+		if (queryTimer.t < ALTO_TIMEOUT) {
+			alto_debugf("*** WARNING: Calling ALTO_query_exec while query is still in progress! Aborting..\n");
+			return 0;
+		}
+		alto_debugf("*** NOTE: Previous ALTO_query_exec timed out (> %d sec.), starting new query..\n", ALTO_TIMEOUT);
 	}
 	queryState = ALTO_QUERY_INPROGRESS;
+	alto_timer_init(&queryTimer);
 
 	// first purge existing DB entries
 	alto_purge_db(ALTO_DB_req);

@@ -42,6 +42,9 @@ Minimum boundary for latency.
 #define ALTO_QUERY_READY		0
 #define ALTO_QUERY_INPROGRESS	1
 
+/** Maximum server response time in seconds */ 
+#define ALTO_TIMEOUT	20
+
 /**
  * This is the struct of one element for the internal interface. Make lists out of it to interact with the client.
  */
