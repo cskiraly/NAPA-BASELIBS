@@ -135,7 +135,7 @@ int getTTL(const int udpSocket,uint8_t *ttl);
  * @param bufferSize The size of the send buffer. 
  * @param *socketaddr The address of the remote socket
  */
-int sendPacket(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr);
+int sendPacketFinal(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr);
 
 
 /**

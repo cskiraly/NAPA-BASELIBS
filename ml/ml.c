@@ -437,26 +437,6 @@ void send_msg(int con_id, int msg_type, char* msg, int msg_len, bool truncable, 
 			msg_h.offset = htonl(offset);
 			msg_h.msg_length = htonl(truncable ? pkt_len : msg_len);
 
-			//monitoring layer hook
-			if(get_Send_pkt_inf_cb != NULL && iov[1].iov_len) {
-				mon_pkt_inf pkt_info;
-
-				memset(h_pkt,0,MON_PKT_HEADER_SPACE);
-
-				pkt_info.remote_socketID = &(connectbuf[con_id]->external_socketID);
-				pkt_info.buffer = msg + offset;
-				pkt_info.bufSize = pkt_len;
-				pkt_info.msgtype = msg_type;
-				pkt_info.dataID = connectbuf[con_id]->seqnr;
-				pkt_info.offset = offset;
-				pkt_info.datasize = msg_len;
-				pkt_info.monitoringHeaderLen = iov[1].iov_len;
-				pkt_info.monitoringHeader = iov[1].iov_base;
-				pkt_info.ttl = -1;
-				memset(&(pkt_info.arrival_time),0,sizeof(struct timeval));
-
-				(get_Send_pkt_inf_cb) ((void *) &pkt_info);
-			}
 
 			debug("ML: sending packet to %s with rconID:%d lconID:%d\n", conid_to_string(con_id), ntohl(msg_h.remote_con_id), ntohl(msg_h.local_con_id));
 			int priority = 0; 
@@ -502,6 +482,38 @@ void send_msg(int con_id, int msg_type, char* msg, int msg_len, bool truncable, 
 }
 
 void pmtu_timeout_cb(int fd, short event, void *arg);
+
+int sendPacket(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr) {
+	//monitoring layer hook
+	if(get_Send_pkt_inf_cb != NULL && iov[1].iov_len) {
+		mon_pkt_inf pkt_info;	
+
+		struct msg_header *msg_h  = (struct msg_header *) iov[0].iov_base;
+
+		memset(iov[1].iov_base,0,iov[1].iov_len);
+
+		pkt_info.remote_socketID = &(connectbuf[ntohl(msg_h->local_con_id)]->external_socketID);
+		pkt_info.buffer = iov[3].iov_base;
+		pkt_info.bufSize = iov[3].iov_len;
+		pkt_info.msgtype = msg_h->msg_type;
+		pkt_info.dataID = ntohl(msg_h->msg_seq_num);
+		pkt_info.offset = ntohl(msg_h->offset);
+		pkt_info.datasize = ntohl(msg_h->msg_length);
+		pkt_info.monitoringHeaderLen = iov[1].iov_len;
+		pkt_info.monitoringHeader = iov[1].iov_base;
+		pkt_info.ttl = -1;
+		memset(&(pkt_info.arrival_time),0,sizeof(struct timeval));
+
+		(get_Send_pkt_inf_cb) ((void *) &pkt_info);
+	}
+
+ 	//struct msg_header *msg_h;
+    //msg_h = (struct msg_header *) iov[0].iov_base;        
+
+	//fprintf(stderr,"*** Sending packet - msgSeqNum: %d offset: %d\n",ntohl(msg_h->msg_seq_num),ntohl(msg_h->offset));
+
+	return sendPacketFinal(udpSocket, iov, len, socketaddr);
+}
 
 void reschedule_conn_msg(int con_id)
 {

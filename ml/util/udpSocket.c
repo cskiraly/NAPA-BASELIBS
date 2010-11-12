@@ -190,7 +190,7 @@ int getTTL(const int udpSocket,uint8_t *ttl){
 #endif
 }
 
-int sendPacket(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr)
+int sendPacketFinal(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr)
 {
 	int error, ret;
 	struct msghdr msgh;

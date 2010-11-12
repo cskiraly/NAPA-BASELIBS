@@ -237,6 +237,8 @@ struct msg_header {
 #define MSG_HEADER_SIZE (sizeof(struct msg_header))
 #pragma pack(pop)   /* restore original alignment from stack */
 
+int sendPacket(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr);
+
 //
 ///**
 // * The init method needs to be called to initialise the transmissionHandler
