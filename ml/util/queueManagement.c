@@ -86,13 +86,11 @@ int addPacketTXqueue(PacketContainer *packet) {
 		TXqueue.tail = packet;
 	}
 	
-	//logQueueOccupancy();
 	return OK;
 }
 
 PacketContainer* takePacketToSend() {			//returns pointer to packet or NULL if queue is empty
 
-	//logQueueOccupancy();
 	if (TXqueue.head != NULL) {
 		PacketContainer *packet = TXqueue.head;
 		
@@ -124,8 +122,7 @@ void addPacketRTXqueue(PacketContainer *packet) {
 		else break;
 	}
 
-
-	if ((RTXqueue.size + packet->pktLen) > RTXmaxSize) {
+	while ((RTXqueue.size + packet->pktLen) > RTXmaxSize) {
 		removeOldestPacket();
 	}
 
@@ -229,15 +226,3 @@ int rtxPacketsFromTo(int connID, int msgSeqNum, int offsetFrom, int offsetTo) {
         return 0;
 }
 
-// void logQueueOccupancy() {
-// 	struct timeval now;
-// 	gettimeofday(&now, NULL);
-// 	double time = now.tv_sec + ((double) now.tv_usec)/1000000;
-// 	file = fopen("./queue.txt", "a+");
-// 	//char *str;
-// 	//sprintf(str,"%f",time); 
-// 	//fputs(str, p);
-// 	fprintf(file,"%f \t %d \n",time, TXqueue.size);	
-// 	fprintf(stderr,"[queueManagement::logQueueOccupancy] -- Time: %f \t queueOccupancy: %d \n", time, TXqueue.size);
-// 	fclose(file);
-// }
