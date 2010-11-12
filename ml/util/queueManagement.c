@@ -63,11 +63,13 @@ PacketContainer* createPacketContainer(const int uSoc,struct iovec *ioVector,int
 
 void destroyPacketContainer(PacketContainer* pktContainer){
 
-        int i;
-        for (i=0; i < pktContainer->iovlen; i++) free(pktContainer->iov[i].iov_base);
-        free(pktContainer->iov);
-        free(pktContainer->socketaddr);
-        free(pktContainer);
+	if (pktContainer != NULL){
+	        int i;
+        	for (i=0; i < pktContainer->iovlen; i++) free(pktContainer->iov[i].iov_base);
+        	free(pktContainer->iov);
+        	free(pktContainer->socketaddr);
+        	free(pktContainer);
+	}
 }
 
 int addPacketTXqueue(PacketContainer *packet) {
@@ -220,8 +222,8 @@ int rtxPacketsFromTo(int connID, int msgSeqNum, int offsetFrom, int offsetTo) {
                 //fprintf(stderr,"\t\t\t\t\t Retransmitting packet: %d of msg_seq_num %d.\n",offset/1349,msgSeqNum);
                 sendPacket(packetToRTX->udpSocket, packetToRTX->iov, 4, packetToRTX->socketaddr);
                 sentRTXDataPktCounter++;
-                //queueOrSendPacket(packetToRTX->udpSocket,packetToRTX->iov,packetToRTX->pktLen,packetToRTX->socketaddr,HP);
-                offset += packetToRTX->iov[3].iov_len;                  //????????????????????
+                offset += packetToRTX->iov[3].iov_len;
+		destroyPacketContainer(packetToRTX);
         }
         return 0;
 }
