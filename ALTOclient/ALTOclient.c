@@ -41,8 +41,12 @@
 #include <sys/time.h>
 #include <time.h>
 
-static int queryFailureCounter;
-static int queryFailureTotalCount;
+typedef struct {
+	int query_failure_count;
+	int query_failure_count_total;
+} alto_stats;
+
+static alto_stats stats;
 
 /*
  * 		Here the reference to the accessible DBs is set
@@ -1111,8 +1115,8 @@ void start_ALTO_client(){
     ALTO_XML_res = NULL;
 
 	// init query failure counters
-	queryFailureCounter = 0;
-    queryFailureTotalCount = 0;
+	stats.query_failure_count = 0;
+    stats.query_failure_count_total = 0;
 }
 
 
@@ -1242,7 +1246,7 @@ void* alto_query_thread_func(void* thread_args)
 	// *** at this point we got the results from the ALTO server ***
 
     // reset counter of consecutive connection failures
-    queryFailureCounter = 0;
+    stats.query_failure_count = 0;
 
 	// write values back
 	for(count = 0; count < args->num; count++){
@@ -1263,8 +1267,8 @@ int ALTO_query_state() {
 }
 
 int ALTO_stats(int stat_id) {
-	if (stat_id == ALTO_STAT_FAILURE_COUNT) return queryFailureCounter;
-	else if (stat_id == ALTO_STAT_FAILURE_COUNT_TOTAL) return  queryFailureTotalCount;
+	if (stat_id == ALTO_STAT_FAILURE_COUNT) return stats.query_failure_count;
+	else if (stat_id == ALTO_STAT_FAILURE_COUNT_TOTAL) return  stats.query_failure_count_total;
 	return 0;
 }
 
@@ -1286,9 +1290,9 @@ int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int
 		res = ALTO_QUERY_EXEC_TIMEOUT;
 
 		// count connection failures
-		queryFailureCounter++;
-		queryFailureTotalCount++;
-		alto_debugf("total count of ALTO server query connection failures so far: %d\n", queryFailureTotalCount);
+		stats.query_failure_count++;
+		stats.query_failure_count_total++;
+		alto_debugf("total count of ALTO server query connection failures so far: %d\n", stats.query_failure_count_total);
 	}
 	queryState = ALTO_QUERY_INPROGRESS;
 	alto_timer_init(&queryTimer);

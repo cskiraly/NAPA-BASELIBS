@@ -1,12 +1,6 @@
 #ifndef ALTOCLIENT_H
 #define ALTOCLIENT_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-
 /**
 * @file ALTOclient.h
 *
@@ -47,6 +41,22 @@ Minimum boundary for latency.
 /** Current state of asynchronous ALTO server query */
 #define ALTO_QUERY_READY		0
 #define ALTO_QUERY_INPROGRESS	1
+
+/** Maximum server response time in seconds */ 
+#define ALTO_TIMEOUT	20
+
+/**
+ * Return codes of ALTO_query_exec.
+ * ALTO_QUERY_EXEC_TIMEOUT means the last query timed out, but the new query started fine. 
+ */
+#define ALTO_QUERY_EXEC_OK			0
+#define ALTO_QUERY_EXEC_INPROGRESS	1
+#define ALTO_QUERY_EXEC_THREAD_FAIL	2
+#define ALTO_QUERY_EXEC_TIMEOUT		3
+
+/** statistics IDs for ALTO_stats */
+#define ALTO_STAT_FAILURE_COUNT			0
+#define ALTO_STAT_FAILURE_COUNT_TOTAL	1
 
 /**
  * This is the struct of one element for the internal interface. Make lists out of it to interact with the client.
@@ -148,7 +158,8 @@ int get_ALTO_guidance_for_txt(char * txt, struct in_addr rc_host, int pri_rat, i
 int get_ALTO_guidance_for_list(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int pri_rat, int sec_rat);
 
 /**
- *	Asynchronous/threaded ALTO query.
+ *	Asynchronous/threaded ALTO query. Return codes are ALTO_QUERY_EXEC_* (see defines above).
+ *  ALTO_QUERY_EXEC_TIMEOUT means last query timed out, but the new query started fine.
  *	@see get_ALTO_guidance_for_list
  */
 int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int pri_rat, int sec_rat);
@@ -159,8 +170,10 @@ int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int
  */
 int ALTO_query_state();
 
-#ifdef __cplusplus
-}
-#endif
+/**
+ *  Returns statistics value for the given ALTO_STAT_* ID. 
+ *  @return requested statistics value.
+ */
+int ALTO_stats(int stats_id);
 
 #endif /* ALTOCLIENT_H */
