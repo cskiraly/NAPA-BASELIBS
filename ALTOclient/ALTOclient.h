@@ -54,6 +54,10 @@ Minimum boundary for latency.
 #define ALTO_QUERY_EXEC_THREAD_FAIL	2
 #define ALTO_QUERY_EXEC_TIMEOUT		3
 
+/** statistics IDs for ALTO_stats */
+#define ALTO_STAT_FAILURE_COUNT			0
+#define ALTO_STAT_FAILURE_COUNT_TOTAL	1
+
 /**
  * This is the struct of one element for the internal interface. Make lists out of it to interact with the client.
  */
@@ -165,5 +169,11 @@ int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int
  *	@return				ALTO_QUERY_READY / ALTO_QUERY_INPROGRESS
  */
 int ALTO_query_state();
+
+/**
+ *  Returns statistics value for the given ALTO_STAT_* ID. 
+ *  @return requested statistics value.
+ */
+int ALTO_stats(int stats_id);
 
 #endif /* ALTOCLIENT_H */

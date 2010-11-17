@@ -1262,6 +1262,12 @@ int ALTO_query_state() {
 	return queryState;
 }
 
+int ALTO_stats(int stat_id) {
+	if (stat_id == ALTO_STAT_FAILURE_COUNT) return queryFailureCounter;
+	else if (stat_id == ALTO_STAT_FAILURE_COUNT_TOTAL) return  queryFailureTotalCount;
+	return 0;
+}
+
 int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int pri_rat, int sec_rat){
 	returnIf(list == NULL, "Can't access the list!", 0);
 	returnIf(num < 0, "<0 elements?", 0);
@@ -1283,15 +1289,6 @@ int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int
 		queryFailureCounter++;
 		queryFailureTotalCount++;
 		alto_debugf("total count of ALTO server query connection failures so far: %d\n", queryFailureTotalCount);
-
-		if (queryFailureCounter > 3) {
-			alto_debugf("*******************************************************\n");
-			alto_debugf("* CRITICAL FAILURE! Unable to connect to ALTO server. *\n");
-			alto_debugf("*   More than 3 consecutive server requests failed.   *\n");
-			alto_debugf("*         --> !!! EXITING APPLICATION !!! <--         *\n");
-			alto_debugf("*******************************************************\n");
-			exit(-1);
-		}
 	}
 	queryState = ALTO_QUERY_INPROGRESS;
 	alto_timer_init(&queryTimer);
