@@ -103,7 +103,7 @@ typedef struct {
 	float dt;				/* timer_delta in seconds */
 } alto_timer;
 
-void alto_timer_init(alto_timer* timer)
+static void alto_timer_init(alto_timer* timer)
 {
 	struct timeval tnow;
 	gettimeofday(&tnow, NULL);
@@ -115,7 +115,7 @@ void alto_timer_init(alto_timer* timer)
 	timer->dt = 0.0f;
 }
 
-void alto_timer_update(alto_timer* timer)
+static void alto_timer_update(alto_timer* timer)
 {
 	struct timeval tnow;
 	gettimeofday(&tnow, NULL);
@@ -420,15 +420,15 @@ xmlDocPtr query_ALTO_server_curl(xmlDocPtr doc, char* ALTO_server_URL){
 
 #define POST_BOUNDARY "---------------------------12408751047121013601852724877"
 
-void POST_add(char* buf, const char* name, const char* value) {
+static void POST_add(char* buf, const char* name, const char* value) {
 	sprintf(buf+strlen(buf), "--"POST_BOUNDARY"\r\nContent-Disposition: form-data; name=\"%s\"\r\n\r\n%s\r\n", name, value);
 }
 
-void POST_end(char* buf) {
+static void POST_end(char* buf) {
 	sprintf(buf+strlen(buf), "--"POST_BOUNDARY"--\r\n\r\n");
 }
 
-void* POST_send(const char* url, const char* data) {
+static void* POST_send(const char* url, const char* data) {
 	int i;
 	void* ctx = NULL;
 	char header[] = "Connection: close\r\n";
@@ -1231,7 +1231,7 @@ typedef struct {
 	int sec_rat;
 } ALTO_ThreadArgs_t;
 
-ALTO_ThreadArgs_t threadArgs;
+static ALTO_ThreadArgs_t threadArgs;
 
 void* alto_query_thread_func(void* thread_args)
 {
