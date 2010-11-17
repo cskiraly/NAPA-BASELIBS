@@ -46,6 +46,15 @@ Minimum boundary for latency.
 #define ALTO_TIMEOUT	20
 
 /**
+ * Return codes of ALTO_query_exec.
+ * ALTO_QUERY_EXEC_TIMEOUT means the last query timed out, but the new query started fine. 
+ */
+#define ALTO_QUERY_EXEC_OK			0
+#define ALTO_QUERY_EXEC_INPROGRESS	1
+#define ALTO_QUERY_EXEC_THREAD_FAIL	2
+#define ALTO_QUERY_EXEC_TIMEOUT		3
+
+/**
  * This is the struct of one element for the internal interface. Make lists out of it to interact with the client.
  */
 typedef struct alto_guidance_t{
@@ -145,7 +154,8 @@ int get_ALTO_guidance_for_txt(char * txt, struct in_addr rc_host, int pri_rat, i
 int get_ALTO_guidance_for_list(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int pri_rat, int sec_rat);
 
 /**
- *	Asynchronous/threaded ALTO query.
+ *	Asynchronous/threaded ALTO query. Return codes are ALTO_QUERY_EXEC_* (see defines above).
+ *  ALTO_QUERY_EXEC_TIMEOUT means last query timed out, but the new query started fine.
  *	@see get_ALTO_guidance_for_list
  */
 int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int pri_rat, int sec_rat);

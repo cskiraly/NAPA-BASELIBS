@@ -41,6 +41,9 @@
 #include <sys/time.h>
 #include <time.h>
 
+static int queryFailureCounter;
+static int queryFailureTotalCount;
+
 /*
  * 		Here the reference to the accessible DBs is set
  */
@@ -1106,6 +1109,10 @@ void start_ALTO_client(){
 	// and Initialize the XMLs
     ALTO_XML_req = NULL;
     ALTO_XML_res = NULL;
+
+	// init query failure counters
+	queryFailureCounter = 0;
+    queryFailureTotalCount = 0;
 }
 
 
@@ -1229,8 +1236,13 @@ void* alto_query_thread_func(void* thread_args)
 
 	alto_debugf("alto_query_thread_func\n");
 
-	// this will block at some point
-	do_ALTO_update(args->rc_host, args->pri_rat, args->sec_rat);
+	// *** this will block at some point ***
+	do_ALTO_update(args->rc_host, args->pri_rat, args->sec_rat);	// BLOCK
+
+	// *** at this point we got the results from the ALTO server ***
+
+    // reset counter of consecutive connection failures
+    queryFailureCounter = 0;
 
 	// write values back
 	for(count = 0; count < args->num; count++){
@@ -1254,14 +1266,32 @@ int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int
 	returnIf(list == NULL, "Can't access the list!", 0);
 	returnIf(num < 0, "<0 elements?", 0);
 
+	int res = ALTO_QUERY_EXEC_OK;
+
 	// set new state
 	if (queryState == ALTO_QUERY_INPROGRESS) {
 		alto_timer_update(&queryTimer);
 		if (queryTimer.t < ALTO_TIMEOUT) {
 			alto_debugf("*** WARNING: Calling ALTO_query_exec while query is still in progress! Aborting..\n");
-			return 0;
+			return ALTO_QUERY_EXEC_INPROGRESS;
 		}
 		alto_debugf("*** NOTE: Previous ALTO_query_exec timed out (> %d sec.), starting new query..\n", ALTO_TIMEOUT);
+
+		res = ALTO_QUERY_EXEC_TIMEOUT;
+
+		// count connection failures
+		queryFailureCounter++;
+		queryFailureTotalCount++;
+		alto_debugf("total count of ALTO server query connection failures so far: %d\n", queryFailureTotalCount);
+
+		if (queryFailureCounter > 3) {
+			alto_debugf("*******************************************************\n");
+			alto_debugf("* CRITICAL FAILURE! Unable to connect to ALTO server. *\n");
+			alto_debugf("*   More than 3 consecutive server requests failed.   *\n");
+			alto_debugf("*         --> !!! EXITING APPLICATION !!! <--         *\n");
+			alto_debugf("*******************************************************\n");
+			exit(-1);
+		}
 	}
 	queryState = ALTO_QUERY_INPROGRESS;
 	alto_timer_init(&queryTimer);
@@ -1274,6 +1304,7 @@ int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int
 
 	//ALTO_XML_req = alto_create_request_XML(ALTO_DB_req, rc_host, pri_rat, sec_rat);
 
+	// *** start async query thread ***
 	threadArgs.list = list;
 	threadArgs.num = num;
 	pthread_attr_init(&attr);
@@ -1281,11 +1312,11 @@ int ALTO_query_exec(ALTO_GUIDANCE_T * list, int num, struct in_addr rc_host, int
 	if (pthread_create(&threadId, &attr, alto_query_thread_func, &threadArgs) != 0) {
 		fprintf(stderr,"[ALTOclient] pthread_create failed!\n");
 		queryState = ALTO_QUERY_READY;
-		return 0;
+		return ALTO_QUERY_EXEC_THREAD_FAIL;
 	}
 
 	// This should be it
-	return 1;
+	return res;
 }
 
 /*
