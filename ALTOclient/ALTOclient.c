@@ -153,7 +153,7 @@ char *get_ALTO_server(void){
  * 	in:		*host_string	Pointer to the string to convert
  * 	return:	IP				Struct where the IP and prefix is encoded
  */
-static struct in_addr get_ALTO_host_IP(char * host_string){
+struct in_addr get_ALTO_host_IP(char * host_string){
 	struct in_addr IP;
 	#ifdef WIN32
 	char * str_buff = new char[strlen(host_string)];
@@ -184,7 +184,7 @@ static struct in_addr get_ALTO_host_IP(char * host_string){
  * 	in:		*host	Pointer to the string to convert
  * 	return:	port	struct where the IP and prefix is encoded
  */
-static int16_t get_ALTO_host_mask(char * host_string){
+int16_t get_ALTO_host_mask(char * host_string){
     int16_t res;
     char *result = NULL;
     char str_buff[256];
@@ -208,7 +208,7 @@ static int16_t get_ALTO_host_mask(char * host_string){
 			rc_host		the in_addr of the requesting host
  *  ret:	XML_doc		the XML where the request is stored in
  */
-static xmlDocPtr alto_create_request_XML(struct alto_db_t * db, struct in_addr rc_host, int pri_rat, int sec_rat){
+xmlDocPtr alto_create_request_XML(struct alto_db_t * db, struct in_addr rc_host, int pri_rat, int sec_rat){
 	returnIf(db == NULL, "internal db ptr is NULL!", NULL);
 
 	// Creates a new document
