@@ -48,8 +48,6 @@ int addPacketTXqueue(PacketContainer *packet);
 
 PacketContainer* takePacketToSend();
 
-void addPacketRTXqueue(PacketContainer *packet);
-
 int removeOldestPacket() ;
 
 void setQueueSizes (int TXsize, int RTXsize);
@@ -60,4 +58,8 @@ int getFirstPacketSize();
 
 void setQueuesParams (int TXsize, int RTXsize, double maxTimeToHold);
 
+#ifdef RTX
+void addPacketRTXqueue(PacketContainer *packet);
+
 int rtxPacketsFromTo(int connID, int msgSeqNum, int offsetFrom, int offsetTo);
+#endif

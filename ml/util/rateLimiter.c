@@ -54,7 +54,9 @@ void freeSpaceInBucket_cb (int fd, short event,void *arg) {
    		gettimeofday(&now, NULL);
 		bib_then = now;
 
+#ifdef RTX
 		if (!(packet->priority & NO_RTX)) addPacketRTXqueue(packet);
+#endif
 
 		sendPacket(packet->udpSocket, packet->iov, 4, packet->socketaddr);
 	}
@@ -96,8 +98,10 @@ int queueOrSendPacket(const int udpSocket, struct iovec *iov, int len, struct so
 			return addPacketTXqueue(newPacket);
 		}
 	}
+#ifdef RTX
 	if (!(priority & NO_RTX)) addPacketRTXqueue(newPacket);
-	
+#endif
+
 	return sendPacket(udpSocket, iov, 4, socketaddr);
 }
 

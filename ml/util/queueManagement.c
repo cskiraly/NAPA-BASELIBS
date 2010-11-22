@@ -105,7 +105,7 @@ PacketContainer* takePacketToSend() {			//returns pointer to packet or NULL if q
 	else return NULL;	
 }
 
-
+#ifdef RTX
 void addPacketRTXqueue(PacketContainer *packet) {
 	//removing old packets - because of maxTimeToHold
 	struct timeval now, age;
@@ -156,6 +156,7 @@ int removeOldestPacket() {			//return 0 if success, else (queue empty) return 1
 	}
 	return 1;	
 }
+#endif
 
 void setQueuesParams (int TXsize, int RTXsize, double maxTTHold) {
 	TXmaxSize = TXsize * 1024;
@@ -176,6 +177,7 @@ int getFirstPacketSize() {
 	return 0;
 }
 
+#ifdef RTX
 PacketContainer* searchPacketInRTX(int connID, int msgSeqNum, int offset) {
 	
 	connID = ntohl(connID);
@@ -227,4 +229,4 @@ int rtxPacketsFromTo(int connID, int msgSeqNum, int offsetFrom, int offsetTo) {
         }
         return 0;
 }
-
+#endif
