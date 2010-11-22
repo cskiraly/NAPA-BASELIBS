@@ -206,6 +206,8 @@ public:
 	};
 
 	void defaultStop() {
+		if(rb)
+			rb->publishResults();
 		stop();
 		if(param_values[P_DEBUG_FILE] == 1.0)
 			debugStop();
