@@ -50,13 +50,11 @@ PacketContainer* takePacketToSend();
 
 int removeOldestPacket() ;
 
-void setQueueSizes (int TXsize, int RTXsize);
-
 int isQueueEmpty();
 
 int getFirstPacketSize();
 
-void setQueuesParams (int TXsize, int RTXsize, double maxTimeToHold);
+void setQueuesParams (int TXsize, int RTXsize, double maxTimeToHold); //in  bytes, bytes, seconds
 
 #ifdef RTX
 void addPacketRTXqueue(PacketContainer *packet);

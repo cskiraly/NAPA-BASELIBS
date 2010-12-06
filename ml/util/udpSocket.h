@@ -168,6 +168,7 @@ int handleSocketError(const int udpSocket,const int iofunc,char *buf,int *bufsiz
  * @return 0 if everything went well and -1 if an error occured 
  */
 int closeSocket(const int udpSocket);
+
 /** 
   * Decide if a packet should be throttled
   * The implementation follows a leaky bucket algorithm: 
@@ -181,8 +182,8 @@ int outputRateControl(int len);
 /**
   * Configure the parameters for output rate control.
   * These values may also be set while packets are being transmitted.
-  * @param bucketsize The size of the bucket in kbytes
-  * @param drainrate The amount of kbytes draining in a second. If drainrate is 0, then rateControl is completely disabled (all packets are passed).
+  * @param bucketsize The size of the bucket in bytes
+  * @param drainrate The darining rate in bits/s. If drainrate is 0, then rateControl is completely disabled (all packets are passed).
 */
 void setOutputRateParams(int bucketsize, int drainrate);
 

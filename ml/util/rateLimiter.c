@@ -67,22 +67,15 @@ void freeSpaceInBucket_cb (int fd, short event,void *arg) {
 }
 
 void planFreeSpaceInBucketEvent(int bytes) {		//plan the event for time when there will be free space in bucket (for the first packet from the TXqueue)
-	
-	int rate = getDrainRate();
-
-	int TXtime_sec = bytes / rate;			//seconds
-	int TXtime_usec = ((bytes - (TXtime_sec * rate) ) * 1000000) / rate;		//microseconds
-
-	struct timeval TXtime = {TXtime_sec, TXtime_usec};	//time needed to send data = firstPacketFromQueue.size, will free space for this packet in the bucket
-
-	//struct timeval test;
-
-	//gettimeofday(&test,NULL);
-
-	//fprintf(stderr,"Planing event for one packet in: %d microseconds\n",TXtime_usec);
+	struct timeval TXtime;
 	struct event *ev;
+
+	//time needed to send data = firstPacketFromQueue.size, will free space for this packet in the bucket
+	TXtime.tv_sec = bytes / drain_rate; //seconds
+	TXtime.tv_usec = (bytes - TXtime.tv_sec * drain_rate) * 1000000 / drain_rate; //microseconds
+
 	ev = evtimer_new(base, freeSpaceInBucket_cb, NULL);
-	event_add(ev,&TXtime);
+	event_add(ev, &TXtime);
 }
 
 int queueOrSendPacket(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr, unsigned char priority)
@@ -105,47 +98,39 @@ int queueOrSendPacket(const int udpSocket, struct iovec *iov, int len, struct so
 	return sendPacket(udpSocket, iov, 4, socketaddr);
 }
 
-void setOutputRateParams(int bucketsize, int drainrate) {			//given in kBytes and kBytes/s
-     bucket_size = bucketsize*1024;		//now it is in Bytes
+void setOutputRateParams(int bucketsize, int drainrate) { //given in Bytes and Bits/s
+     bucket_size = bucketsize;
      outputRateControl(0);
-     drain_rate = drainrate; 
-}
-
-int getDrainRate () {			//in Bytes!!!!!!!!!!
-	return drain_rate * 1024;
+     drain_rate = drainrate >> 3; //now in bytes/s
 }
 
 int outputRateControl(int len) {
-   struct timeval now;
-   gettimeofday(&now, NULL);
-   if(drain_rate <= 0) {
-      bytes_in_bucket = 0;
-      bib_then = now;
-      return OK;
-   }
-   else {   
+	struct timeval now;
+	gettimeofday(&now, NULL);
 
-	long leaked;
-	int total_drain_secs = bytes_in_bucket / (drain_rate *1024) + 1; 
-       if(now.tv_sec - bib_then.tv_sec - 1 > total_drain_secs) {
-           bytes_in_bucket = 0;
-       }
-       else {
-          leaked = drain_rate * 1024 * (now.tv_sec - bib_then.tv_sec);
-          leaked += drain_rate * 1024 * (now.tv_usec - bib_then.tv_usec) / 1000000; 
-	  if(leaked > bytes_in_bucket) bytes_in_bucket = 0;
-          else bytes_in_bucket -= leaked;
-       }
+	if(drain_rate <= 0) {
+		bytes_in_bucket = 0;
+		bib_then = now;
+		return OK;
+	} else {
+		long leaked;
+		int total_drain_secs = bytes_in_bucket / (drain_rate) + 1; 
 
-       bib_then = now;
-       if(bytes_in_bucket + len <= bucket_size) {
-              bytes_in_bucket += len;
-              return OK;
-       }
-       else { 
-		return THROTTLE;
-	}
+		if(now.tv_sec - bib_then.tv_sec - 1 > total_drain_secs) {
+				bytes_in_bucket = 0;
+		} else {
+			leaked = drain_rate * (now.tv_sec - bib_then.tv_sec);
+			leaked += drain_rate * (now.tv_usec - bib_then.tv_usec) / 1000000; 
+			if(leaked > bytes_in_bucket) bytes_in_bucket = 0;
+					else bytes_in_bucket -= leaked;
+		}
+
+		bib_then = now;
+		if(bytes_in_bucket + len <= bucket_size) {
+			bytes_in_bucket += len;
+			return OK;
+		} else {
+			return THROTTLE;
+		}
    }
 }
-
-
