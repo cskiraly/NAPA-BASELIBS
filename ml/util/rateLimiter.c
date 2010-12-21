@@ -21,7 +21,8 @@
 
 extern struct event_base *base;
 static long bucket_size = 0;
-static int drain_rate = 0;
+static int64_t drain_rate = 0;
+
 
 static long bytes_in_bucket = 0;
 struct timeval bib_then = { 0, 0};
