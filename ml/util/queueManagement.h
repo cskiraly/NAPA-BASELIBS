@@ -19,7 +19,6 @@
 #include <winsock2.h>
 #endif
 
-
 typedef struct PktContainer {
 	int udpSocket; 
 	struct iovec *iov; 
