@@ -99,7 +99,7 @@ PacketContainer* takePacketToSend() {			//returns pointer to packet or NULL if q
 		TXqueue.size -= packet->pktLen;
 		TXqueue.head = TXqueue.head->next;
 		packet->next = NULL;
-					
+		if (TXqueue.head == NULL) TXqueue.tail = NULL;					
 		return packet;
 	}
 	else return NULL;	
