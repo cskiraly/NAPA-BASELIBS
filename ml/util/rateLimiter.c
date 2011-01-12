@@ -44,7 +44,7 @@ void freeSpaceInBucket_cb (int fd, short event,void *arg) {
 
 	fprintf(stderr,"Event scheduled in: %d microseconds\n",us);*/
 
-	while(outputRateControl(getFirstPacketSize()) == OK) {	
+	while((!isQueueEmpty()) && (outputRateControl(getFirstPacketSize()) == OK)) {	
 
 
 		PacketContainer* packet = takePacketToSend();
@@ -115,7 +115,7 @@ int outputRateControl(int len) {
 		return OK;
 	} else {
 		long leaked;
-		int total_drain_secs = bytes_in_bucket / (drain_rate) + 1; 
+		int total_drain_secs = bytes_in_bucket / (drain_rate) + 1;
 
 		if(now.tv_sec - bib_then.tv_sec - 1 > total_drain_secs) {
 				bytes_in_bucket = 0;
