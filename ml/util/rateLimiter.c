@@ -114,7 +114,7 @@ int outputRateControl(int len) {
 		bib_then = now;
 		return OK;
 	} else {
-		long leaked;
+		unsigned int leaked;
 		int total_drain_secs = bytes_in_bucket / (drain_rate) + 1;
 
 		if(now.tv_sec - bib_then.tv_sec - 1 > total_drain_secs) {
