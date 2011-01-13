@@ -48,7 +48,8 @@ const char* ResultBuffer::stat_suffixes[] = {
 	"_win_max",
 	"_sum",
 	"_win_sum",
-	"_rate"
+	"_rate",
+	"_period_sum"
 };
 
 int ResultBuffer::publishResults(void){
@@ -118,6 +119,9 @@ int ResultBuffer::publishResults(void){
 		repPublish(repo_client, NULL, NULL, &mr);
 		publish_name.erase(name_size);
 	}
+
+	stats[PERIOD_SUM] = NAN;
+
 	return EOK;
 };
 
@@ -179,6 +183,11 @@ int ResultBuffer::newSample(result r) {
 		stats[SUM] = r;
 	else
 		stats[SUM] += r;
+
+	if(isnan(stats[PERIOD_SUM]))
+		stats[PERIOD_SUM] = r;
+	else
+		stats[PERIOD_SUM] += r;
 
 	rate_sum_samples += r;
 
