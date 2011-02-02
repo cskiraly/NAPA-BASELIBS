@@ -50,9 +50,7 @@
 
 #include <stdio.h> 
 #include <time.h>
-#ifndef WIN32
 #include <netinet/in.h>
-#endif
 #include <string.h>
 #include <stdbool.h>
 

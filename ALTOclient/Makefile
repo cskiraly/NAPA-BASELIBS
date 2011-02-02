@@ -5,10 +5,8 @@ CPPFLAGS += -I$(XMLSRC)
 LDFLAGS += -L$(XMLLIB)
 LDLIBS += -lxml2 -lpthread
 
-ifdef CURL
-LDLIBS += -lcurl
-CPPFLAGS += -DUSE_CURL
-endif
+# libcurl is now obsolete
+#LDLIBS += -lcurl
 
 all: main lib
 

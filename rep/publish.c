@@ -8,75 +8,30 @@
 
 struct streambuffer publish_streambuffer = { NULL, NULL, 0};
 
-void bprintf(struct streambuffer *sb, const char *txt, ...) {
-	va_list str_args;
-	va_start(str_args, txt);
-#if !WIN32 && !MAC_OS
-	vfprintf(sb->stream, txt, str_args);
-#else
-	int space = sb->buffsize - sb->len;
-	while(sb->buffer) { 
-		int written = vsnprintf(sb->buffer+sb->len, space, txt, str_args);
-		char *newbuf;
-        if(written < space -1) {
-			sb->len += written;
-			break;
-		}
-		newbuf = (char *)realloc(sb->buffer, sb->buffsize +
-				SB_INCREMENT);
-		if(newbuf == 0) {
-			fprintf(stderr, "Out of memory on memstream buffer extend (to %d bytes)",
-					sb->buffsize + SB_INCREMENT); 
-			return;
-		}
-		sb->buffer = newbuf;
-		sb->buffsize += SB_INCREMENT;
-	}	
-#endif
-	va_end(str_args);
-}
-
-void brewind(struct streambuffer *sb) {
-#if !WIN32 && !MAC_OS
-	rewind(sb->stream);
-#else
-	if(sb->buffer != NULL) *sb->buffer = 0;
-	sb->len = 0;
-#endif
-}
-
-void bflush(struct streambuffer *sb) {
-#if !WIN32 && !MAC_OS
-	    fflush(sb->stream);
-#endif
-}
-
-
-
 const char *encode_measurementrecord(const MeasurementRecord *r) {
-	brewind(&publish_streambuffer);
+	rewind(publish_streambuffer.stream);
 
-	bprintf(&publish_streambuffer, "originator=%s&", r->originator);
+	fprintf(publish_streambuffer.stream, "originator=%s&", r->originator);
 	if (r->targetA)
-		bprintf(&publish_streambuffer, "targetA=%s&", r->targetA);
+		fprintf(publish_streambuffer.stream, "targetA=%s&", r->targetA);
 	if (r->targetB)
-		bprintf(&publish_streambuffer, "targetB=%s&", r->targetB);
-	bprintf(&publish_streambuffer, "published_name=%s", r->published_name);
+		fprintf(publish_streambuffer.stream, "targetB=%s&", r->targetB);
+	fprintf(publish_streambuffer.stream, "published_name=%s", r->published_name);
 
 	if (r->string_value)
-		bprintf(&publish_streambuffer, "&string_value=%s", r->string_value);
+		fprintf(publish_streambuffer.stream, "&string_value=%s", r->string_value);
 	else if (r->value != (0.0/0.0)) 
-		bprintf(&publish_streambuffer, "&value=%f", r->value);
+		fprintf(publish_streambuffer.stream, "&value=%lf", r->value);
 
 	if (r->channel) 
-		bprintf(&publish_streambuffer, "&channel=%s", r->channel);
+		fprintf(publish_streambuffer.stream, "&channel=%s", r->channel);
 
 	if (r->timestamp.tv_sec + r->timestamp.tv_usec != 0) {
-		bprintf(&publish_streambuffer, "&timestamp=%s",
+		fprintf(publish_streambuffer.stream, "&timestamp=%s",
 				timeval2str(&(r->timestamp)));
 	}
 
-	bflush(&publish_streambuffer);
+	fflush(publish_streambuffer.stream);
 	/*debug("result: %s", publish_streambuffer.buffer);*/
 	return publish_streambuffer.buffer;
 }
@@ -99,7 +54,7 @@ void _publish_callback(struct evhttp_request *req,void *arg) {
 			response[response_len] = 0;
 			debug("Response string (len %d): %s", response_len, response);
 			free(response);
-		}	
+		}
 		if (user_cb) user_cb((HANDLE)server, id, cbdata->cbarg, req->response_code ? req->response_code : -1);
 		return;
 	}
@@ -119,11 +74,12 @@ HANDLE repPublish(HANDLE h, cb_repPublish cb, void *cbarg, MeasurementRecord *r)
 		return 0;
 	}
 
-	info("abouttopublish,%s,%s,%s,%s,%f,%s,%s,%s\n", 
+	fprintf(stderr,"abouttopublish,%s,%s,%s,%s,%lf,%s,%s,%s\n", 
 		r->originator, r->targetA, r->targetB, r->published_name, r->value, 
 		r->string_value, r->channel, timeval2str(&(r->timestamp)));
 	char uri[1024];
 	char buf[1024];
+	const char *encoded = encode_measurementrecord(r);
 
 	request_data *rd = (request_data *)malloc(sizeof(request_data));
 	if (!rd) return NULL;
@@ -182,7 +138,6 @@ void _batch_publish_callback(struct evhttp_request *req,void *arg) {
 	rep->in_transit_entries = 0;
 }
 
-#define REPO_RECORD_LEN 300
 /** Batch publish callback */
 void deferred_publish_cb(evutil_socket_t fd, short what, void *arg) {
 	struct reposerver *rep = (struct reposerver *)arg;
@@ -190,22 +145,15 @@ void deferred_publish_cb(evutil_socket_t fd, short what, void *arg) {
 	if (rep->publish_buffer_entries) {
 		debug("Deferred publish callback: %d entries to publish",
 				rep->publish_buffer_entries);
-		char *post_data = malloc(rep->publish_buffer_entries *
-				REPO_RECORD_LEN + 10);
+		char *post_data = malloc(rep->publish_buffer_entries * 256);
 		if (!post_data) fatal("Out of memory!");
 		post_data[0] = 0;
 
 		int i;
 		for (i = 0; i != rep->publish_buffer_entries; i++) {
-			const char *enc;
-		   	enc = encode_measurementrecord(&(rep->publish_buffer[i].r));
-			if(strlen(enc) >= REPO_RECORD_LEN) {
-			 warn("Skipping publish of HUGE record of %d bytes", strlen(enc));
-			}
-			else {
-				strcat(post_data,enc);
-				strcat(post_data, "\n");
-			}
+			strcat(post_data,
+					encode_measurementrecord(&(rep->publish_buffer[i].r)));
+			strcat(post_data, "\n");
 		}
 
 		make_post_request("/BatchPublish", post_data,
@@ -227,3 +175,4 @@ void deferred_publish_cb(evutil_socket_t fd, short what, void *arg) {
 		event_base_once(eventbase, -1, EV_TIMEOUT, deferred_publish_cb, rep, &t); 
 	}
 }
+

@@ -62,9 +62,6 @@
 #include <sys/types.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#ifdef WIN32
-#include <winsock2.h>
-#endif
 
 #ifndef byte
 /** 8-bit unsigned type */

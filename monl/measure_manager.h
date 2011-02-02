@@ -243,7 +243,7 @@ public:
 
 	MeasurementStatus monGetStatus(MonHandler mh) {
 		if(!isValidMonHandler(mh))
-			return MS_ERROR;
+			return ERROR;
 		return mMeasureInstances[mh]->getStatus();
 	};
 
@@ -319,8 +319,7 @@ public:
 
 		if(mMeasureInstances[mh]->rb == NULL)
 			return NAN;
-
-		mMeasureInstances[mh]->rb->updateStats();
+	
 		return mMeasureInstances[mh]->rb->stats[st];
 	};
 

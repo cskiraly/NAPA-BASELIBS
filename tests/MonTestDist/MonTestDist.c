@@ -15,9 +15,9 @@
 
 #define MSG_TYPE 3
 
-char request[] = "AHi Kai thisis a request (Ping) ...";
+char request[] = "APingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPingPing";
 
-char reply[] = "B ...and thisis the reply (Pong)!";
+char reply[] = "BPong";
 //Note first characters identifies Request form Replies and must be maintaned (it is not printed out)
 
 struct peer_info {
@@ -49,6 +49,9 @@ void gen_pause(struct timeval *t) {
 	t->tv_usec = (unsigned long)fmod(p, 100000.0);
 }
 
+int generic = -1;
+int sn = 0;
+
 
 /* Event to send periodically traffic after the connection has been established */
 void send_data_cb(int fd, short event,void *arg){
@@ -66,6 +69,9 @@ void send_data_cb(int fd, short event,void *arg){
 
 	mlSendData(peer->con_id, request, strlen(request) + 1, MSG_TYPE, NULL);
 
+	if(generic >= 0)
+		monNewSample(generic, sn++);
+
 	gen_pause(&t);
 	//reschedule
 	event_base_once(eventbase, -1, EV_TIMEOUT, &send_data_cb, arg, &t);
@@ -77,7 +83,7 @@ void open_conn_cb_active (int connectionID, void *arg){
 	struct timeval t = {0,0};
 	struct peer_info *peer = (struct peer_info *) arg;
 	enum stat_types st[] = {AVG, MIN, MAX};
-	enum stat_types st2[] = {AVG};
+	enum stat_types st2[] = {RATE};
 	int i=0, ret;
 
 	peer->con_id = connectionID;
@@ -94,46 +100,46 @@ void open_conn_cb_active (int connectionID, void *arg){
 	ret = peer->m_list[i] = monCreateMeasure(HOPCOUNT, PACKET | IN_BAND);
 	ret = monPublishStatisticalType(peer->m_list[i], NULL, channel, st , sizeof(st)/sizeof(enum stat_types), repoclient);
 //	monSetParameter (peer->m_list[i], P_PUBLISHING_RATE, 30);
-//	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
 	ret = monActivateMeasure(peer->m_list[i], peer->rem_peer, MSG_TYPE);
 	i++;
 
-// 	/* Clockdrift and capacity */
-// 	ret = peer->m_list[i] = monCreateMeasure(CLOCKDRIFT, PACKET | IN_BAND);
-// 	ret = monSetParameter (peer->m_list[i], P_CLOCKDRIFT_ALGORITHM, 1);
-// 	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
-// 	ret = monActivateMeasure(peer->m_list[i],peer->rem_peer, MSG_TYPE);
-// 	i++;
-// 
-// 	ret = peer->m_list[i] = monCreateMeasure(CORRECTED_DELAY, PACKET | IN_BAND);
-// 	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
-// 	ret = monActivateMeasure(peer->m_list[i],peer->rem_peer, MSG_TYPE);
-// 	i++;
-// 
-// 	ret = peer->m_list[i] = monCreateMeasure(CAPACITY_CAPPROBE, PACKET | IN_BAND);
-// 	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
-// 	ret = monSetParameter (peer->m_list[i], P_CAPPROBE_DELAY_TH, -1);
-// // 	monSetParameter (mh, P_CAPPROBE_PKT_TH, 100);
-// // 	monSetParameter (mh, P_CAPPROBE_IPD_TH, 60);
-// // 	monPublishStatisticalType(mh, NULL, channel, st , sizeof(st)/sizeof(enum stat_types), repoclient);
-//  	ret = monActivateMeasure(peer->m_list[i],peer->rem_peer, MSG_TYPE);
-// 	i++;
-// 
-// 	ret = peer->m_list[i] = monCreateMeasure(TX_BYTE, PACKET | IN_BAND);
-// 	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
-// 	ret = monPublishStatisticalType(peer->m_list[i], NULL, channel, st2, sizeof(st2)/sizeof(enum stat_types), repoclient);
-// 	ret = monActivateMeasure(peer->m_list[i], peer->rem_peer, MSG_TYPE);
-// 	i++;
-// 
-// 	ret = peer->m_list[i] = monCreateMeasure(RX_BYTE, PACKET | IN_BAND);
-// 	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
-// 	ret = monPublishStatisticalType(peer->m_list[i], NULL, channel, st2, sizeof(st2)/sizeof(enum stat_types), repoclient);
-// 	ret = monActivateMeasure(peer->m_list[i], peer->rem_peer, MSG_TYPE);
-// 	i++;
+	/* Clockdrift and capacity */
+	ret = peer->m_list[i] = monCreateMeasure(CLOCKDRIFT, PACKET | IN_BAND);
+	ret = monSetParameter (peer->m_list[i], P_CLOCKDRIFT_ALGORITHM, 1);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+	ret = monActivateMeasure(peer->m_list[i],peer->rem_peer, MSG_TYPE);
+	i++;
+
+	ret = peer->m_list[i] = monCreateMeasure(CORRECTED_DELAY, PACKET | IN_BAND);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+	ret = monActivateMeasure(peer->m_list[i],peer->rem_peer, MSG_TYPE);
+	i++;
+
+	ret = peer->m_list[i] = monCreateMeasure(CAPACITY_CAPPROBE, PACKET | IN_BAND);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+	ret = monSetParameter (peer->m_list[i], P_CAPPROBE_DELAY_TH, -1);
+// 	monSetParameter (mh, P_CAPPROBE_PKT_TH, 100);
+// 	monSetParameter (mh, P_CAPPROBE_IPD_TH, 60);
+// 	monPublishStatisticalType(mh, NULL, channel, st , sizeof(st)/sizeof(enum stat_types), repoclient);
+ 	ret = monActivateMeasure(peer->m_list[i],peer->rem_peer, MSG_TYPE);
+	i++;
+
+	ret = peer->m_list[i] = monCreateMeasure(TX_BYTE, PACKET | IN_BAND);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+	ret = monPublishStatisticalType(peer->m_list[i], NULL, channel, st2, sizeof(st2)/sizeof(enum stat_types), repoclient);
+	ret = monActivateMeasure(peer->m_list[i], peer->rem_peer, MSG_TYPE);
+	i++;
+
+	ret = peer->m_list[i] = monCreateMeasure(RX_BYTE, PACKET | IN_BAND);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+	ret = monPublishStatisticalType(peer->m_list[i], NULL, channel, st2, sizeof(st2)/sizeof(enum stat_types), repoclient);
+	ret = monActivateMeasure(peer->m_list[i], peer->rem_peer, MSG_TYPE);
+	i++;
 
 	/* Seqwin */
 	ret = peer->m_list[i] = monCreateMeasure(SEQWIN, DATA | IN_BAND);
-//	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
 // 	monSetParameter (peer->m_list[i], P_WINDOW_SIZE, 100);
 // 	monSetParameter (peer->m_list[i], P_PUBLISHING_RATE, 100);
 // 	monPublishStatisticalType(peer->m_list[i], NULL, channel, st , sizeof(st)/sizeof(enum stat_types), repoclient);
@@ -142,27 +148,27 @@ void open_conn_cb_active (int connectionID, void *arg){
 
 	/* Loss */
 	ret = peer->m_list[i] = monCreateMeasure(LOSS, DATA | IN_BAND);
-//	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
 // 	monSetParameter (peer->m_list[i], P_WINDOW_SIZE, 100);
 // 	monSetParameter (peer->m_list[i], P_PUBLISHING_RATE, 100);
-	monPublishStatisticalType(peer->m_list[i], NULL, channel, st2 , sizeof(st2)/sizeof(enum stat_types), repoclient);
+// 	monPublishStatisticalType(peer->m_list[i], NULL, channel, st , sizeof(st)/sizeof(enum stat_types), repoclient);
 	ret = monActivateMeasure(peer->m_list[i], peer->rem_peer, MSG_TYPE);
 	i++;
 
 	/* Loss Burst */
 	ret = peer->m_list[i] = monCreateMeasure(LOSS_BURST, DATA | IN_BAND);
-//	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
 //	monSetParameter (peer->m_list[i], P_WINDOW_SIZE, 100);
 //	monSetParameter (peer->m_list[i], P_PUBLISHING_RATE, 100);
-	monPublishStatisticalType(peer->m_list[i], NULL, channel, st , sizeof(st)/sizeof(enum stat_types), repoclient);
+//	monPublishStatisticalType(peer->m_list[i], NULL, channel, st , sizeof(st)/sizeof(enum stat_types), repoclient);
 	ret = monActivateMeasure(peer->m_list[i], peer->rem_peer, MSG_TYPE);
 	i++;
 
 	/* Round trip time */
 	ret = peer->m_list[i] = monCreateMeasure(RTT, DATA | IN_BAND);
 //	monSetParameter (peer->m_list[i], P_PUBLISHING_RATE, 100);
-	monPublishStatisticalType(peer->m_list[i], NULL, channel, st , sizeof(st)/sizeof(enum stat_types), repoclient);
-//	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
+//	monPublishStatisticalType(peer->m_list[i], NULL, channel, st , sizeof(st)/sizeof(enum stat_types), repoclient);
+	ret = monSetParameter (peer->m_list[i], P_DEBUG_FILE, 1);
 	ret = monActivateMeasure(peer->m_list[i], peer->rem_peer, MSG_TYPE);
 	i++;
 
@@ -195,6 +201,12 @@ void start_measures(char **peers ,int p_len, int should_free) {
 	int i, ret;
 	send_params sParams;
 	struct peer_info *t;
+	enum stat_types st[] = {MIN, MAX};
+
+	generic = monCreateMeasure(GENERIC, 0);
+	ret = monSetParameter (generic, P_DEBUG_FILE, 1);
+	ret = monPublishStatisticalType(generic, "GenericTest", channel, st , sizeof(st)/sizeof(enum stat_types), repoclient);
+	ret = monActivateMeasure(generic, NULL, MSG_TYPE);
 
 	for(i=0; i < p_len; i++) {
 		if(strcmp(local_id, peers[i]) == 0)
@@ -228,6 +240,10 @@ void start_measures(char **peers ,int p_len, int should_free) {
 void stop_measures(void) {
 	int i;
 	struct peer_info *t;
+
+	monDestroyMeasure(generic);
+	generic = -1;
+	sn = 0;
 
 	/* Stop any running measurments and free up memory */
 	while(peers_head != NULL) {

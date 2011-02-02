@@ -32,27 +32,20 @@
  *     THIS HEADER MAY NOT BE EXTRACTED OR MODIFIED IN ANY WAY.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <sys/time.h>
-
-#include <event2/event.h>
-#ifndef WIN32
 /* For sockaddr_in */
 #include <netinet/in.h>
 /* For socket functions */
 #include <sys/socket.h>
 /* For fcntl */
 #include <fcntl.h>
-#include <sys/uio.h>
-#include <arpa/inet.h>
-#include <resolv.h>
-#include <sys/socket.h>
-#include <netdb.h>
 
+#include <event2/event.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include <sys/socket.h>
 #ifdef __linux__
 #include <linux/types.h>
 #include <linux/errqueue.h>
@@ -62,20 +55,23 @@
 #define MSG_ERRQUEUE 0
 #endif
 
-#else
-#include <winsock2.h>
-#endif
 
+#include <errno.h>
+#include <string.h>
+#include <netdb.h>
+#include <netinet/in.h>
 
+#include <resolv.h>
+#include <sys/time.h>
+#include <sys/uio.h>
+#include <arpa/inet.h>
 
+#include <unistd.h>
+#include <stdlib.h>
 
 #include "udpSocket.h"
-
 #define LOG_MODULE "[ml] "
 #include "ml_log.h"
-
-#include "rateLimiter.h"
-#include "queueManagement.h"
 
 /* debug varible: set to 1 if you want debug output  */
 int verbose = 0;
@@ -86,10 +82,6 @@ int createSocket(const int port,const char *ipaddr)
   struct sockaddr_in udpsrc, udpdst;
 
   int returnStatus = 0;
-  debug("X.CreateSock %s %d\n",ipaddr, port);
-
-  bzero((char *)&udpsrc, sizeof udpsrc);
-  bzero((char *)&udpdst, sizeof udpsrc);
 
   //int udpSocket = 0;
   /*libevent2*/
@@ -163,18 +155,12 @@ int createSocket(const int port,const char *ipaddr)
 
 #endif
 
-  debug("X.CreateSock\n");
   return udpSocket;
 
 }
 
-#ifndef WIN32
 /* Information: read the standard TTL from a socket  */
 int getTTL(const int udpSocket,uint8_t *ttl){
-#ifdef MAC_OS
-	return 0;
-#else
-
 	unsigned int value;
 	unsigned int size = sizeof(value);
 
@@ -187,13 +173,14 @@ int getTTL(const int udpSocket,uint8_t *ttl){
 	if(verbose == 1) debug("TTL is %i\n",value);
 
 	return 1;
-#endif
 }
 
-int sendPacketFinal(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr)
+int sendPacket(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr)
 {
 	int error, ret;
 	struct msghdr msgh;
+        
+        if(outputRateControl(len) != OK) return THROTTLE;
 
 	msgh.msg_name = socketaddr;
 	msgh.msg_namelen = sizeof(struct sockaddr_in);
@@ -475,63 +462,4 @@ printf("Hostaddr: %x\n", *((unsigned int *)(he->h_addr)));
 #endif
 	return NULL;
 }
-#else  // WINDOWS
 
-int sendPacket(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr)
-{
-  char stack_buffer[1600];
-  char *buf = stack_buffer;
-  int i;
-  int total_len = 0;
-  int ret;
-  for(i = 0; i < len; i++) total_len += iov[i].iov_len;
-
-  if(outputRateControl(total_len) != OK) return THROTTLE;
-
-  if(total_len > sizeof(stack_buffer)) {
-     warn("sendPacket total_length %d requires dynamically allocated buffer", total_len);
-     buf = malloc(total_len);
-  }
-  total_len = 0;
-  for(i = 0; i < len; i++) {
-     memcpy(buf+total_len, iov[i].iov_base, iov[i].iov_len);
-     total_len += iov[i].iov_len;
-  } 
-  ret = sendto(udpSocket, buf, total_len, 0, (struct sockaddr *)socketaddr, sizeof(*socketaddr));
-debug("Sent %d bytes (%d) to %d\n",ret, WSAGetLastError(), udpSocket);
-  if(buf != stack_buffer) free(buf);
-  return ret == total_len ? OK:FAILURE; 
-}
-
-void recvPacket(const int udpSocket,char *buffer,int *recvSize,struct sockaddr_in *udpdst,icmp_error_cb icmpcb_value,int *ttl)
-{
-fprintf(stderr,"X.RECV\n");
-  int salen = sizeof(struct sockaddr_in);
-  int ret;
-  ret = recvfrom(udpSocket, buffer, *recvSize, 0, (struct sockaddr *)udpdst, &salen);
-  if(ret > 0) *recvSize = ret;
-  *ttl=10;
-}
-
-int getTTL(const int udpSocket,uint8_t *ttl){
-  return 64;
-}
-
-const char *mlAutodetectIPAddress() {
-  return NULL;
-}
-
-
-const char *inet_ntop(int af, const void *src,
-       char *dst, size_t size) {
-    char *c = inet_ntoa(*(struct in_addr *)src);
-    if(strlen(c) >= size) return NULL;
-    return strcpy(dst, c);
-}
-int inet_pton(int af, const char * src, void *dst) {
-    unsigned long l = inet_addr(src);
-    if(l == INADDR_NONE) return 0;
-    *(unsigned long *)dst = l;
-    return 1;
-}
-#endif

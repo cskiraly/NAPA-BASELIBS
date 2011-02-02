@@ -27,15 +27,10 @@
 
 #define REPOSERVER_MAGIC        0xAABB
 #define PUBLISH_BUFFER_SIZE	1024
-#define SB_INCREMENT 		512
 
 /** Struct maintaining streambuffer data. Used internally */
 struct streambuffer {
-#if !WIN32 && !MAC_OS
 	FILE *stream;
-#else
-	size_t buffsize;
-#endif
 	char *buffer;
 	size_t len;
 };

@@ -32,6 +32,13 @@
  *     THIS HEADER MAY NOT BE EXTRACTED OR MODIFIED IN ANY WAY.
  */
 
+#include <arpa/inet.h>
+#ifndef WIN32
+#include <netinet/in.h>
+#include <sys/socket.h>
+#endif
+#include <fcntl.h>
+#include <event2/event.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -39,28 +46,16 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <errno.h>
 #include <time.h>
 #include <math.h>
 #include <assert.h>
-#include <errno.h>
-
-#ifndef WIN32
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <fcntl.h>
-#else
-
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#endif
 
 #include "util/udpSocket.h"
 #include "util/stun.h"
 #include "transmissionHandler.h"
-#include "util/rateLimiter.h"
-#include "util/queueManagement.h"
 
 #define LOG_MODULE "[ml] "
 #include "ml_log.h"
@@ -112,29 +107,9 @@ struct event_base *base;
  */
 #define RECV_TIMEOUT_DEFAULT { 2, 0 }
 
-#ifdef RTX
-/*
- * default timeout value for a packet reception
- */
-#define PKT_RECV_TIMEOUT_DEFAULT { 0, 50000 } // 50 ms
-
-/*
- * default timeout value for a packet reception
- */
-#define LAST_PKT_RECV_TIMEOUT_DEFAULT { 1, 700000 }
-
-/*
- * default fraction of RECV_TIMEOUT_DEFAULT for a last packet(s) reception timeout
- */
-#define LAST_PKT_RECV_TIMEOUT_FRACTION 0.7
-
-#endif
-
-
 /*
  * global variables
  */
-
 /*
  * define a buffer of pointers to connect structures
  */
@@ -208,120 +183,10 @@ boolean recv_data_callback;
 /*
  * helper function to get rid of a warning
  */
-#ifndef WIN32
 int min(int a, int b) {
 	if (a > b) return b;
 	return a;
 }
-#endif
-
-#ifdef RTX
-//*********Counters**********
-
-struct Counters {
-	unsigned int receivedCompleteMsgCounter;
-	unsigned int receivedIncompleteMsgCounter;
-	unsigned int receivedDataPktCounter;
-	unsigned int receivedRTXDataPktCounter;
-	unsigned int receivedNACK1PktCounter;
-	unsigned int receivedNACKMorePktCounter;
-	unsigned int sentDataPktCounter;
-	unsigned int sentRTXDataPktCtr;
-	unsigned int sentNACK1PktCounter;
-	unsigned int sentNACKMorePktCounter;
-} counters;
-
-extern unsigned int sentRTXDataPktCounter;
-
-/*
- * receive timeout for a packet
- */
-static struct timeval pkt_recv_timeout = PKT_RECV_TIMEOUT_DEFAULT;
-
-
-static struct timeval last_pkt_recv_timeout = LAST_PKT_RECV_TIMEOUT_DEFAULT;
-
-void mlShowCounters() {
-	counters.sentRTXDataPktCtr = sentRTXDataPktCounter;
-	fprintf(stderr, "\nreceivedCompleteMsgCounter: %d\nreceivedIncompleteMsgCounter: %d\nreceivedDataPktCounter: %d\nreceivedRTXDataPktCounter: %d\nreceivedNACK1PktCounter: %d\nreceivedNACKMorePktCounter: %d\nsentDataPktCounter: %d\nsentRTXDataPktCtr: %d\nsentNACK1PktCounter: %d\nsentNACKMorePktCounter: %d\n", counters.receivedCompleteMsgCounter, counters.receivedIncompleteMsgCounter, counters.receivedDataPktCounter, counters.receivedRTXDataPktCounter, counters.receivedNACK1PktCounter, counters.receivedNACKMorePktCounter, counters.sentDataPktCounter, counters.sentRTXDataPktCtr, counters.sentNACK1PktCounter, counters.sentNACKMorePktCounter);
-	return;
-}
-
-void recv_nack_msg(struct msg_header *msg_h, char *msgbuf, int msg_size)
-{
-	struct nack_msg *nackmsg;
-	
-	msgbuf += msg_h->len_mon_data_hdr;
-	msg_size -= msg_h->len_mon_data_hdr;
-	nackmsg = (struct nack_msg*) msgbuf;
-	
-	unsigned int gapSize = nackmsg->offsetTo - nackmsg->offsetFrom;
-	//if (gapSize == 1349) counters.receivedNACK1PktCounter++;
-	//else counters.receivedNACKMorePktCounter++;
-
-	rtxPacketsFromTo(nackmsg->con_id, nackmsg->msg_seq_num, nackmsg->offsetFrom, nackmsg->offsetTo);	
-}
-
-void pkt_recv_timeout_cb(int fd, short event, void *arg){
-	int recv_id = (long) arg;
-	debug("ML: recv_timeout_cb called. Timeout for id:%d\n",recv_id);
-
-	//check if message still exists	
-	if (recvdatabuf[recv_id] == NULL) return;
-
-	//check if gap was filled in the meantime
-	if (recvdatabuf[recv_id]->gapArray[recvdatabuf[recv_id]->firstGap].offsetFrom == recvdatabuf[recv_id]->gapArray[recvdatabuf[recv_id]->firstGap].offsetTo) {
-		recvdatabuf[recv_id]->firstGap++;
-		return;	
-	}
-
-	struct nack_msg nackmsg;
-	nackmsg.con_id = recvdatabuf[recv_id]->txConnectionID;
-	nackmsg.msg_seq_num = recvdatabuf[recv_id]->seqnr;
-	nackmsg.offsetFrom = recvdatabuf[recv_id]->gapArray[recvdatabuf[recv_id]->firstGap].offsetFrom;
-	nackmsg.offsetTo = recvdatabuf[recv_id]->gapArray[recvdatabuf[recv_id]->firstGap].offsetTo;
-	recvdatabuf[recv_id]->firstGap++;
-
-	unsigned int gapSize = nackmsg.offsetTo - nackmsg.offsetFrom;
-	//if (gapSize == 1349) counters.sentNACK1PktCounter++;
-	//else counters.sentNACKMorePktCounter++;
-
-	//fprintf(stderr,"Sending NACK <- msg_seq_num: %d. monitoringDataHeaderLen: %d. offsetFrom: %d offsetTo: %d \n", nackmsg.msg_seq_num, recvdatabuf[recv_id]->monitoringDataHeaderLen, nackmsg.offsetFrom, nackmsg.offsetTo);
-
-	send_msg(recvdatabuf[recv_id]->connectionID, ML_NACK_MSG, (char *) &nackmsg, sizeof(struct nack_msg), true, &(connectbuf[recvdatabuf[recv_id]->connectionID]->defaultSendParams));	
-}
-
-void last_pkt_recv_timeout_cb(int fd, short event, void *arg){
-	int recv_id = (long) arg;
-	debug("ML: recv_timeout_cb called. Timeout for id:%d\n",recv_id);
-
-	if (recvdatabuf[recv_id] == NULL) {
-		//fprintf(stderr,"Called last_pkt_recv_timeout_cb but there is no slot\n");
-		return;
-	}
-
-	//fprintf(stderr,"Starting last_pkt_recv_timeout_cb for msg_seq_num: %d\n", recvdatabuf[recv_id]->seqnr);
-
-	if (recvdatabuf[recv_id]->expectedOffset == recvdatabuf[recv_id]->bufsize - recvdatabuf[recv_id]->monitoringDataHeaderLen) return;
-
-	struct nack_msg nackmsg;
-	nackmsg.con_id = recvdatabuf[recv_id]->txConnectionID;
-	nackmsg.msg_seq_num = recvdatabuf[recv_id]->seqnr;
-	nackmsg.offsetFrom = recvdatabuf[recv_id]->expectedOffset;
-	nackmsg.offsetTo = recvdatabuf[recv_id]->bufsize - recvdatabuf[recv_id]->monitoringDataHeaderLen;
-
-	unsigned int gapSize = nackmsg.offsetTo - nackmsg.offsetFrom;
-	//if (gapSize == 1349) counters.sentNACK1PktCounter++;
-	//else counters.sentNACKMorePktCounter++;	
-
-	//fprintf(stderr,"last_pkt - Sending NACK <- msg_seq_num: %d. monitoringDataHeaderLen: %d. offsetFrom: %d offsetTo: %d \n", nackmsg.msg_seq_num, recvdatabuf[recv_id]->monitoringDataHeaderLen, nackmsg.offsetFrom, nackmsg.offsetTo);
-
-	send_msg(recvdatabuf[recv_id]->connectionID, ML_NACK_MSG, &nackmsg, sizeof(struct nack_msg), true, &(connectbuf[recvdatabuf[recv_id]->connectionID]->defaultSendParams));	
-}
-
-#endif
-
-
 
 /*
  * convert a socketID to a string. It uses a static buffer, so either strdup is needed, or the string will get lost!
@@ -437,16 +302,29 @@ void send_msg(int con_id, int msg_type, char* msg, int msg_len, bool truncable, 
 			msg_h.offset = htonl(offset);
 			msg_h.msg_length = htonl(truncable ? pkt_len : msg_len);
 
+			//monitoring layer hook
+			if(get_Send_pkt_inf_cb != NULL && iov[1].iov_len) {
+				mon_pkt_inf pkt_info;
+
+				memset(h_pkt,0,MON_PKT_HEADER_SPACE);
+
+				pkt_info.remote_socketID = &(connectbuf[con_id]->external_socketID);
+				pkt_info.buffer = msg + offset;
+				pkt_info.bufSize = pkt_len;
+				pkt_info.msgtype = msg_type;
+				pkt_info.dataID = connectbuf[con_id]->seqnr;
+				pkt_info.offset = offset;
+				pkt_info.datasize = msg_len;
+				pkt_info.monitoringHeaderLen = iov[1].iov_len;
+				pkt_info.monitoringHeader = iov[1].iov_base;
+				pkt_info.ttl = -1;
+				memset(&(pkt_info.arrival_time),0,sizeof(struct timeval));
+
+				(get_Send_pkt_inf_cb) ((void *) &pkt_info);
+			}
 
 			debug("ML: sending packet to %s with rconID:%d lconID:%d\n", conid_to_string(con_id), ntohl(msg_h.remote_con_id), ntohl(msg_h.local_con_id));
-			int priority = 0; 
-			if ((msg_type == ML_CON_MSG)
-#ifdef RTX
- || (msg_type == ML_NACK_MSG)
-#endif
-) priority = HP;
-			//fprintf(stderr,"*******************************ML.C: Sending packet: msg_h.offset: %d msg_h.msg_seq_num: %d\n",ntohl(msg_h.offset),ntohl(msg_h.msg_seq_num));
-			switch(queueOrSendPacket(socketfd, iov, 4, &udpgen.udpaddr,priority)) {
+			switch(sendPacket(socketfd, iov, 4, &udpgen.udpaddr)) {
 				case MSGLEN:
 					info("ML: sending message failed, reducing MTU from %d to %d (to:%s conID:%d lconID:%d msgsize:%d offset:%d)\n", connectbuf[con_id]->pmtusize, pmtu_decrement(connectbuf[con_id]->pmtusize), conid_to_string(con_id), ntohl(msg_h.remote_con_id), ntohl(msg_h.local_con_id), msg_len, offset);
 					// TODO: pmtu decremented here, but not in the "truncable" packet. That is currently resent without changing the claimed pmtu. Might need to be changed.
@@ -466,9 +344,6 @@ void send_msg(int con_id, int msg_type, char* msg, int msg_len, bool truncable, 
 					offset = msg_len; // exit the while
 					break;
 				case OK:
-#ifdef RTX
-					if (msg_type < 127) counters.sentDataPktCounter++;
-#endif
 					//update
 					offset += pkt_len;
 					//transmit data header only in the first packet
@@ -477,43 +352,9 @@ void send_msg(int con_id, int msg_type, char* msg, int msg_len, bool truncable, 
 			}
 		} while(offset != msg_len && !truncable);
 	} while(retry);
-	//fprintf(stderr, "sentDataPktCounter after msg_seq_num = %d: %d\n", msg_h.msg_seq_num, counters.sentDataPktCounter);
-	//fprintf(stderr, "sentRTXDataPktCounter after msg_seq_num = %d: %d\n", msg_h.msg_seq_num, counters.sentRTXDataPktCtr);
 }
 
 void pmtu_timeout_cb(int fd, short event, void *arg);
-
-int sendPacket(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr) {
-	//monitoring layer hook
-	if(get_Send_pkt_inf_cb != NULL && iov[1].iov_len) {
-		mon_pkt_inf pkt_info;	
-
-		struct msg_header *msg_h  = (struct msg_header *) iov[0].iov_base;
-
-		memset(iov[1].iov_base,0,iov[1].iov_len);
-
-		pkt_info.remote_socketID = &(connectbuf[ntohl(msg_h->local_con_id)]->external_socketID);
-		pkt_info.buffer = iov[3].iov_base;
-		pkt_info.bufSize = iov[3].iov_len;
-		pkt_info.msgtype = msg_h->msg_type;
-		pkt_info.dataID = ntohl(msg_h->msg_seq_num);
-		pkt_info.offset = ntohl(msg_h->offset);
-		pkt_info.datasize = ntohl(msg_h->msg_length);
-		pkt_info.monitoringHeaderLen = iov[1].iov_len;
-		pkt_info.monitoringHeader = iov[1].iov_base;
-		pkt_info.ttl = -1;
-		memset(&(pkt_info.arrival_time),0,sizeof(struct timeval));
-
-		(get_Send_pkt_inf_cb) ((void *) &pkt_info);
-	}
-
- 	//struct msg_header *msg_h;
-    //msg_h = (struct msg_header *) iov[0].iov_base;        
-
-	//fprintf(stderr,"*** Sending packet - msgSeqNum: %d offset: %d\n",ntohl(msg_h->msg_seq_num),ntohl(msg_h->offset));
-
-	return sendPacketFinal(udpSocket, iov, len, socketaddr);
-}
 
 void reschedule_conn_msg(int con_id)
 {
@@ -549,11 +390,7 @@ void send_conn_msg(int con_id, int buf_size, int command_type)
 	msg_header->pmtu_size = connectbuf[con_id]->pmtusize;
 
 	memcpy(&(msg_header->sock_id), loc_socketID, sizeof(socket_ID));
-  {
-                        char buf[SOCKETID_STRING_SIZE];
-                        mlSocketIDToString(&((struct conn_msg*)connectbuf[con_id]->ctrl_msg_buf)->sock_id,buf,sizeof(buf));
-                        debug("Local socket_address sent in INVITE: %s, sizeof msg %ld\n", buf, sizeof(struct conn_msg));
-   }
+
 	send_msg(con_id, ML_CON_MSG, connectbuf[con_id]->ctrl_msg_buf, buf_size, true, &(connectbuf[con_id]->defaultSendParams));
 }
 
@@ -667,9 +504,6 @@ void recv_conn_msg(struct msg_header *msg_h, char *msgbuf, int msg_size, struct 
 				connectbuf[free_con_id]->connection_head = connectbuf[free_con_id]->connection_last = NULL;
 				connectbuf[free_con_id]->starttime = time(NULL);
 				memcpy(&(connectbuf[free_con_id]->external_socketID), &(con_msg->sock_id), sizeof(socket_ID));
-		//Workaround to support reuse of socketID
-				connectbuf[free_con_id]->external_socketID.internal_addr.udpaddr.sin_family=AF_INET;
-				connectbuf[free_con_id]->external_socketID.external_addr.udpaddr.sin_family=AF_INET;
 				connectbuf[free_con_id]->pmtusize = con_msg->pmtu_size;	// bootstrap pmtu from the other's size. Not strictly needed, but a good hint
 				connectbuf[free_con_id]->timeout_event = NULL;
 				connectbuf[free_con_id]->external_connectionID = msg_h->local_con_id;
@@ -791,11 +625,6 @@ void recv_stun_msg(char *msgbuf, int recvSize)
 		NAT_traversal = true;
 		// callback to the upper layer indicating that the socketID is now
 		// ready to use
-		{
-                	char buf[SOCKETID_STRING_SIZE];
-                	mlSocketIDToString(&local_socketID,buf,sizeof(buf));
- 			debug("received local socket_address: %s\n", buf);
-		}
 		(receive_SocketID_cb) (&local_socketID, 0);
 	}
 }
@@ -860,12 +689,8 @@ void recv_timeout_cb(int fd, short event, void *arg)
 			&(connectbuf[recvdatabuf[recv_id]->connectionID]->external_socketID);
 		rParams.firstPacketArrived = recvdatabuf[recv_id]->firstPacketArrived;
 
-#ifdef RTX
-		counters.receivedIncompleteMsgCounter++;
-		//mlShowCounters();
-		//fprintf(stderr,"******Cleaning slot for inclomplete msg_seq_num: %d\n", recvdatabuf[recv_id]->seqnr);		
-#endif
- 		//(receive_data_callback) (recvdatabuf[recv_id]->recvbuf + recvdatabuf[recv_id]->monitoringDataHeaderLen, recvdatabuf[recv_id]->bufsize - recvdatabuf[recv_id]->monitoringDataHeaderLen, recvdatabuf[recv_id]->msgtype, &rParams);
+// 		(receive_data_callback) (recvdatabuf[recv_id]->recvbuf + recvdatabuf[recv_id]->monitoringDataHeaderLen, recvdatabuf[recv_id]->bufsize - recvdatabuf[recv_id]->monitoringDataHeaderLen,
+// 			recvdatabuf[recv_id]->msgtype, &rParams);
 
 		//clean up
 		if (recvdatabuf[recv_id]->timeout_event) {
@@ -891,9 +716,6 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 		return;
 	}
 
-#ifdef RTX
-	counters.receivedDataPktCounter++;
-#endif	
 	// check if a recv_data exist and enter data
 	for (recv_id = 0; recv_id < RECVDATABUFSIZE; recv_id++)
 		if (recvdatabuf[recv_id] != NULL) {
@@ -916,14 +738,6 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 		recvdatabuf[recv_id]->bufsize = msg_h->msg_length + msg_h->len_mon_data_hdr;
 		recvdatabuf[recv_id]->recvbuf = (char *) malloc(recvdatabuf[recv_id]->bufsize);
 		recvdatabuf[recv_id]->arrivedBytes = 0;	//count this without the Mon headers
-#ifdef RTX
-		recvdatabuf[recv_id]->txConnectionID = msg_h->local_con_id;
-		recvdatabuf[recv_id]->expectedOffset = 0;
-		recvdatabuf[recv_id]->gapCounter = 0;
-		recvdatabuf[recv_id]->firstGap = 0;
-		recvdatabuf[recv_id]->last_pkt_timeout_event = NULL;
-#endif
-
 		/*
 		* read the timeout data and set it
 		*/
@@ -942,7 +756,6 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 
 	//if first packet extract mon data header and advance pointer
 	if (msg_h->offset == 0) {
-		//fprintf(stderr,"Hoooooray!! We have first packet of some message!!\n");
 		memcpy(recvdatabuf[recv_id]->recvbuf, msgbuf, msg_h->len_mon_data_hdr);
 		msgbuf += msg_h->len_mon_data_hdr;
 		bufsize -= msg_h->len_mon_data_hdr;
@@ -953,46 +766,10 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 	// increment fragmentnr
 	recvdatabuf[recv_id]->recvFragments++;
 	// increment the arrivedBytes
-	recvdatabuf[recv_id]->arrivedBytes += bufsize; 
-
-	//fprintf(stderr,"Arrived bytes: %d Offset: %d Expected offset: %d\n",recvdatabuf[recv_id]->arrivedBytes/1349,msg_h->offset/1349,recvdatabuf[recv_id]->expectedOffset/1349);
+	recvdatabuf[recv_id]->arrivedBytes += bufsize;
 
 	// enter the data into the buffer
 	memcpy(recvdatabuf[recv_id]->recvbuf + msg_h->len_mon_data_hdr + msg_h->offset, msgbuf, bufsize);
-#ifdef RTX
-	// detecting a new gap	
-	if (msg_h->offset > recvdatabuf[recv_id]->expectedOffset) {
-		recvdatabuf[recv_id]->gapArray[recvdatabuf[recv_id]->gapCounter].offsetFrom = recvdatabuf[recv_id]->expectedOffset;
-		recvdatabuf[recv_id]->gapArray[recvdatabuf[recv_id]->gapCounter].offsetTo = msg_h->offset;
-		if (recvdatabuf[recv_id]->gapCounter < RTX_MAX_GAPS - 1) recvdatabuf[recv_id]->gapCounter++;
-		evtimer_add(event_new(base, -1, EV_TIMEOUT, &pkt_recv_timeout_cb, (void *) (long)recv_id), &pkt_recv_timeout);
-	}
-	
-	//filling the gap by delayed packets
-	if (msg_h->offset < recvdatabuf[recv_id]->expectedOffset){
-		counters.receivedRTXDataPktCounter++;
-		//skip retransmitted packets
-		if (recvdatabuf[recv_id]->firstGap < recvdatabuf[recv_id]->gapCounter && msg_h->offset >= recvdatabuf[recv_id]->gapArray[recvdatabuf[recv_id]->firstGap].offsetFrom) {
-			int i;
-			//fprintf(stderr,"firstGap: %d	gapCounter: %d\n", recvdatabuf[recv_id]->firstGap, recvdatabuf[recv_id]->gapCounter);
-			for (i = recvdatabuf[recv_id]->firstGap; i < recvdatabuf[recv_id]->gapCounter; i++){
-				if (msg_h->offset == recvdatabuf[recv_id]->gapArray[i].offsetFrom) {
-					recvdatabuf[recv_id]->gapArray[i].offsetFrom += bufsize;
-					break;
-				}
-				if (msg_h->offset == (recvdatabuf[recv_id]->gapArray[i].offsetTo - bufsize)) {
-					recvdatabuf[recv_id]->gapArray[i].offsetTo -= bufsize;
-					break;
-				}
-			}
-		} else {//fprintf(stderr,"Skipping retransmitted packets in filling the gap.\n"); 
-			//counters.receivedRTXDataPktCounter++;
-			}
-	}
-
-	//updating the expectedOffset	
-	if (msg_h->offset >= recvdatabuf[recv_id]->expectedOffset) recvdatabuf[recv_id]->expectedOffset = msg_h->offset + bufsize;
-#endif
 
 	//TODO very basic checkif all fragments arrived: has to be reviewed
 	if(recvdatabuf[recv_id]->arrivedBytes == recvdatabuf[recv_id]->bufsize - recvdatabuf[recv_id]->monitoringDataHeaderLen)
@@ -1045,35 +822,21 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 				debug("ML: received message from conID:%d, %s\n",recvdatabuf[recv_id]->connectionID,str);
 				rParams.firstPacketArrived = recvdatabuf[recv_id]->firstPacketArrived;
 
-#ifdef RTX
-				counters.receivedCompleteMsgCounter++;
-				//mlShowCounters();
-#endif
-
 				(receive_data_callback) (recvdatabuf[recv_id]->recvbuf + recvdatabuf[recv_id]->monitoringDataHeaderLen, recvdatabuf[recv_id]->bufsize - recvdatabuf[recv_id]->monitoringDataHeaderLen,
 					recvdatabuf[recv_id]->msgtype, (void *) &rParams);
 			} else {
 			    warn("ML: callback not initialized for this message type: %d!\n",msg_h->msg_type);
 			}
-			
+
 			//clean up
 			if (recvdatabuf[recv_id]->timeout_event) {
-				debug("ML: freeing timeout for %d\n",recv_id);
+				debug("ML: freeing timeout for %d",recv_id);
 				event_del(recvdatabuf[recv_id]->timeout_event);
 				event_free(recvdatabuf[recv_id]->timeout_event);
 				recvdatabuf[recv_id]->timeout_event = NULL;
 			} else {
 				debug("ML: received in 1 packet\n",recv_id);
 			}
-#ifdef RTX
-			if (recvdatabuf[recv_id]->last_pkt_timeout_event) {
-				debug("ML: freeing last packet timeout for %d",recv_id);
-				event_del(recvdatabuf[recv_id]->last_pkt_timeout_event);
-				event_free(recvdatabuf[recv_id]->last_pkt_timeout_event);
-				recvdatabuf[recv_id]->last_pkt_timeout_event = NULL;
-			}
-			//fprintf(stderr,"******Cleaning slot for clomplete msg_seq_num: %d\n", recvdatabuf[recv_id]->seqnr);	
-#endif
 			free(recvdatabuf[recv_id]->recvbuf);
 			free(recvdatabuf[recv_id]);
 			recvdatabuf[recv_id] = NULL;
@@ -1083,10 +846,6 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 				//TODO make timeout at least a DEFINE
 				recvdatabuf[recv_id]->timeout_event = event_new(base, -1, EV_TIMEOUT, &recv_timeout_cb, (void *) (long)recv_id);
 				evtimer_add(recvdatabuf[recv_id]->timeout_event, &recv_timeout);
-#ifdef RTX
-				recvdatabuf[recv_id]->last_pkt_timeout_event = event_new(base, -1, EV_TIMEOUT, &last_pkt_recv_timeout_cb, (void *) (long)recv_id);
-				evtimer_add(recvdatabuf[recv_id]->last_pkt_timeout_event, &last_pkt_recv_timeout);
-#endif
 			}
 		}
 	}
@@ -1138,7 +897,7 @@ void pmtu_timeout_cb(int fd, short event, void *arg)
 	}
 
 	//error in PMTU discovery?
-	if (connectbuf[con_id]->pmtusize == P_ERROR) {
+	if (connectbuf[con_id]->pmtusize == ERROR) {
 		if (connectbuf[con_id]->internal_connect == true) {
 			//as of now we tried directly connecting, now let's try trough the NAT
 			connectbuf[con_id]->internal_connect = false;
@@ -1191,7 +950,7 @@ pmtu pmtu_decrement(pmtu pmtusize)
 	case BELOWDSL:
 		return MIN;
 	case MIN:
-		return P_ERROR;
+		return ERROR;
 	default:
 		warn("ML: strange pmtu size encountered:%d, changing to some safe value:%d\n", pmtusize, MIN);
 		return MIN;
@@ -1252,7 +1011,7 @@ void pmtu_error_cb_th(char *msg, int msglen)
 
 //    connectbuf[connectionID]->pmtutrysize = new_pmtusize;
 
-    if (new_pmtusize == P_ERROR) {
+    if (new_pmtusize == ERROR) {
 		error("ML:  Could not create connection with connectionID %i !\n",
 			connectionID);
 
@@ -1367,7 +1126,7 @@ void recv_pkg(int fd, short event, void *arg)
 	unsigned short stun_bind_response = 0x0101;
 	unsigned short * msgspot = (unsigned short *) msgbuf;
 	if (*msgspot == stun_bind_response) {
-		debug("ML: recv_pkg: parse stun message called on %d bytes\n", recvSize);
+		debug("ML: recv_pkg: parse stun message called\n");
 		recv_stun_msg(msgbuf, recvSize);
 		return;
 	}
@@ -1429,12 +1188,6 @@ void recv_pkg(int fd, short event, void *arg)
 			debug("ML: received conn pkg\n");
 			recv_conn_msg(msg_h, bufptr, msg_size, &recv_addr);
 			break;
-#ifdef RTX
-		case ML_NACK_MSG:
-			debug("ML: received nack pkg\n");
-			recv_nack_msg(msg_h, bufptr, msg_size);
-			break;
-#endif
 		default:
 			if(msg_h->msg_type < 127) {
 				debug("ML: received data pkg\n");
@@ -1464,14 +1217,12 @@ void try_stun();
  */
 void nat_traversal_timeout(int fd, short event, void *arg)
 {
-debug("X. NatTrTo %d\n", NAT_traversal);
 	if (NAT_traversal == false) {
 		debug("ML: NAT traversal request re-send\n");
 		if(receive_SocketID_cb)
 			(receive_SocketID_cb) (&local_socketID, 2);
 		try_stun();
 	}
-debug("X. NatTrTo\n");
 }
 
 //return IP address, or INADDR_NONE if can't resolve
@@ -1495,7 +1246,6 @@ int create_socket(const int port, const char *ipaddr)
 {
 	struct sockaddr_in udpaddr = {0};
 	udpaddr.sin_family = AF_INET;
-        debug("X. create_socket %s, %d\n", ipaddr, port);
 	if (ipaddr == NULL) {
 		/*
 		* try to guess the local IP address
@@ -1570,7 +1320,6 @@ void try_stun()
 
 int mlInit(bool recv_data_cb,struct timeval timeout_value,const int port,const char *ipaddr,const int stun_port,const char *stun_ipaddr,receive_localsocketID_cb local_socketID_cb,void *arg){
 
-/*X*/ //  fprintf(stderr,"MLINIT1 %s, %d, %s, %d\n", ipaddr, port, stun_ipaddr, stun_port);
 	base = (struct event_base *) arg;
 	recv_data_callback = recv_data_cb;
 	mlSetRecvTimeout(timeout_value);
@@ -1580,18 +1329,13 @@ int mlInit(bool recv_data_cb,struct timeval timeout_value,const int port,const c
 
 	}
 	register_recv_localsocketID_cb(local_socketID_cb);
-/*X*/ //  fprintf(stderr,"MLINIT1\n");
 	return create_socket(port, ipaddr);
 }
 
-void mlSetRateLimiterParams(int bucketsize, int drainrate, int maxQueueSize, int maxQueueSizeRTX, double maxTimeToHold) {
+void mlSetThrottle(int bucketsize, int drainrate) {
         setOutputRateParams(bucketsize, drainrate);
-	setQueuesParams (maxQueueSize, maxQueueSizeRTX, maxTimeToHold);
 }
      
-void mlSetVerbosity (int log_level) {
-	setLogLevel(log_level);
-}
 
 /* register callbacks  */
 void mlRegisterGetRecvPktInf(get_recv_pkt_inf_cb recv_pkt_inf_cb){
@@ -1652,14 +1396,7 @@ void mlRegisterSetMonitoringHeaderDataCb(set_monitoring_header_data_cb monitorin
 void mlSetRecvTimeout(struct timeval timeout_value){
 
 	recv_timeout = timeout_value;
-#ifdef RTX
-	unsigned int total_usec = recv_timeout.tv_sec * 1000000 + recv_timeout.tv_usec;
-	total_usec = total_usec * LAST_PKT_RECV_TIMEOUT_FRACTION;
-	last_pkt_recv_timeout.tv_sec = total_usec / 1000000;
-	last_pkt_recv_timeout.tv_usec = total_usec - last_pkt_recv_timeout.tv_sec * 1000000;
-	fprintf(stderr,"Timeout for receiving message: %d : %d\n", recv_timeout.tv_sec, recv_timeout.tv_usec);	
-	fprintf(stderr,"Timeout for last pkt: %d : %d\n", last_pkt_recv_timeout.tv_sec, last_pkt_recv_timeout.tv_usec);	
-#endif
+
 }
 
 int mlGetStandardTTL(socketID_handle socketID,uint8_t *ttl){

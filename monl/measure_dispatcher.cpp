@@ -24,17 +24,11 @@
 #include "grapes_log.h"
 
 
-#ifndef WIN32
 #include <arpa/inet.h>
-#else
-#include <winsock2.h>
-#endif
 #include <string.h>
 #include <sstream>
 #include <stdint.h>
 #include <sys/time.h>
-
-#include <cmath>
 
 //TODO: possible improvements:
 // - make buffer a ptr and don't make an explicit copy
@@ -920,7 +914,7 @@ void MeasureDispatcher::cbTxPkt(void *arg) {
 		mph->initial_ttl = (uint32_t)r_rem[R_INITIAL_TTL];
 		mph->ts_sec = htonl((uint32_t)floor(r_rem[R_SEND_TIME]));
 		mph->ts_usec = htonl((uint32_t)((r_rem[R_SEND_TIME] - floor(r_rem[R_SEND_TIME])) * 1000000.0));
-		if(!std::isnan(r_rem[R_REPLY_TIME])) {
+		if(!isnan(r_rem[R_REPLY_TIME])) {
 			mph->ans_ts_sec = htonl((uint32_t)floor(r_rem[R_REPLY_TIME]));
 			mph->ans_ts_usec = htonl((uint32_t)((r_rem[R_REPLY_TIME] - floor(r_rem[R_REPLY_TIME])) * 1000000.0));
 		} else {
@@ -992,7 +986,7 @@ void MeasureDispatcher::cbTxData(void *arg) {
 		mdh->seq_num =  htonl((uint32_t)r_rem[R_SEQNUM]);
 		mdh->ts_sec =  htonl((uint32_t)floor(r_rem[R_SEND_TIME]));
 		mdh->ts_usec =  htonl((uint32_t)((r_rem[R_SEND_TIME] - floor(r_rem[R_SEND_TIME])) * 1000000.0));
-		if(!std::isnan(r_rem[R_REPLY_TIME])) {
+		if(!isnan(r_rem[R_REPLY_TIME])) {
 			mdh->ans_ts_sec = htonl((uint32_t)floor(r_rem[R_REPLY_TIME]));
 			mdh->ans_ts_usec = htonl((uint32_t)((r_rem[R_REPLY_TIME] - floor(r_rem[R_REPLY_TIME])) * 1000000.0));
 		} else {

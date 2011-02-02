@@ -22,12 +22,10 @@
 #define EOK		0
 #define EUNRESOLVEDDEP 	1
 #define EEXISTS		2
-#ifndef WIN32
 #define ERANGE		3
 #define EINVAL		4
-#define ENOMEM		6
-#endif
 #define EINUSE		5
+#define ENOMEM		6
 #define EFAILED	7
 
 #endif /* _ERRORS_H_ */

@@ -12,6 +12,12 @@ AC_PROG_CXX
 AC_PROG_RANLIB
 AC_LANG_C
 
+AC_CHECK_HEADER(netdb.h)
+if test "$ac_cv_header_netdb_h" == no
+then
+	AC_MSG_ERROR([netdb.h is missing, unable to continue])
+	exit -1
+fi
 
 if test "$ac_cv_header_sys_types_h" == no
 then
