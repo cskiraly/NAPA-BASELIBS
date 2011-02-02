@@ -86,7 +86,7 @@ result SeqWinMeasure::RxPkt(result *r, ExecutionList *el) {
 	else if(win_valid)
 		r[R_SEQWIN] = delta_sn_win;
 
-	return r[R_SEQWIN];
+	return NAN;
 }
 
 result SeqWinMeasure::RxData(result *r, ExecutionList *el) {

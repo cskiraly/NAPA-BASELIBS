@@ -46,21 +46,25 @@
 #ifndef TRANSMISSIONHANDLER_H
 #define TRANSMISSIONHANDLER_H
 #include <sys/time.h>
+#ifndef WIN32
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
+#include <sys/uio.h>
+#endif
 #include <fcntl.h>
 #include <event2/event.h>
 #include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/uio.h>
 #include "util/udpSocket.h"
 #include "util/stun.h"
 #include "ml.h"
 
+#ifndef WIN32
 #ifndef boolean
 typedef bool boolean;
 #endif
+#endif
+
 #ifndef TRUE
 #define TRUE ((bool)1)
 #endif
@@ -68,6 +72,14 @@ typedef bool boolean;
 #define FALSE ((bool)0)
 #endif
 
+#ifdef RTX
+/**
+ * This is the maximum number of gaps RTX can keep track of inside one message
+ */
+#define RTX_MAX_GAPS 25
+
+#define ML_NACK_MSG 128
+#endif
 /**
  * This is the maximum size of the monitoring module header that can be added to the messaging layer header
  */
@@ -87,7 +99,7 @@ typedef struct event *sock_event_ptr;
 /**
  * Defined a mtu size - IP size - UDP size
  */
-typedef enum {MAX = 1472, DSL = 1464, DSLMEDIUM = 1422, DSLSLIM = 1372, BELOWDSL = 1172, MIN = 472,ERROR = -1} pmtu;
+typedef enum {MAX = 1472, DSL = 1464, DSLMEDIUM = 1422, DSLSLIM = 1372, BELOWDSL = 1172, MIN = 472, P_ERROR = -1} pmtu;
 
 /**
  * Define connection command types
@@ -119,6 +131,13 @@ typedef struct _socket_ID {
   socketaddrgen external_addr; ///< external or reflexive address
 } socket_ID;
 
+#ifdef RTX
+struct gap {
+	int offsetFrom;
+	int offsetTo;
+};
+#endif
+
 /**
   * A struct that contains information about data that is being received
   */
@@ -138,6 +157,14 @@ typedef struct {
   struct event *timeout_event; ///< a timeout event
   struct timeval timeout_value; ///< the value for a libevent timeout
   time_t starttime; ///< the start time
+#ifdef RTX
+  struct event* last_pkt_timeout_event;
+  int txConnectionID;
+  int expectedOffset;
+  int gapCounter; //index of the first "free slot"
+  int firstGap;	//first gap which hasn't been handled yet (for which the NACK hasn't been sent yet)
+  struct gap gapArray[RTX_MAX_GAPS];
+#endif
 } recvdata;
 
 struct receive_connection_cb_list{
@@ -172,6 +199,7 @@ typedef struct {
 
 #define ML_CON_MSG 127
 
+
 /**
  * A struct with the messaging layer header for connection handling messages
  */
@@ -182,6 +210,19 @@ struct conn_msg {
 	int32_t pmtu_size;	/// the pmtu size 
 	socket_ID sock_id;	/// the socketId of the sender
 } __attribute__((packed));
+
+#ifdef RTX
+/************modifications-START************/
+
+struct nack_msg {
+	int32_t con_id;		///local connectionID of the transmitter
+	int32_t msg_seq_num;
+	uint32_t offsetFrom;
+	uint32_t offsetTo;
+} __attribute__((packed));
+
+/************modifications-END**************/
+#endif
 
 struct msg_header {
 	uint32_t offset;
@@ -195,6 +236,8 @@ struct msg_header {
 };
 #define MSG_HEADER_SIZE (sizeof(struct msg_header))
 #pragma pack(pop)   /* restore original alignment from stack */
+
+int sendPacket(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr);
 
 //
 ///**

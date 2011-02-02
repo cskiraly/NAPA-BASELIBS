@@ -55,6 +55,9 @@ struct res_mh_pair {
 typedef std::map<MeasurementId, class MonMeasure*> ExecutionList;
 
 class MonMeasure {
+	int rx_cnt;
+	result meas_sum;
+	int meas_cnt;
 protected:
 	bool auto_loaded;
 
@@ -80,6 +83,9 @@ protected:
 	/* Parameter values */
 	MonParameterValue *param_values;
 
+	int tx_every;
+
+	result every(result &m);
 
 	void debugInit(const char *);
 	void debugStop();
@@ -206,6 +212,8 @@ public:
 	};
 
 	void defaultStop() {
+		if(rb)
+			rb->publishResults();
 		stop();
 		if(param_values[P_DEBUG_FILE] == 1.0)
 			debugStop();

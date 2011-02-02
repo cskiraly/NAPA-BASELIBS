@@ -20,6 +20,7 @@
 #include <sys/time.h>
 
 RttMeasure::RttMeasure(class MeasurePlugin *m, MeasurementCapabilities mc, class MeasureDispatcher *md): MonMeasure(m,mc,md) {
+	tx_every = 10;
 }
 
 RttMeasure::~RttMeasure() {
@@ -51,7 +52,7 @@ result RttMeasure::RxPkt(result *r,ExecutionList *el) {
 			snprintf(dbg, sizeof(dbg), "RX: Ts: %f seq#: %f Rtt: %f Replyt: %f", r[R_RECEIVE_TIME], r[R_SEQNUM], r[R_RTT], r[R_REPLY_TIME]);
 			debugOutput(dbg);
 
-			return r[R_RTT];
+			return every(r[R_RTT]);
 		}
 
 		snprintf(dbg, sizeof(dbg), "RX: Ts: %f seq#: %f Rtt: nan Replyt: %f", r[R_RECEIVE_TIME], r[R_SEQNUM], r[R_RTT], r[R_REPLY_TIME]);

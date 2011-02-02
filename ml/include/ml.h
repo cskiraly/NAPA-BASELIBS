@@ -51,7 +51,6 @@
 #include <stdint.h>
 #include <sys/time.h>
 
-
 /**
  * @brief The size of a socketID
  */
@@ -262,12 +261,10 @@ void register_recv_localsocketID_cb(receive_localsocketID_cb local_socketID_cb);
 int mlInit(bool recv_data_cb,struct timeval timeout_value,const int port,const char *ipaddr,const int stun_port,const char *stun_ipaddr,receive_localsocketID_cb local_socketID_cb,void *arg);
 
 /**
-  * Configure the parameters for output rate control.
-  * These values may also be set while packets are being transmitted.
-  * @param bucketsize The size of the bucket in kbytes
-  * @param drainrate The amount of kbytes draining in a second. If drainrate is <=0, then rateControl is completely disabled (all packets are passed).
+  * Configure the verbosity of messages
+  * @param log_level [0-4] the lower the less messages are printed out
 */
-void mlSetThrottle(int bucketsize, int drainrate);
+void mlSetVerbosity(int log_level);
 
 /**
  * @brief Register a received packet callback.
@@ -516,6 +513,19 @@ int mlCompareSocketIDsByPort(socketID_handle sock1, socketID_handle sock2);
  * @return The MTU associated to the given connection.
  */
 int mlGetPathMTU(int ConnectionId);
+
+
+
+/**
+  * Configure the parameters for output rate control.
+  * @param bucketsize The size of the bucket in kbytes
+  * @param drainrate The amount of kbytes draining in a second. If drainrate is <=0, then rateControl is completely disabled (all packets are passed).
+  * @param maxQueueSize In kbytes. Max data stored while limiting the output rate. If 0 packets limitted by drainrate are dropped.
+  * @param maxQueueSizeRTX In kbytes. Max data waiting for the retransmission if needed.
+  * @param maxTimeToHold. Time for which sent packets are stored in RTX queue in seconds.
+*/
+void mlSetRateLimiterParams(int bucketsize, int drainrate, int maxQueueSize, int maxQueueSizeRTX, double maxTimeToHold);
+
 
 #ifdef __cplusplus
 }

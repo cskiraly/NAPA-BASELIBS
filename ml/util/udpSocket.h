@@ -49,8 +49,31 @@
 #ifndef UDPSOCKET_H
 #define UDPSOCKET_H
 
-#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <event2/event.h>
+#include <time.h>
+
+#ifndef WIN32
+#include <arpa/inet.h>
+#include <netdb.h>
 #include <netinet/in.h>
+#include <sys/socket.h>
+#include <fcntl.h>
+#else
+
+#include <winsock2.h>
+
+struct iovec {
+  void *iov_base;
+  size_t iov_len;
+};
+
+const char *inet_ntop(int af, const void *src,
+       char *dst, size_t size);
+int inet_pton(int af, const char * src, void * dst);
+#endif
 
 /**
  * The maximum buffer size for a send or received packet.  
@@ -112,25 +135,8 @@ int getTTL(const int udpSocket,uint8_t *ttl);
  * @param bufferSize The size of the send buffer. 
  * @param *socketaddr The address of the remote socket
  */
-int sendPacket(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr);
+int sendPacketFinal(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr);
 
-/** 
-  * Decide if a packet should be throttled
-  * The implementation follows a leaky bucket algorithm: 
-  * if the packet would fill the bucket beyond its limit, it is to be discarded
-  *
-  * @param len The length of the packet to be sent
-  * @return OK or THROTTLE 
-*/
-int outputRateControl(int len);
-
-/**
-  * Configure the parameters for output rate control.
-  * These values may also be set while packets are being transmitted.
-  * @param bucketsize The size of the bucket in kbytes
-  * @param drainrate The amount of kbytes draining in a second. If drainrate is 0, then rateControl is completely disabled (all packets are passed).
-*/
-void setOutputRateParams(int bucketsize, int drainrate);
 
 /**
  * Receive a udp packet
@@ -162,5 +168,25 @@ int handleSocketError(const int udpSocket,const int iofunc,char *buf,int *bufsiz
  * @return 0 if everything went well and -1 if an error occured 
  */
 int closeSocket(const int udpSocket);
+
+/** 
+  * Decide if a packet should be throttled
+  * The implementation follows a leaky bucket algorithm: 
+  * if the packet would fill the bucket beyond its limit, it is to be discarded
+  *
+  * @param len The length of the packet to be sent
+  * @return OK or THROTTLE 
+*/
+int outputRateControl(int len);
+
+/**
+  * Configure the parameters for output rate control.
+  * These values may also be set while packets are being transmitted.
+  * @param bucketsize The size of the bucket in bytes
+  * @param drainrate The darining rate in bits/s. If drainrate is 0, then rateControl is completely disabled (all packets are passed).
+*/
+void setOutputRateParams(int bucketsize, int drainrate);
+
+
 
 #endif

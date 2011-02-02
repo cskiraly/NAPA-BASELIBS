@@ -22,6 +22,7 @@
 
 LossMeasure::LossMeasure(class MeasurePlugin *m, MeasurementCapabilities mc, class MeasureDispatcher *md): MonMeasure(m,mc,md) {
 	mSeqWin = NULL;
+	tx_every = 10;
 }
 
 void LossMeasure::init() {
@@ -54,7 +55,7 @@ result LossMeasure::RxPkt(result *r,ExecutionList *el) {
 	char dbg[512];
 	snprintf(dbg, sizeof(dbg), "Ts: %f Loss: %f", r[R_RECEIVE_TIME],  r[R_LOSS]);
 	debugOutput(dbg);
-	return r[R_LOSS];
+	return every(r[R_LOSS]);
 }
 
 result LossMeasure::RxData(result *r,ExecutionList *el) {

@@ -38,11 +38,16 @@ void grapesInitLog(int log_level, const char *filename, const char *mode) {
         DCLogSetHeader( dclog, 1 );
         DCLogSetPrintLevel( dclog, 1 );
 
+#if !WIN32 && !MAC_OS
 	logstream = open_memstream(&logbuffer, &logbuffer_size);
 	if (!logstream) {
 		fprintf(stderr, "Unable to initialize logger, exiting");
 		exit(-1);
 	}
+#else
+        logbuffer_size=1000;
+	logbuffer = (char *) malloc(logbuffer_size);
+#endif
         initialized = 1;
 }
 
@@ -60,16 +65,22 @@ void grapesWriteLog(const unsigned char lev, const char *fmt, ... ) {
 
 	if (!initialized) return;
 
-	rewind(logstream);
 
   	va_start( str_args, fmt );
+#if !WIN32 && !MAC_OS
+	rewind(logstream);
   	if (vfprintf( logstream, fmt, str_args ) < 0) return;
-  	va_end( str_args );
-
 	char zero = 0;
 	if (fwrite(&zero, 1, 1, logstream) != 1) return;
 	fflush(logstream);
+#else
+        if (vsnprintf( logbuffer, logbuffer_size, fmt, str_args) < 0) return;
+        logbuffer[logbuffer_size - 1] = '\0';
+#endif
+  	va_end( str_args );
 
+//fprintf(stderr, "X.do logger lev:%d, msg %s\n", lev, logbuffer);
 	DCLogWrite(dclog, lev , logbuffer);
+        fflush(dclog->fp);
 }
 

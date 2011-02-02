@@ -103,6 +103,7 @@ enum stat_types {
 	SUM,
 	WIN_SUM,
 	RATE,
+	PERIOD_SUM,
 	LAST_STAT_TYPE
 };
 

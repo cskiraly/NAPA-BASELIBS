@@ -273,7 +273,7 @@ FAILED,
 /* a remote error occured while activating the measure */
 RFAILED,
 /* you called monActivateMeasure with wrong paramters */
-ERROR,
+MS_ERROR,
 /* the measure is beeing set up */
 INITIALISING,
 /* the measure is beeing stopped */

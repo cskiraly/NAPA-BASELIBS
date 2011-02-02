@@ -7,14 +7,30 @@ int parse_serverspec(const char *server, char **addr, unsigned short *port);
 void deferred_publish_cb(evutil_socket_t fd, short what, void *arg);
 
 void repInit(const char *config) {
+#if !WIN32 && !MAC_OS
 	if ((publish_streambuffer.stream = open_memstream(&publish_streambuffer.buffer, &publish_streambuffer.len)) 
-		== NULL) fatal("Unable to initilize repoclient, file %s, line %d", __FILE__, __LINE__);
-	debug("The Repository client library is ready");
+		== NULL) {
+#else
+	publish_streambuffer.buffsize = PUBLISH_BUFFER_SIZE;
+	publish_streambuffer.buffer = malloc(publish_streambuffer.buffsize);
+        if(publish_streambuffer.buffer == NULL) {
+		publish_streambuffer.buffsize = 0;
+#endif
+		fatal("Unable to initilize repoclient, file %s, line %d", __FILE__, __LINE__);
+	}
+	else debug("The Repository client library is ready");
 }
 
 /** Initialize the repoclient instance by parsing the server spec string and setting up things */
-HANDLE repOpen(const char *server, int publish_delay) {
-	struct reposerver *rep = malloc(sizeof(struct reposerver));
+HANDLE repOpen(const char *server, int publish_delay) { 
+	struct reposerver *rep;
+
+        if(server == NULL || strlen(server) == 0 || strcmp(server, "-") == 0) {
+                warn("Repository publishing is disabled");
+		return NULL;
+	}
+
+	rep = malloc(sizeof(struct reposerver));
 	if (!rep) fatal("Out of memory while initializing repository client for %s", server);
 	rep->magic=REPOSERVER_MAGIC;
 	rep->publish_buffer = NULL;
@@ -37,7 +53,8 @@ HANDLE repOpen(const char *server, int publish_delay) {
 		event_base_once(eventbase, -1, EV_TIMEOUT, deferred_publish_cb, rep, &t);
 	}
 
-	return (HANDLE *)rep;
+        debug("X.repOpen cclosing\n");
+        return rep;
 }
 
 /** Close the repoclient instance and free resources */

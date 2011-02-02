@@ -107,6 +107,7 @@ void dataRxcb(char *buffer,int buflen, MsgType msgtype, recv_params *rparams){
 int monInit(void *eb, void *repo_client) {
 	MonMeasureMapId c_measure_map_id;
 	
+        debug("X.moninit\n");
 	init_mon_event(eb);
 	
 	int i,k,len;
@@ -124,7 +125,9 @@ int monInit(void *eb, void *repo_client) {
 		return -ENOMEM;
 	memset(measure_array, 0, len * sizeof(struct MeasurementPlugin));
 	
-   MonMeasureMapId::iterator it;
+        debug("X.moninit\n");
+	
+        MonMeasureMapId::iterator it;
 	for(it = c_measure_map_id.begin(), i = 0; it != c_measure_map_id.end(); it++,i++) {
 		measure_array[i].name = const_cast<char *>((it->second->getName()).c_str());
 		measure_array[i].id = it->second->getId();
@@ -164,6 +167,7 @@ int monInit(void *eb, void *repo_client) {
 		measure_array[i].caps = it->second->getCaps();
 	}
 
+        debug("X.moninit\n");
 	measure_array_len = i;
 
 	/* register callback functions */

@@ -20,6 +20,7 @@
 #include "hopcount_measure.h"
 
 HopcountMeasure::HopcountMeasure(class MeasurePlugin *m, MeasurementCapabilities mc, class MeasureDispatcher *md): MonMeasure(m,mc,md) {
+	tx_every = 100;
 };
 
 HopcountMeasure::~HopcountMeasure() {
@@ -46,9 +47,8 @@ result HopcountMeasure::RxPkt(result *r,ExecutionList *el) {
 	char dbg[512];
 	snprintf(dbg, sizeof(dbg), "Ts: %f Hops: %f (%f-%f)", r[R_SEND_TIME], r[R_HOPCOUNT], r[R_TTL], r[R_INITIAL_TTL]);
 	debugOutput(dbg);
-	return r[R_HOPCOUNT];
+	return every(r[R_HOPCOUNT]);
 }
-
 
 HopcountMeasurePlugin::HopcountMeasurePlugin() {
 	/* Initialise properties: MANDATORY! */

@@ -23,6 +23,11 @@
 #include	"grapes_log.h"
 
 MonMeasure::MonMeasure(class MeasurePlugin *mp, MeasurementCapabilities mc, class MeasureDispatcher *ptrDisp) {
+	rx_cnt = 0;
+	meas_sum = 0;
+	meas_cnt = 0;
+	tx_every = 1;
+
 	measure_plugin = mp;
 	flags = mc;
 	used_counter = 0;
@@ -101,5 +106,18 @@ void MonMeasure::debugOutput(char *out) {
 	case	2:
 			debug("%s",out);
 			break;
+	}
+}
+
+result MonMeasure::every(result &m) {
+	meas_sum += m;
+	meas_cnt++;
+	if(rx_cnt++ % tx_every) {
+		return NAN;	//don't respond too frequently
+	} else {
+		m = meas_sum / meas_cnt;
+		meas_sum = 0;
+		meas_cnt = 0;
+		return m;
 	}
 }

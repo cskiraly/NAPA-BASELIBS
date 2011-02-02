@@ -44,7 +44,6 @@ private:
 	int samples;
 
 	int n_samples;
-	result sum_samples;
 	result sum_win_samples;
 	result rate_sum_samples;
 
@@ -60,6 +59,7 @@ private:
 	int publish_length;
 
 	void *repo_client;
+
 	int newSampleWin(result r);
 
 public:
@@ -113,6 +113,7 @@ public:
 	int publishResults(void);
 	int resizeBuffer(int s);
 	int newSample(result r);
+	void updateStats(void);
 };
 
 #endif

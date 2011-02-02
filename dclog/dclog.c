@@ -44,7 +44,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <netdb.h>
+//#include <netdb.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,6 +54,14 @@
 #ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
+
+#else
+
+static struct tm *localtime_r(const time_t *clock, struct tm *result) {
+    struct tm *res = localtime(clock);
+    *result = *res;
+  return result;
+}
 #endif
 
 // dclog headers
@@ -753,8 +761,9 @@ inline UCHAR DCLogWrite( DCLog *dclog, const UCHAR lev,
   
   // If the user-specified level is higher than the logging level for
   // this DCLog object, return success
-  if (lev > dclog->lev)
+  if (lev > dclog->lev) {
     return 1;
+  }
   
   // If we are using the unique filename by day of the month feature,
   // DCLOG_FEAT_UNIQUE, see if the day of the month has changed

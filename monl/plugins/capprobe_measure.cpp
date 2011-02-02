@@ -23,6 +23,10 @@
 #include <math.h>
 #include <string>
 
+#ifdef WIN32
+#define random(x) rand(x)
+#endif
+
 //defualt values only! can be changed using the changeParam() function
 #define LOWER_LAYER_OVERHEAD 8+20+18+8+12
 #define CAPPROBE_MTU 1300
