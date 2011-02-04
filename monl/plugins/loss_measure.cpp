@@ -18,7 +18,7 @@
  ***********************************************************************/
 
 #include "loss_measure.h"
-#include "grapes_log.h"
+#include "napa_log.h"
 
 LossMeasure::LossMeasure(class MeasurePlugin *m, MeasurementCapabilities mc, class MeasureDispatcher *md): MonMeasure(m,mc,md) {
 	mSeqWin = NULL;

@@ -20,7 +20,7 @@
 #include "measure_dispatcher.h"
 #include "measure_manager.h"
 #include "mon_event.h"
-#include	"grapes_log.h"
+#include	"napa_log.h"
 
 MonMeasure::MonMeasure(class MeasurePlugin *mp, MeasurementCapabilities mc, class MeasureDispatcher *ptrDisp) {
 	rx_cnt = 0;

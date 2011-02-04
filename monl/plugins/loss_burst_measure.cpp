@@ -18,7 +18,7 @@
  ***********************************************************************/
 
 #include "loss_burst_measure.h"
-#include "grapes_log.h"
+#include "napa_log.h"
 
 LossBurstMeasure::LossBurstMeasure(class MeasurePlugin *m, MeasurementCapabilities mc, class MeasureDispatcher *md): MonMeasure(m,mc,md) {
 }

@@ -28,7 +28,7 @@
 #include "ml.h"
 #include "mon.h"
 
-#include "grapes_log.h"
+#include "napa_log.h"
 
 class ResultBuffer {
 private:

@@ -19,7 +19,7 @@
 
 #include "result_buffer.h"
 #include "errors.h"
-#include	"grapes_log.h"
+#include	"napa_log.h"
 #include "repoclient.h"
 
 #include "mon_event.h"

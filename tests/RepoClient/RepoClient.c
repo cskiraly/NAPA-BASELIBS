@@ -8,8 +8,8 @@
 #include        <event2/http.h>
 #include        <event2/http_struct.h>
 
-#include	<grapes.h>
-#include	<grapes_log.h>
+#include	<napa.h>
+#include	<napa_log.h>
 #include	<repoclient.h>
 #include	<ml.h>
 
@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
 	}
 	/* Initialize libevent and logging */
 	eventbase = event_base_new();
-	grapesInitLog(LOG_DEBUG, NULL, NULL);
+	napaInitLog(LOG_DEBUG, NULL, NULL);
 	repInit("");
 
 	/* Parse config file and init repoclient with the "repository" cfg section */
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
 	if (!ntests) fatal("No tests specified, exiting");
 
 	struct timeval t = { 1, 0 };
-	grapesSchedulePeriodic(&t, 1.0/5.0, do_tests, NULL);
+	napaSchedulePeriodic(&t, 1.0/5.0, do_tests, NULL);
 	do_tests(NULL, NULL);
 
 	repClose(repoclient);

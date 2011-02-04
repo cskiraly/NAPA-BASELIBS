@@ -19,8 +19,8 @@
 #include        <event2/http.h>
 #include        <event2/http_struct.h>
  
-#include	<grapes.h>
-#include	<grapes_log.h>
+#include	<napa.h>
+#include	<napa_log.h>
 #include	<mon.h>		// for MeasurementRecord
 
 #include	<repoclient.h>

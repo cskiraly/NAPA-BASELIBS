@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA 
  ***********************************************************************/
 #include "forecaster_measure.h"
-#include "grapes_log.h"
+#include "napa_log.h"
 #include <sys/time.h>
 #include <limits.h>
 

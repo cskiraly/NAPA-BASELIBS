@@ -56,7 +56,7 @@ void new_chunk(struct chunk_buffer *cb, void *cbarg, const struct chunk *c) {
 Peer *peer_init(const char *configfile) {
 	peer = calloc(sizeof(Peer),1);
 
-	grapesInit(event_base_new());
+	napaInit(event_base_new());
 
 	cfg_t *main_config = cfg_init(cfg_main, CFGF_NONE);
 	if(cfg_parse(main_config, configfile) == CFG_PARSE_ERROR)
@@ -103,7 +103,7 @@ void init_messaging(cfg_t *ml_config) {
 		recv_localsocketID_cb, eventbase);
 
 	while (!messaging_ready) {
-		grapesYield();
+		napaYield();
         }
 	info("ML has been initialized, local addess is %s", LocalPeerID);
 }

@@ -4,8 +4,8 @@
 #include <math.h>
 
 #include "ml.h"
-#include "grapes_log.h"
-#include "grapes.h"
+#include "napa_log.h"
+#include "napa.h"
 #include "transmissionHandler.h"
 
 int peerID;
@@ -244,11 +244,11 @@ int main(int argc, char *argv[]) {
 
 	numOfMsg = inputRate / ((msgLen/1349 + 1)*23 + msgLen)*timeInterval;	
 
-	//Init grapes: log facility and libevent
-	grapesInit(event_base_new());
+	//Init napa: log facility and libevent
+	napaInit(event_base_new());
 
 	// Initialize logging
-	grapesInitLog(verbosity, NULL, NULL);
+	napaInitLog(verbosity, NULL, NULL);
 
 	//initRateLimiter(eventbase);
 

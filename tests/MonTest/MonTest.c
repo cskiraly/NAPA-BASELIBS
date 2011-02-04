@@ -25,8 +25,8 @@
 
 #include "ml.h"
 #include "mon.h"
-#include "grapes_log.h"
-#include "grapes.h"
+#include "napa_log.h"
+#include "napa.h"
 #include "repoclient.h"
 
 int active = 0; // active or passive?
@@ -267,11 +267,11 @@ int main(int argc, char *argv[]) {
 
 	printf("Running conf:\nIP: %s\nSTUN: %s\nREPO: %s\nACTIVE: %s\nVERBOSITY: %d\n", bind_ip ? bind_ip:"auto", stun_server, repository, active ? "active" : "passive", verbosity);
 
-	//Init grapes: log facility and libevent
-	grapesInit(event_base_new());
+	//Init napa: log facility and libevent
+	napaInit(event_base_new());
 
 	// Initialize logging
-	grapesInitLog(verbosity, NULL, NULL);
+	napaInitLog(verbosity, NULL, NULL);
 
 	//Init monitoring layer
 	monInit(eventbase, NULL);

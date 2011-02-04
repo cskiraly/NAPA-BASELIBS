@@ -3,9 +3,9 @@
 
 /** @file ul.h
  * 
- * @brief GRAPES User Layer Interface 
+ * @brief User Layer Interface 
  * 
- * The User Layer API describes how a GRAPES peer interacts with the user.
+ * The User Layer API describes how a peer interacts with the user.
  * There are two major operation modes:
  *	- player: displays the received video stream, and provides basic 
  *		controls (e.g. start/stop, channel switch etc.)
@@ -19,28 +19,28 @@
  * These operations are referred to as <i>chunkization</i>/<i>de-chunkization</i>.
  * 
  * In order to provide maximum flexibility, these processes are loosely coupled 
- * to the core GRAPES via network pipes. For simplicity, in the reference 
- * implementation we propose the HTTP protocol for (de)chunkizer-GRAPES core
+ * to the core via network pipes. For simplicity, in the reference 
+ * implementation we propose the HTTP protocol for (de)chunkizer-core
  * interaction.
  *
  * This interface is conceptually clean, easy to integrate with other programs, 
  * and straightforward to implement.
  *
- * As a princile to start with, the GRAPES application handles chunks on its external interfaces. 
+ * As a princile to start with, the application handles chunks on its external interfaces. 
  * At the ingestion side, it receives chunks sent by a <i>sequencer</i> in approximately correct timing. 
- * At the receiver/player nodes, GRAPES+ should issue chunks in correct sequence, 
+ * At the receiver/player nodes, the application should issue chunks in correct sequence, 
  * and (if possible) again with a roughly correct timing. 
  * As a simple approach, each receiver/player client may request a delay 
- * when it connects to GRAPES (e.g. 5 secs), and it receives the replay of 
+ * when it connects to the application (e.g. 5 secs), and it receives the replay of 
  * ingestion events offset by this delay.
  * 
  * This approach also decouples the `network' and `multimedia' aspects of the software: 
- * the player and ingestor are not linked with the GRAPES application and has maximum flexibility 
+ * the player and ingestor are not linked with the application and has maximum flexibility 
  * (e.g. with codec legal and technology aspects).
 
  * `Roughly correct timing'  means that the sending time for chunks are synchronized 
  * (to the media time they contain) with an accuracy of about or less than one chunk period. 
- * This way, within GRAPES, new chunks may directly enter the ChunkBuffer (replacing the oldest one), 
+ * This way, within the application, new chunks may directly enter the ChunkBuffer (replacing the oldest one), 
  * and the dechunkizers will also have to buffer only a small number of (1-3) chunks. 
  * 
  * For low-level interface, we propose using HTTP POST operations: HTTP is a well-known protocol 
@@ -49,7 +49,7 @@
  * HTTP interfaces are also easy to test.
  * 
  * The application may support  multiple simultaneous clients (players with different delays, analyzers, etc.) 
- * on the receiver side. The service offered for this registration by GRAPES is the same HTTP 
+ * on the receiver side. The service offered for this registration by the application is the same HTTP 
  * service used by the chunkizer to send new chunks.
  *
  * <b> Source (ingestor) Protocol Description</b>
@@ -58,24 +58,24 @@
  * from the ingestor. The format is a follows:<br>
  * <tt>http://<addr>:<port>/<path-id>/<chunk-number>?timestamp=<date></tt><br>
  * accompanied by the binary chunk in the POST message
- * The chunk data is opaque for GRAPES and is delivered unchanged.
+ * The chunk data is opaque for the application and is delivered unchanged.
  *
  * <b> Player (client) Protocol Description: Control Interface</b>
  * 
- * The GRAPES core module implements a HTTP listener to receive registrations
+ * An application module implements a HTTP listener to receive registrations
  * from clients (e.g. Display/GUI or analyzer modules). 
  * Registrations are encoded as HTTP GET requests as follows:
  * <tt>http://<hostname>:<port>/register-receptor?url=<url>&channel=<channel>&delay=<delay>&validity=<validity></tt><br>
  * Parameters are:
- *	- <hostname> and <port> are startup parameters for GRAPES
+ *	- <hostname> and <port> are startup parameters for the application
  *	- <url> the URL where posts should be sent (URL encoded). MANDATORY.
  *	- <channel> channel identifier
  * 	- <delay> the delay, expressed in seconds, fractional values are supported. Delay defaults to 5 seconds.
  * 	- <validity> TImeout for this registration: if there is no additional registration 
- *	within <validity> seconds, GRAPES will stop posting chunks.  Default is 300 seconds.
+ *	within <validity> seconds, the application will stop posting chunks.  Default is 300 seconds.
  * 
  * Then, each registered client module is supposed to implement a HTTP listener on the specified URL  
- * where GRAPES will send chunks to. Sending is implemented as a HTTP POST using the source (ingestor) protocol
+ * where the application will send chunks to. Sending is implemented as a HTTP POST using the source (ingestor) protocol
  * above.
  * The client-registration HTTP service above can be easily extended with optional commands implementing GUI
  * controls.
@@ -88,7 +88,7 @@
  * 
  */
 
-#include	"grapes.h"
+#include	"napa.h"
 
 /**
   Initialize source functionality within a peer's User Layer.
@@ -110,7 +110,7 @@ void shutdownULSource(HANDLE ul_source);
 /**
   Initialize a `player' (dechunkizer) functionality  within a peer's User Layer..
 
-  @param[in] reg_url register-receptor URL where GRAPES listens
+  @param[in] reg_url register-receptor URL where the application listens
   @return a handle for the initized peer UL or NULL on error
 */
 HANDLE initULPeer(const char *reg_url);

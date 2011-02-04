@@ -20,8 +20,8 @@
 #include <event2/http_struct.h>
 #include <confuse.h>
  
-#include <grapes.h>
-#include <grapes_log.h>
+#include <napa.h>
+#include <napa_log.h>
 #include <ml.h>
 #include <mon.h>		
 #include <repoclient.h>

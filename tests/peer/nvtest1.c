@@ -1,7 +1,7 @@
 /*
  */
-#include "grapes.h"
-#include "grapes_log.h"
+#include "napa.h"
+#include "napa_log.h"
 #include "chunk.h"
 #include "ml.h"
 

@@ -18,7 +18,7 @@
  ***********************************************************************/
 
 #define LOG_MODULE "[monl] "
-#include	"grapes_log.h"
+#include	"napa_log.h"
 #include "ml.h"
 #include "mon.h"
 #include "measure_manager.h"

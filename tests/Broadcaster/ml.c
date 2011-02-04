@@ -198,7 +198,7 @@ void ml_init(cfg_t *ml_config, int override_port) {
 		recv_localsocketID_cb, eventbase);
 
 	while (!messaging_ready) {
-		grapesYield();
+		napaYield();
 	}
 	mlRegisterRecvDataCb(recv_data_from_peer_cb, MSG_TYPE_CHUNK);
 	mlRegisterRecvDataCb(recv_keepalive_from_peer_cb, MSG_TYPE_ML_KEEPALIVE);

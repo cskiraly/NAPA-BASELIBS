@@ -6,8 +6,8 @@
 
 #include "ml.h"
 #include "mon.h"
-#include "grapes_log.h"
-#include "grapes.h"
+#include "napa_log.h"
+#include "napa.h"
 #include "repoclient.h"
 
 #define SOCKETID_PUBLISH_NAME "SocketId"
@@ -412,11 +412,11 @@ int main(int argc, char *argv[]) {
 
 	printf("Running conf:\nIP:\t\t%s\nSTUN:\t\t%s\nREPO:\t\t%s\nVERBOSITY:\t%d\nPORT:\t\t%d\nCYCLE:\t\t%ds\nCHANNEL:\t%s\nPAUSE:\t\t%dms\n", bind_ip ? bind_ip:"auto", stun_server, repository, verbosity, port, cycle, channel, avg_pause);
 
-	//Init grapes: log facility and libevent
-	grapesInit(event_base_new());
+	//Init napa: log facility and libevent
+	napaInit(event_base_new());
 
 	// Initialize logging
-	grapesInitLog(verbosity, NULL, NULL);
+	napaInitLog(verbosity, NULL, NULL);
 
 	//Init monitoring layer
 	monInit(eventbase, NULL);

@@ -26,7 +26,7 @@
 #include "measure_plugin.h"
 #include "measure_dispatcher.h"
 
-#include "grapes_log.h"
+#include "napa_log.h"
 
 
 #define MAX_NUM_MEASURES_INSTANTIATED 1000000

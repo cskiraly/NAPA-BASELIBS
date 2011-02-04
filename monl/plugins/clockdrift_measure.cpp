@@ -18,7 +18,7 @@
  ***********************************************************************/
 
 #include "clockdrift_measure.h"
-#include "grapes_log.h"
+#include "napa_log.h"
 #include <math.h>
 
 

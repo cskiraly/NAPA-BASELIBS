@@ -8,8 +8,8 @@
 #include        <event2/http.h>
 #include        <event2/http_struct.h>
 
-#include	<grapes.h>
-#include	<grapes_log.h>
+#include	<napa.h>
+#include	<napa_log.h>
 #include	<repoclient.h>
 #include	<neighborlist.h>
 
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
 	}
 	/* Initialize libevent and logging */
 	eventbase = event_base_new();
-	grapesInitLog(-1, NULL, NULL);
+	napaInitLog(-1, NULL, NULL);
 	repInit("");
 
 	/* Parse config file and init repoclient with the "repository" cfg section */
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
 		cfg_getint(neighborlist_cfg, "update_period"), NULL, NULL, NULL);
 
 	struct timeval begin = { 5, 0 };
-	grapesSchedulePeriodic(&begin, 1.0/10.0, periodic_query, neighborlist);
+	napaSchedulePeriodic(&begin, 1.0/10.0, periodic_query, neighborlist);
 
 
 	event_base_loop(eventbase, 0);

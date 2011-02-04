@@ -1,5 +1,5 @@
 /*
- * This file implements logging functionality for the GRAPES framework
+ * This file implements logging functionality for the NAPA framework
  */
 
 #define _GNU_SOURCE
@@ -7,7 +7,7 @@
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<stdarg.h>
-#include	<grapes_log.h>
+#include	<napa_log.h>
 #include	"dclog.h"
 
 DCLog *dclog = NULL;
@@ -16,7 +16,7 @@ FILE *logstream = NULL;
 char *logbuffer = NULL;
 size_t logbuffer_size = 0;
 
-void grapesInitLog(int log_level, const char *filename, const char *mode) {
+void napaInitLog(int log_level, const char *filename, const char *mode) {
         if (initialized) return;
 
         /* Initialize the logger facility */
@@ -51,7 +51,7 @@ void grapesInitLog(int log_level, const char *filename, const char *mode) {
         initialized = 1;
 }
 
-void grapesCloseLog() {
+void napaCloseLog() {
 	if (!initialized) return;
 
 	DCLogClose(dclog);
@@ -60,7 +60,7 @@ void grapesCloseLog() {
 	initialized = 0;
 }
 
-void grapesWriteLog(const unsigned char lev, const char *fmt, ... ) {
+void napaWriteLog(const unsigned char lev, const char *fmt, ... ) {
 	va_list str_args;
 
 	if (!initialized) return;

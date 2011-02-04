@@ -17,7 +17,7 @@
  * 
  */
 
-#include	"grapes.h"
+#include	"napa.h"
 
 /** A NeighborListEntry holds information for Peers in the NeighborList */
 typedef struct {

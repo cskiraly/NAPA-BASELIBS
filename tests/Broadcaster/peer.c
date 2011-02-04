@@ -70,9 +70,9 @@ int main(int argc, char *argv[]) {
 
 	// Initialize logging
 	if (log_level == -1) log_level = cfg_getint(log_config, "level");
-	grapesInitLog(log_level, cfg_getstr(log_config, "logfile"),
+	napaInitLog(log_level, cfg_getstr(log_config, "logfile"),
 			cfg_getstr(log_config, "filemode"));
-	grapesInit(event_base_new());
+	napaInit(event_base_new());
 
 	// Check config file
 	int fd = open(argv[argc - 1], 0);

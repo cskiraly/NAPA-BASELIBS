@@ -65,7 +65,7 @@ int init_source_ul(const char *stream, double chunk_duration) {
 	src->bev = (struct bufferevent *)bufferevent_socket_new((struct event_base *)eventbase, udpSocket, 0);
 	bufferevent_enable(src->bev, EV_READ);
 	src->chunk_duration = chunk_duration;
-	grapesSchedulePeriodic(NULL, 1.0/chunk_duration, read_stream, src);
+	napaSchedulePeriodic(NULL, 1.0/chunk_duration, read_stream, src);
 }
 
 

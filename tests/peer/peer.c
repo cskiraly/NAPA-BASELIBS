@@ -1,5 +1,5 @@
 /*
- * GRAPES test peer implementation
+ * NAPA test peer implementation
  */
 
 #include	"peer.h"
@@ -44,8 +44,8 @@ int main(int argc, char *argv[]) {
 		exit(-1);
 	}
 
-        grapesInitLog(LOG_INFO, NULL, NULL);		/* Initialize logging */
-	peer = peer_init(argv[1]);	/* Initialize the GRAPES infrastructure */
+        napaInitLog(LOG_INFO, NULL, NULL);		/* Initialize logging */
+	peer = peer_init(argv[1]);	/* Initialize the NAPA infrastructure */
 
 	info("Initialization done");
 

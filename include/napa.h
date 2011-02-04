@@ -1,17 +1,17 @@
-#ifndef _GRAPES_H
-#define _GRAPES_H
+#ifndef _NAPA_H
+#define _NAPA_H
 
 /** @mainpage
 
    @section intro Introduction
 
-   The GRAPES prototype code is the reference implementation for the evolving GRAPES (aka. PULSE+) API.
+   The NAPA prototype code is the reference implementation for the evolving WineStreamer (aka. PULSE+) API.
    The main point is to demonstrate the intended final <b>structure</b> of the implementation, with
    omitting as much details as possible. Thus, the pre-prototype contains C language bindings for
    most of the datatypes, API calls etc. without the actual implementation, or with a <i>stub</i>
    implementation only for internal testing and to demonstrate the intended structure.
 
-   Thus, most of the information found in this documentation is intended for GRAPES developers.
+   Thus, most of the information found in this documentation is intended for NAPA developers.
 
    @section structure Code Structure
 
@@ -30,7 +30,7 @@
    The pre-prototype code uses a number of external open-source libraries.
    Most importantly, the <A HREF="http://monkey.org/~provos/libevent/">libevent</A> framework 
    is used to implement the reactive architecture, which was chosen as the 
-   model of computation for GRAPES.
+   model of computation for some of the NAPA libraries.
    Additionally, further open-source libraries are used to perform common tasks
    such as config file parsing and logging.
    
@@ -46,13 +46,13 @@
 */
 
 
-/** @file grapes.h
+/** @file napa.h
  *
- * Common definitions for the GRAPES framework reference implementation, to be included by all 
- * applications using GRAPES.
+ * Common definitions for the NAPA framework reference implementation, to be included by all 
+ * applications using these libraries.
  *
  * This header file contains basic, system-wide definitions (such as PeerID) which are necessary
- * for different GRAPES modules to interact.
+ * for different modules to interact.
  * 
  * Libraries and system-wide dependencies are included from this file, for example standard C
  * header files for common types (e.g. <i>bool</i> or <i>byte<i>
@@ -84,17 +84,17 @@ extern struct event_base *eventbase;
 extern "C" {
 #endif
 
-/** Function to initialize the GRAPES framework.
+/** Function to initialize the framework.
  *
- * This function has to be called first, before any other GRAPES-provided function.
+ * This function has to be called first, before any other NAPA-BASELIBS-provided function.
  
    @param event2_base libevent2 base structure, provided by the external application
 */
-void grapesInit(void *event2_base);
+void napaInit(void *event2_base);
 
 /** Function to yield control (sleep) 
 */
-void grapesYield();
+void napaYield();
 
 /**
   Register a function to be called periodically.
@@ -107,17 +107,17 @@ void grapesYield();
   @param[in] cb callback function to be called periodically.
   @param[in] cbarg argument for the callback function.
   @return handle to the function or NULL on error.
-  @see grapesStopPeriodic
+  @see napaStopPeriodic
 */
-HANDLE grapesSchedulePeriodic(const struct timeval *start, double frequency, void(*cb)(HANDLE handle, void *arg), void *cbarg);
+HANDLE napaSchedulePeriodic(const struct timeval *start, double frequency, void(*cb)(HANDLE handle, void *arg), void *cbarg);
 
 /**
   Stop periodically calling the callback registered to the handle.
 
   @param h handle to the callback.
-  @see grapesStartPeriodic
+  @see napaStartPeriodic
 */
-void grapesStopPeriodic(HANDLE h);
+void napaStopPeriodic(HANDLE h);
 
 
 /** Convenience function to print a timeval */

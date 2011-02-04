@@ -59,7 +59,7 @@ void src_init(cfg_t *source_cfg) {
 			fatal("Unable to start the HTTP receiver to http://%s:%d", 
 					addr, port);
 	} else fatal("Unable to parse stream specification %s", stream);
-	grapesSchedulePeriodic(NULL, 1/60.0, periodicPublishSrcLag, NULL);
+	napaSchedulePeriodic(NULL, 1/60.0, periodicPublishSrcLag, NULL);
 }
 
 struct source_stream {
@@ -196,7 +196,7 @@ int init_source_ul(const char *stream, double chunk_duration) {
 		src->buffers[src->num_buffers] = malloc(MAX_PACKET_SIZE);
 	src->atts_size = 0;
 
-	grapesSchedulePeriodic(NULL, 1.0/chunk_duration, read_stream, src);
+	napaSchedulePeriodic(NULL, 1.0/chunk_duration, read_stream, src);
 }
 
 

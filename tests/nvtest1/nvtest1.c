@@ -274,13 +274,13 @@ bad_url:
 						evhttp_send_reply(req,305,"REQUEST PROCESSING FAILED",NULL);
 						goto finally;
 					}
-					evbuffer_add_printf(req->output_buffer,"<html><head><title>GRAPES - Registration</title></head>"
+					evbuffer_add_printf(req->output_buffer,"<html><head><title>NAPA - Registration</title></head>"
 						"<body><h3>Successfully registered to %s (delay: %f)</h3></body></html>", url, delay);
 				}
 				else {
 					int fd = open(REGFORM_FILE_NAME,O_RDONLY);
 					if(fd > 0) evbuffer_add_file(req->output_buffer, fd, 0, 10000);
-					else evbuffer_add_printf(req->output_buffer,"<html><head><title>GRAPES - Error</title></head>"
+					else evbuffer_add_printf(req->output_buffer,"<html><head><title>NAPA - Error</title></head>"
 						"<body><h3>Error!! Cannot load file %s</h3></body></html>", REGFORM_FILE_NAME);
 				}
 				evhttp_send_reply(req,200,"OK",NULL);

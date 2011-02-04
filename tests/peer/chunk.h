@@ -14,7 +14,7 @@
 #include <event2/buffer.h>
 #include <sys/time.h>
 
-#include "grapes.h"
+#include "napa.h"
 
 
 struct chunk {

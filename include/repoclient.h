@@ -12,7 +12,7 @@
  * Overall considerations:
 	-# In the prototype, the Repository operates as a cental network resource (server). However, peers
 may execute several repoclient instances, and connect to several Repository servers at the same time.
-and has its own executable program, to be run independent of other GRAPES processes. 
+and has its own executable program, to be run independent of other NAPA processes. 
 	-# The repository controller uses an internal network protocol for querying and publishing (inserting) measurement records, and this API defines the client side of this protocol.
 	-# The following kinds of queries are supported:
 		-# Metadata query: list of available (or implemented/supported) 
@@ -72,7 +72,7 @@ on measurement values, ordered by a supplied linear function over measurements
 		in the same format what is used for the Publish call.  Missing (NULL-valued) fields are omitted.
 */
 
-#include	"grapes.h"
+#include	"napa.h"
 #include	"mon.h"
 
 /** Constraints are used in GetPeer and CountPeer functions to specify matching criteria for numeric-value MeasurementRecords */

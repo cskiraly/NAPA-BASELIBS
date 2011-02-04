@@ -21,7 +21,7 @@
 #include "measure_manager.h"
 #include "errors.h"
 #include "ctrl_msg.h"
-#include "grapes_log.h"
+#include "napa_log.h"
 
 
 #ifndef WIN32

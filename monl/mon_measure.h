@@ -31,7 +31,7 @@
 #include "result_buffer.h"
 #include "ml.h"
 
-#include "grapes_log.h"
+#include "napa_log.h"
 
 #include <fstream>
 

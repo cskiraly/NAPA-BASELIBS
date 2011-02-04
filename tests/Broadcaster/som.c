@@ -174,7 +174,7 @@ void som_init(cfg_t *som_config) {
 	int publishPeerIDPeriod =  cfg_getint(som_config,
 			"publishPeerIDPeriod");
 	if (publishPeerIDPeriod) 
-		grapesSchedulePeriodic(NULL, 1.0/(float)publishPeerIDPeriod,
+		napaSchedulePeriodic(NULL, 1.0/(float)publishPeerIDPeriod,
 				publish_PeerID, NULL);
 
 	/* If we are passive, we need to figure out who is the server, and send

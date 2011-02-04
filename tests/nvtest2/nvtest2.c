@@ -182,9 +182,9 @@ const char *print_list(char **list, int n, bool should_free) {
 Peer *peer_init(const char *configfile) {
 	peer = calloc(sizeof(Peer), 1);
 
-	// Init grapes: log facility and libevent
-	grapesInit(event_base_new());
-	info("GRAPES initialized.");
+	// Init napa: log facility and libevent
+	napaInit(event_base_new());
+	info("NAPA initialized.");
 
 	// Parse config file */
 	cfg_t *main_config = cfg_init(cfg_main, CFGF_NONE);
@@ -209,7 +209,7 @@ Peer *peer_init(const char *configfile) {
 
 	// Initialize connection opener loop for requested connections
 	struct timeval begin = { 10, 0 };
-	grapesSchedulePeriodic(&begin, 1.0/(double)peer->nblist_update_period, check_conn_reqs, NULL);
+	napaSchedulePeriodic(&begin, 1.0/(double)peer->nblist_update_period, check_conn_reqs, NULL);
 
 	// Initialize stream source and destination
 	if (!dummymode) {
@@ -228,7 +228,7 @@ void init_monitoring(cfg_t *mon_config) {
 	verbosity = cfg_getint(mon_config, "level");
 
 	// Initialize logging
-	grapesInitLog(verbosity, NULL, NULL);
+	napaInitLog(verbosity, NULL, NULL);
 	info("Logging initialized with verbosity: %d", verbosity);
 
 	// Init monitoring layer
@@ -252,7 +252,7 @@ void init_neighborreqs(cfg_t *nb_config) {
 	peer->neighborlist = neighborlist_init(peer->repository, peer->nblist_desired_size, peer->nblist_update_period, peer->channel, NULL, NULL);
 
 	struct timeval begin = { 5, 0 };
-	grapesSchedulePeriodic(&begin, 1.0/(double)peer->nblist_update_period, periodic_nblst_query, peer->neighborlist);
+	napaSchedulePeriodic(&begin, 1.0/(double)peer->nblist_update_period, periodic_nblst_query, peer->neighborlist);
 }
 
 // Initialize messaging layer
@@ -283,7 +283,7 @@ void init_messaging(cfg_t *ml_config) {
 		receive_local_socketID_cb, (void*)eventbase);
 
 	while (!messaging_ready) {
-		grapesYield();
+		napaYield();
 	}
 	info("ML has been initialized, with local addess: %s", peer->LocalID);
 }
@@ -673,7 +673,7 @@ int init_source_ul(const char *stream, double chunk_duration) {
 	src->chunk_duration = chunk_duration;
 	src->chunkid = 0;
 
-	grapesSchedulePeriodic(NULL, 1.0/chunk_duration, read_stream, src);
+	napaSchedulePeriodic(NULL, 1.0/chunk_duration, read_stream, src);
 }
 
 // Get the list of requested connections' list from the repository
@@ -743,7 +743,7 @@ int main(int argc, char *argv[]) {
 		dummymode = 1;
 	}
 
-	// Initialize the GRAPES infrastructure
+	// Initialize the NAPA infrastructure
 	peer = peer_init(argv[1]);
 
 	// Start everything

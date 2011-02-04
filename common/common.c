@@ -1,5 +1,5 @@
 /*
- * Common functions (mostly init stuff) for GRAPES
+ * Common functions (mostly init stuff) for NAPA
  */
 
 #include	<stdio.h>
@@ -9,8 +9,8 @@
 #include	<event2/event.h>
 
 
-#include	"grapes.h"
-#include	"grapes_log.h"
+#include	"napa.h"
+#include	"napa_log.h"
 
 struct event_base *eventbase = NULL;
 
@@ -22,7 +22,7 @@ void never_callback(evutil_socket_t fd, short what, void *arg) {
 #endif
 
 /** Initialize the software. This should be called FIRST */
-void grapesInit(void *event2_base) {
+void napaInit(void *event2_base) {
 	eventbase = event2_base;
 #if 0
 	/* Won't need this for normal operation */
@@ -31,7 +31,7 @@ void grapesInit(void *event2_base) {
 #endif
 }
 
-void grapesYield() {
+void napaYield() {
 	event_base_loop(eventbase, EVLOOP_ONCE);
 }
 
@@ -56,7 +56,7 @@ void schedule_periodic_callback(evutil_socket_t fd, short what, void *arg) {
 }
 
 
-HANDLE grapesSchedulePeriodic(const struct timeval *start, double frequency, void(*cb)(HANDLE handle, void *arg), void *cbarg) {
+HANDLE napaSchedulePeriodic(const struct timeval *start, double frequency, void(*cb)(HANDLE handle, void *arg), void *cbarg) {
 	struct timeval t = { 0,0 };
 	if (start) t = *start;
 	struct periodic *h = malloc(sizeof(struct periodic));
@@ -70,7 +70,7 @@ HANDLE grapesSchedulePeriodic(const struct timeval *start, double frequency, voi
 	return h;
 }
 
-void grapesStopPeriodic(HANDLE h) {
+void napaStopPeriodic(HANDLE h) {
 	struct periodic *p = h;
 	p->frequency = 0.0;
 }

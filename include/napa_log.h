@@ -1,10 +1,10 @@
-#ifndef _GRAPES_LOG_H
-#define _GRAPES_LOG_H
+#ifndef _NAPA_LOG_H
+#define _NAPA_LOG_H
 
-/** Logging facilities for GRAPES 
+/** Logging facilities for NAPA 
 
- * @file grapes_log.h
- * @brief This module provides convenient logging functions for other GRAPES modules
+ * @file napa_log.h
+ * @brief This module provides convenient logging functions for other NAPA modules
  *
  */
 
@@ -32,39 +32,39 @@
 #define LOG_PROFILE     DCLOG_PROFILE
 
 /** general-purpose, module-aware log facility, to be used with a log priority */
-#define grapes_log(priority, format, ... ) grapesWriteLog(priority,  format " [%s,%d]\n",  ##__VA_ARGS__ , __FILE__, __LINE__ )
+#define napa_log(priority, format, ... ) napaWriteLog(priority,  format " [%s,%d]\n",  ##__VA_ARGS__ , __FILE__, __LINE__ )
 /** Convenience macro to log TODOs */
-#define todo(format, ...) grapes_log(LOG_WARN, "[TODO] " format " file: %s, line %d",  ##__VA_ARGS__ )
+#define todo(format, ...) napa_log(LOG_WARN, "[TODO] " format " file: %s, line %d",  ##__VA_ARGS__ )
 
 /** Convenience macro to log LOG_DEBUG messages */
-#define debug(format, ... ) grapes_log(LOG_DEBUG, format, ##__VA_ARGS__ )
+#define debug(format, ... ) napa_log(LOG_DEBUG, format, ##__VA_ARGS__ )
 /** Convenience macro to log LOG_INFO messages */
-#define info(format, ... )  grapes_log(LOG_INFO, format, ##__VA_ARGS__ )
+#define info(format, ... )  napa_log(LOG_INFO, format, ##__VA_ARGS__ )
 /** Convenience macro to log LOG_WARN messages */
-#define warn(format, ... )  grapes_log(LOG_WARN, format, ##__VA_ARGS__ )
+#define warn(format, ... )  napa_log(LOG_WARN, format, ##__VA_ARGS__ )
 /** Convenience macro to log LOG_ERROR messages */
-#define error(format, ... )  grapes_log(LOG_ERROR, format, ##__VA_ARGS__ )
+#define error(format, ... )  napa_log(LOG_ERROR, format, ##__VA_ARGS__ )
 /**  Convenience macro to log LOG_CRITICAL messages and crash the program */
-#define fatal(format, ... ) {  grapes_log(LOG_CRITICAL, format, ##__VA_ARGS__ ); exit(-1); }
+#define fatal(format, ... ) {  napa_log(LOG_CRITICAL, format, ##__VA_ARGS__ ); exit(-1); }
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** 
-  Initializes the GRAPES logging facility.
+  Initializes the NAPA logging facility.
 
   @param[in] loglevel Only log messages on or above this level
   @param[in] filename Write log messages to this file (might be "stderr" or "stdout")
   @param[in] mode file open mode ("a" for append or "w" for truncate)
 */
-void grapesInitLog(int loglevel, const char *filename, const char *mode);
+void napaInitLog(int loglevel, const char *filename, const char *mode);
 
-/** Closes down GRAPES logging facility. Log messages are discarded after this. */
-void grapesCloseLog();
+/** Closes down NAPA logging facility. Log messages are discarded after this. */
+void napaCloseLog();
 
-/** Low-level interface to the GRAPES logging system. Use the above defined convenience macros instead */
-void grapesWriteLog(const unsigned char lev, const char *fmt, ... );
+/** Low-level interface to the NAPA logging system. Use the above defined convenience macros instead */
+void napaWriteLog(const unsigned char lev, const char *fmt, ... );
 #ifdef __cplusplus
 }
 #endif
