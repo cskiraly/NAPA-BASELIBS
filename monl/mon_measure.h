@@ -97,11 +97,9 @@ protected:
 		if(ph == P_INIT_NAN_ZERO && rb != NULL)
 			return rb->init();
 		if(ph == P_DEBUG_FILE) {
-			if(param_values[P_DEBUG_FILE] == p)
-				return EOK;
-			if(p == 1)
+			if(p == 1.0 || p == 3.0)
 				debugInit(measure_plugin->name.c_str());
-			if(p == 0)
+			if(p == 0.0 || p == 2.0)
 				debugStop();
 			return EOK;
 		}
@@ -207,7 +205,7 @@ public:
 
 	void defaultInit() {
 		init();
-		if(param_values[P_DEBUG_FILE] == 1.0)
+		if(param_values[P_DEBUG_FILE] == 1.0 || param_values[P_DEBUG_FILE] == 3.0)
 			debugInit(measure_plugin->name.c_str());
 	};
 
@@ -215,7 +213,7 @@ public:
 		if(rb)
 			rb->publishResults();
 		stop();
-		if(param_values[P_DEBUG_FILE] == 1.0)
+		if(param_values[P_DEBUG_FILE] == 1.0 || param_values[P_DEBUG_FILE] == 3.0)
 			debugStop();
 	};
 
