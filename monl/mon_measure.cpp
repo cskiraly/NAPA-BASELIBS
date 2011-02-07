@@ -16,6 +16,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA 
  ***********************************************************************/
+#include <sstream>
 #include "mon_measure.h"
 #include "measure_dispatcher.h"
 #include "measure_manager.h"
@@ -71,7 +72,9 @@ void MonMeasure::debugInit(const char *name) {
 
 	output_name = name;
 
-	output_name += "-MT:" + msg_type;
+	std::stringstream mtss;
+	mtss << "-MT:" << (int)msg_type;
+	output_name += mtss.str();
 
 	sid = mlGetLocalSocketID(&errorstatus);
 	if(errorstatus == 0) {
