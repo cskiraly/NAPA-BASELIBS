@@ -1,6 +1,8 @@
 /***************************************************************************
  *   Copyright (C) 2009 by Robert Birke
  *   robert.birke@polito.it
+ *   Copyright (C) 2010 by Csaba Kiraly
+ *   kiraly@disi.unitn.it
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -75,6 +77,12 @@ void MonMeasure::debugInit(const char *name) {
 	std::stringstream mtss;
 	mtss << "-MT:" << (int)msg_type;
 	output_name += mtss.str();
+
+	if(flags & REMOTE) {
+		output_name += "-remote";
+	} else {
+		output_name += "-local";
+	}
 
 	sid = mlGetLocalSocketID(&errorstatus);
 	if(errorstatus == 0) {
