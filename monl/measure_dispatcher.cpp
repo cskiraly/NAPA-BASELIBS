@@ -24,7 +24,7 @@
 #include "napa_log.h"
 
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <arpa/inet.h>
 #else
 #include <winsock2.h>

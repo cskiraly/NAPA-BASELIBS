@@ -38,7 +38,7 @@ void napaInitLog(int log_level, const char *filename, const char *mode) {
         DCLogSetHeader( dclog, 1 );
         DCLogSetPrintLevel( dclog, 1 );
 
-#if !WIN32 && !MAC_OS
+#if !_WIN32 && !MAC_OS
 	logstream = open_memstream(&logbuffer, &logbuffer_size);
 	if (!logstream) {
 		fprintf(stderr, "Unable to initialize logger, exiting");
@@ -67,7 +67,7 @@ void napaWriteLog(const unsigned char lev, const char *fmt, ... ) {
 
 
   	va_start( str_args, fmt );
-#if !WIN32 && !MAC_OS
+#if !_WIN32 && !MAC_OS
 	rewind(logstream);
   	if (vfprintf( logstream, fmt, str_args ) < 0) return;
 	char zero = 0;

@@ -7,7 +7,7 @@ int parse_serverspec(const char *server, char **addr, unsigned short *port);
 void deferred_publish_cb(evutil_socket_t fd, short what, void *arg);
 
 void repInit(const char *config) {
-#if !WIN32 && !MAC_OS
+#if !_WIN32 && !MAC_OS
 	if ((publish_streambuffer.stream = open_memstream(&publish_streambuffer.buffer, &publish_streambuffer.len)) 
 		== NULL) {
 #else

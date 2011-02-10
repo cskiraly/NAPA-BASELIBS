@@ -109,7 +109,7 @@ char *get_ALTO_server(void){
  */
 struct in_addr get_ALTO_host_IP(char * host_string){
 	struct in_addr IP;
-	#ifdef WIN32
+	#ifdef _WIN32
 	char * str_buff = new char[strlen(host_string)];
 	#else
 	char str_buff[strlen(host_string)];
@@ -126,7 +126,7 @@ struct in_addr get_ALTO_host_IP(char * host_string){
 		return IP;
 	}
 	alto_debugf("%s: No IP found\n!!!", __FUNCTION__);
-	#ifdef WIN32
+	#ifdef _WIN32
 	delete [] str_buff;
 	#endif
 	return IP;

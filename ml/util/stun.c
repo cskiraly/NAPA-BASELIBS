@@ -46,7 +46,7 @@
 
 #include <fcntl.h>
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -679,7 +679,7 @@ stunRand()
 #     error Need some way to seed the random number generator 
 #endif 
       int seed = (int)(tick);
-#ifdef WIN32
+#ifdef _WIN32
       srand(seed);
 #else
       srandom(seed);
@@ -696,7 +696,7 @@ UInt64
 stunGetSystemTimeSecs()
 {
    UInt64 time=0;
-#if defined(WIN32)  
+#if defined(_WIN32)  
    SYSTEMTIME t;
    // CJ TODO - this probably has bug on wrap around every 24 hours
    GetSystemTime( &t );

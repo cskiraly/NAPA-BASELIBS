@@ -22,7 +22,7 @@
 #define EOK		0
 #define EUNRESOLVEDDEP 	1
 #define EEXISTS		2
-#ifndef WIN32
+#ifndef _WIN32
 #define ERANGE		3
 #define EINVAL		4
 #define ENOMEM		6

@@ -21,7 +21,7 @@
 #include <sys/time.h>
 #include <limits.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #define random(x) rand(x)
 #endif
 

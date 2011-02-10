@@ -55,7 +55,7 @@
 #include <event2/event.h>
 #include <time.h>
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>

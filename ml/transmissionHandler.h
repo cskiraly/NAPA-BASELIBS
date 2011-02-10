@@ -46,7 +46,7 @@
 #ifndef TRANSMISSIONHANDLER_H
 #define TRANSMISSIONHANDLER_H
 #include <sys/time.h>
-#ifndef WIN32
+#ifndef _WIN32
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -59,7 +59,7 @@
 #include "util/stun.h"
 #include "ml.h"
 
-#ifndef WIN32
+#ifndef _WIN32
 #ifndef boolean
 typedef bool boolean;
 #endif

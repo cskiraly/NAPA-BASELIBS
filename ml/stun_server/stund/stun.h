@@ -17,7 +17,7 @@
 typedef unsigned char  UInt8;
 typedef unsigned short UInt16;
 typedef unsigned int   UInt32;
-#if defined( WIN32 )
+#if defined( _WIN32 )
 typedef unsigned __int64 UInt64;
 #else
 typedef unsigned long long UInt64;
@@ -195,7 +195,7 @@ typedef enum
    StunTypeFirewall,
 } NatType;
 
-#ifdef WIN32
+#ifdef _WIN32
 typedef SOCKET Socket;
 #else
 typedef int Socket;

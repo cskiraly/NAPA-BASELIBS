@@ -50,7 +50,7 @@
 
 #include <stdio.h> 
 #include <time.h>
-#ifndef WIN32
+#ifndef _WIN32
 #include <netinet/in.h>
 #endif
 #include <string.h>

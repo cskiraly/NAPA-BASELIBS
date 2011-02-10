@@ -177,7 +177,7 @@ boolean recv_data_callback;
 /*
  * helper function to get rid of a warning
  */
-#ifndef WIN32
+#ifndef _WIN32
 int min(int a, int b) {
 	if (a > b) return b;
 	return a;

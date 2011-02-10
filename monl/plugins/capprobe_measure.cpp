@@ -23,7 +23,7 @@
 #include <math.h>
 #include <string>
 
-#ifdef WIN32
+#ifdef _WIN32
 #define random(x) rand(x)
 #endif
 

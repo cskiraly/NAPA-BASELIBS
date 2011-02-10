@@ -136,7 +136,7 @@ int createSocket(const int port,const char *ipaddr)
 
 }
 
-#ifndef WIN32
+#ifndef _WIN32
 /* Information: read the standard TTL from a socket  */
 int getTTL(const int udpSocket,uint8_t *ttl){
 #ifdef MAC_OS

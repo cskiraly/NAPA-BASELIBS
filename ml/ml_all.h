@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <errno.h>
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
