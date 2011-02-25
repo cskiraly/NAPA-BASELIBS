@@ -69,7 +69,7 @@ struct event_base *base;
 /*
  * timeout before thinking of an mtu problem (check MAX_TRIALS as well)
  */
-#define PMTU_TIMEOUT 500000 // in usec
+#define PMTU_TIMEOUT 1000000 // in usec
 
 /*
  * retry sending connection messages this many times before reducing pmtu
