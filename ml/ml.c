@@ -418,7 +418,7 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 					offset = msg_len; // exit the while
 					break;
 				case FAILURE:
-					info("ML: sending message failed (to:%s conID:%d lconID:%d msgsize:%d offset:%d)\n", conid_to_string(con_id), ntohl(msg_h.remote_con_id), ntohl(msg_h.local_con_id), msg_len, offset);
+					info("ML: sending message failed (to:%s conID:%d lconID:%d msgsize:%d msgtype:%d offset:%d)\n", conid_to_string(con_id), ntohl(msg_h.remote_con_id), ntohl(msg_h.local_con_id), msg_len, msg_h.msg_type, offset);
 					offset = msg_len; // exit the while
 					break;
                                 case THROTTLE:
@@ -445,7 +445,6 @@ void pmtu_timeout_cb(int fd, short event, void *arg);
 
 int sendPacket(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr) {
 	//monitoring layer hook
-debug("SENDP1");
 	if(get_Send_pkt_inf_cb != NULL && iov[1].iov_len) {
 		mon_pkt_inf pkt_info;	
 
@@ -472,7 +471,6 @@ debug("SENDP1");
     //msg_h = (struct msg_header *) iov[0].iov_base;        
 
 	//fprintf(stderr,"*** Sending packet - msgSeqNum: %d offset: %d\n",ntohl(msg_h->msg_seq_num),ntohl(msg_h->offset));
-debug("SENDP2");
 
 	return sendPacketFinal(udpSocket, iov, len, socketaddr);
 }
