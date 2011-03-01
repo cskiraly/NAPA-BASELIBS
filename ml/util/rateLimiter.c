@@ -73,8 +73,6 @@ int queueOrSendPacket(const int udpSocket, struct iovec *iov, int len, struct so
 {
 	PacketContainer *newPacket = (PacketContainer*) createPacketContainer(udpSocket,iov,len,socketaddr,priority);
 
-debug("QUUEO1");
-debug("QUUEO1");
 	if(!(priority & HP)) {
 		if (!isQueueEmpty()) {						//some packets are already waiting, "I am for sure after them"
 			return addPacketTXqueue(newPacket);
@@ -84,12 +82,10 @@ debug("QUUEO1");
 			return addPacketTXqueue(newPacket);
 		}
 	}
-debug("QUUEO1c\n");
 #ifdef RTX
 	if (!(priority & NO_RTX)) addPacketRTXqueue(newPacket);
 #endif
 
-debug("QUUEO2");
 	return sendPacket(udpSocket, iov, 4, socketaddr);
 }
 
