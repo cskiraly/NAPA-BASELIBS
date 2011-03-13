@@ -301,8 +301,8 @@ public:
 		if(repo_client == NULL)
 			repo_client = default_repo_client;
 
-		if(repo_client == NULL)
-			return -EFAILED;
+		//if(repo_client == NULL)
+		//	return -EFAILED;
 
 		if(channel == NULL)
 			channel = default_channel;
