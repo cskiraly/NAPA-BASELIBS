@@ -2257,22 +2257,22 @@ int mlCompareSocketIDs(socketID_handle sock1, socketID_handle sock2) {
 
 	if (sock1->internal_addr.udpaddr.sin_addr.s_addr !=
 	    sock2->internal_addr.udpaddr.sin_addr.s_addr)
-			return 1;
+			return memcmp(&sock1->internal_addr.udpaddr.sin_addr.s_addr, &sock2->internal_addr.udpaddr.sin_addr.s_addr, sizeof(sock1->internal_addr.udpaddr.sin_addr.s_addr));
 
 	if (sock1->internal_addr.udpaddr.sin_port !=
 		 sock2->internal_addr.udpaddr.sin_port)
-			return 1;
+			return memcmp(&sock1->internal_addr.udpaddr.sin_port, &sock2->internal_addr.udpaddr.sin_port, sizeof(sock1->internal_addr.udpaddr.sin_port));
 
 	/*
 	* compare external addr
 	*/
 	if (sock1->external_addr.udpaddr.sin_addr.s_addr !=
 	    sock2->external_addr.udpaddr.sin_addr.s_addr)
-			return 1;
+			return memcmp(&sock1->external_addr.udpaddr.sin_addr.s_addr, &sock2->external_addr.udpaddr.sin_addr.s_addr, sizeof(sock1->external_addr.udpaddr.sin_addr.s_addr));
 
 	if (sock1->external_addr.udpaddr.sin_port !=
 		 sock2->external_addr.udpaddr.sin_port)
-			return 1;
+			return memcmp(&sock1->external_addr.udpaddr.sin_port, &sock2->external_addr.udpaddr.sin_port, sizeof(sock1->external_addr.udpaddr.sin_port));
 
 	return 0;
 }
