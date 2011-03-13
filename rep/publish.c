@@ -119,9 +119,9 @@ HANDLE repPublish(HANDLE h, cb_repPublish cb, void *cbarg, MeasurementRecord *r)
 		return 0;
 	}
 
-	info("abouttopublish,%s,%s,%s,%s,%f,%s,%s,%s\n", 
-		r->originator, r->targetA, r->targetB, r->published_name, r->value, 
-		r->string_value, r->channel, timeval2str(&(r->timestamp)));
+	//info("abouttopublish,%s,%s,%s,%s,%f,%s,%s,%s\n",
+	//	r->originator, r->targetA, r->targetB, r->published_name, r->value,
+	//	r->string_value, r->channel, timeval2str(&(r->timestamp)));
 	char uri[1024];
 	char buf[1024];
 
