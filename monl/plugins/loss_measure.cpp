@@ -38,13 +38,13 @@ result LossMeasure::RxPkt(result *r,ExecutionList *el) {
 	if(isnan(r[R_SEQWIN]))
 		return NAN;
 
-	if(mSeqWin == NULL) {
+//	if(mSeqWin == NULL) { dirty trick to test bug
 		if(el->find(SEQWIN) == el->end()) {
 			error("MONL: LOSS missing dependency");
 			return NAN;
 		}
 		mSeqWin = (*el)[SEQWIN];
-	}
+//	}
 
 	if(r[R_SEQWIN] > mSeqWin->getParameter(P_SEQN_WIN_SIZE) && 
 		r[R_SEQWIN] < mSeqWin->getParameter(P_SEQN_WIN_OVERFLOW_TH)) {
