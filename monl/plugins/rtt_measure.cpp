@@ -77,7 +77,7 @@ result RttMeasure::TxPkt(result *r,ExecutionList *el) {
 		else
 			r[R_REPLY_TIME] = NAN;
 	} else {
-		snprintf(dbg, sizeof(dbg), "TX: Ts: %f seq#: %f", r[R_SEND_TIME], r[R_SEQNUM], last_time_rx, r[R_REPLY_TIME]);
+		snprintf(dbg, sizeof(dbg), "TX: Ts: %f seq#: %f", r[R_SEND_TIME], r[R_SEQNUM]);
 		debugOutput(dbg);
 	}
 	return NAN;
