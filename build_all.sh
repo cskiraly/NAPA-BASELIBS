@@ -69,6 +69,10 @@ if [ -n "$RTX" ]; then
 	CXXFLAGS="$CXXFLAGS -DRTX"
 fi
 
+#Set the otpions to use with configure
+[ -n "$CFLAGS" ] && CONF_CFLAGS="CFLAGS='$CFLAGS'"
+[ -n "$CXXFLAGS" ] && CONF_CXXFLAGS="CXXFLAGS='$CXXFLAGS'"
+
 MAKE="make -j `grep processor /proc/cpuinfo | wc -l`"
 
 THIRDPARTY_DIR="${BUILD_ROOT_DIR}/3RDPARTY-LIBS"
@@ -283,7 +287,9 @@ export LIBEVENT_DIR LIBCONFUSE_DIR LIBXML2_DIR
      [ -e Makefile ] && $MAKE distclean
    mkdir -p m4 config
      autoreconf --force -I config -I m4 --install
-     ./configure $EVOPT $CONFOPT
+     echo "./configure $EVOPT $CONFOPT $CONF_CFLAGS $CONF_CXXFLAGS ${HOSTARCH:+--host=$HOSTARCH}"
+     echo "./configure $EVOPT $CONFOPT $CONF_CFLAGS $CONF_CXXFLAGS ${HOSTARCH:+--host=$HOSTARCH}" > conf.sh
+     sh conf.sh
      echo "//blah" > common/chunk.c
    fi
    for SUBDIR in dclog common monl rep ALTOclient ; do
@@ -294,7 +300,9 @@ export LIBEVENT_DIR LIBCONFUSE_DIR LIBXML2_DIR
       if [ ! -e Makefile -o -n "$REBUILD_BASELIBS" ] ; then
         mkdir -p m4 config
         autoreconf --force -I config -I m4 --install
-        ./configure $EVOPT $CONFOPT
+     echo "./configure $EVOPT $CONFOPT $CONF_CFLAGS $CONF_CXXFLAGS ${HOSTARCH:+--host=$HOSTARCH}"
+     echo "./configure $EVOPT $CONFOPT $CONF_CFLAGS $CONF_CXXFLAGS ${HOSTARCH:+--host=$HOSTARCH}" > conf.sh
+     sh conf.sh
 	$MAKE clean
       fi
       $MAKE
