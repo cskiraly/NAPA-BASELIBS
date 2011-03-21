@@ -34,7 +34,7 @@ fi
 [ -z "$ML" ] && ML=1
 [ -z "$MONL" ] && MONL=1
 [ -z "$ALTO" ] && ALTO=1
-[ -z "$RTX" ] && RTX=0
+[ -z "$RTX" ] && RTX=1
 
 # Refresh base libraries if this is an svn checkout?
 [ -n "$UPDATE_BASELIBS" ] || UPDATE_BASELIBS="" 
