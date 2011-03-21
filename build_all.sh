@@ -34,6 +34,7 @@ fi
 [ -z "$ML" ] && ML=1
 [ -z "$MONL" ] && MONL=1
 [ -z "$ALTO" ] && ALTO=1
+[ -z "$RTX" ] && RTX=0
 
 # Refresh base libraries if this is an svn checkout?
 [ -n "$UPDATE_BASELIBS" ] || UPDATE_BASELIBS="" 
@@ -55,6 +56,7 @@ which autoconf >/dev/null || { echo "please install autoconf!"; exit 1; }
 [ "$ML" == "0" ] && ML=
 [ "$MONL" == "0" ] && MONL=
 [ "$ALTO" == "0" ] && ALTO=
+[ "$RTX" == "0" ] && RTX=
 
 # if not empty, options are set to '1' (except for STATIC)
 [ -n "$DUMMY" ] && DUMMY=0
@@ -62,6 +64,10 @@ which autoconf >/dev/null || { echo "please install autoconf!"; exit 1; }
 [ -n "$MONL" ] && MONL=1
 [ -n "$ALTO" ] && ALTO=1
 
+if [ -n "$RTX" ]; then
+	CFLAGS="$CFLAGS -DRTX"
+	CXXFLAGS="$CXXFLAGS -DRTX"
+fi
 
 MAKE="make -j `grep processor /proc/cpuinfo | wc -l`"
 
