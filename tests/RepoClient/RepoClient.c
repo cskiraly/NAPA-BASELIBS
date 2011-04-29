@@ -159,9 +159,9 @@ int main(int argc, char *argv[]) {
 	ntests = cfg_size(cfg, "test");
 	if (!ntests) fatal("No tests specified, exiting");
 
-	struct timeval t = { 1, 0 };
-	napaSchedulePeriodic(&t, 1.0/5.0, do_tests, NULL);
-	do_tests(NULL, NULL);
+	//struct timeval t = { 1, 0 };
+	//napaSchedulePeriodic(&t, 1.0/5000.0, do_tests, NULL);
+	do_tests(repoclient, NULL);
 
 	repClose(repoclient);
 
