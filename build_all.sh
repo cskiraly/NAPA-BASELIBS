@@ -43,6 +43,9 @@ fi
 
 #which flex || { echo "please install flex!"; exit 1; }
 #which libtoolize || { echo "please install libtool!"; exit 1; }
+WGET_OR_CURL=`which wget`
+[ -n "$WGET_OR_CURL" ] || { WGET_OR_CURL=`which curl` ; WGET_OR_CURLOPT="-L -O"; }
+[ -n "$WGET_OR_CURL" ] || { echo "please install wget or curl!"; exit 1; }
 which autoconf >/dev/null || { echo "please install autoconf!"; exit 1; }
 #which autopoint || { echo "please install gettext (or autopoint) !"; exit 1; }
 
@@ -76,6 +79,9 @@ fi
 MAKE="make -j `grep processor /proc/cpuinfo | wc -l`"
 
 THIRDPARTY_DIR="${BUILD_ROOT_DIR}/3RDPARTY-LIBS"
+[ -z "$DOWNLOAD_CACHE" ] && { DOWNLOAD_CACHE="${THIRDPARTY_DIR}/_download_cache"; mkdir -p $DOWNLOAD_CACHE; }
+[ "$DOWNLOAD_CACHE" == "<no>" ] || [ -d "$DOWNLOAD_CACHE" -a -w "$DOWNLOAD_CACHE" ] || \
+     { echo "ERROR: Download cache $DOWNLOAD_CACHE is not a writable directory"; exit; }
 
 QUICK=false
 REMOVE_OBJECTS=false
@@ -149,6 +155,17 @@ check_files_in_system_paths() {
    [ -n "$FOUND_ALL" ]
 } 
    
+cache_or_wget() {
+	URL=$1
+		FILE=$2
+		[ -z "$FILE" ] && FILE=`grep -o '[^/]*$' <<<"$URL"`
+		if [ "$DOWNLOAD_CACHE" == "<no>" -o ! -e "$DOWNLOAD_CACHE/$FILE" ] ; then 
+			$WGET_OR_CURL $WGET_OR_CURLOPT $URL || [ ! -e $FILE ] || { echo "ERROR: download of $URL failed"; exit; }
+	[ "$DOWNLOAD_CACHE" == "<no>" ] || cp $FILE $DOWNLOAD_CACHE;
+		else 
+			cp $DOWNLOAD_CACHE/$FILE .
+				fi
+}
    
 prepare_lib() {
     LIB_NAME="$1"
