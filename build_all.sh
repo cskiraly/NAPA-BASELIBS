@@ -7,7 +7,6 @@ if [ -n "$ALL_DIR" ] ; then
   [ -e "$ALL_DIR" ] || { echo "Directory in \$ALL_DIR does not exist: $ALL_DIR"; exit; }  
   [ -z "$LIBEVENT_DIR" ] && LIBEVENT_DIR=$ALL_DIR/libevent
   [ -z "$LIBCONFUSE_DIR" ] && LIBCONFUSE_DIR=$ALL_DIR/libconfuse;
-  [ -z "$LOG4C_DIR" ] && LOG4C_DIR=$ALL_DIR/log4c;
   [ -z "$LIBXML2_DIR" ] && LIBXML2_DIR=$ALL_DIR/libxml2;
 fi
 
@@ -23,7 +22,6 @@ fi
 
 [ -n "$LIBEVENT_DIR" ] || LIBEVENT_DIR="<build_local>"
 [ -n "$LIBCONFUSE_DIR" ] || LIBCONFUSE_DIR="<build_local>"
-[ -n "$LOG4C_DIR" ] || LOG4C_DIR="<build_local>"
 [ -n "$LIBXML2_DIR" ] || LIBXML2_DIR="<build_local>"
 
 # leave empty or assign 0 to disable these features.
@@ -266,11 +264,6 @@ prepare_lib libconfuse LIBCONFUSE_DIR "confuse.h libconfuse.a" \
 
 [ `uname -m` = x86_64 ] && LIBEXPAT_HACK='--with-expat=builtin'
 
-prepare_lib log4c LOG4C_DIR "log4c.h liblog4c.a" \
-        "wget http://downloads.sourceforge.net/project/log4c/log4c/1.2.1/log4c-1.2.1.tar.gz; \
-              tar xvzf log4c-1.2.1.tar.gz" \
-        "./configure --prefix \$LIB_HOME $LIBEXPAT_HACK; $MAKE; $MAKE install"
-
 prepare_lib libxml2 LIBXML2_DIR "libxml2/libxml/xmlversion.h libxml2/libxml/xmlIO.h libxml2/libxml/parser.h libxml2/libxml/tree.h libxml2.a" \
         "wget ftp://xmlsoft.org/libxml2/libxml2-2.7.6.tar.gz; \
               tar xvzf libxml2-2.7.6.tar.gz" \
@@ -286,7 +279,6 @@ grep -q "^<" <<<$LIBXML2_DIR  && LIBXML2_DIR=
 echo "=============== YOUR 3RDPARTY DIRECTORIES ============"
 echo "LIBEVENT_DIR=$LIBEVENT_DIR" 
 echo "LIBCONFUSE_DIR=$LIBCONFUSE_DIR" 
-echo "LOG4C_DIR=$LOG4C_DIR" 
 echo "LIBXML2_DIR=$LIBXML2_DIR"
 
 echo
