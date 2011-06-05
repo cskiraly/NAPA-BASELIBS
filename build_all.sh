@@ -87,7 +87,11 @@ fi
 [ -n "$CFLAGS" ] && CONF_CFLAGS="CFLAGS='$CFLAGS'"
 [ -n "$CXXFLAGS" ] && CONF_CXXFLAGS="CXXFLAGS='$CXXFLAGS'"
 
-MAKE="make -j `grep processor /proc/cpuinfo | wc -l`"
+if [ "$OSTYPE" == "linux-gnu" ]; then
+  MAKE="make -j `grep processor /proc/cpuinfo | wc -l`"
+else
+  MAKE="make -j 4"
+fi
 
 THIRDPARTY_DIR="${BUILD_ROOT_DIR}/3RDPARTY-LIBS"
 [ -z "$DOWNLOAD_CACHE" ] && { DOWNLOAD_CACHE="${THIRDPARTY_DIR}/_download_cache"; mkdir -p $DOWNLOAD_CACHE; }
@@ -269,13 +273,13 @@ prepare_lib libevent LIBEVENT_DIR "event2/event.h libevent.a" \
         "cache_or_wget http://www.monkey.org/~provos/libevent-2.0.3-alpha.tar.gz; \
                   tar xvzf libevent-2.0.3-alpha.tar.gz" \
 			 "./configure --prefix=\$LIB_HOME ${HOSTARCH:+--host=$HOSTARCH};\
-        $MAKE; $MAKE install" 
+        $MAKE; make install" 
 
 prepare_lib libconfuse LIBCONFUSE_DIR "confuse.h libconfuse.a" \
 	"cache_or_wget http://savannah.nongnu.org/download/confuse/confuse-2.7.tar.gz;\
 	tar xvzf confuse-2.7.tar.gz" \
 			 "./configure --disable-examples --prefix=\$LIB_HOME  ${HOSTARCH:+--host=$HOSTARCH};\
-			 $MAKE; $MAKE install" 
+			 $MAKE; make install" 
 [ `uname -m` = x86_64 ] && LIBEXPAT_HACK='--with-expat=builtin'
 
 if [ -n "$ALTO" ] ; then
@@ -283,7 +287,7 @@ prepare_lib libxml2 LIBXML2_DIR "libxml2/libxml/xmlversion.h libxml2/libxml/xmlI
         "cache_or_wget ftp://xmlsoft.org/libxml2/libxml2-2.7.6.tar.gz; \
               tar xvzf libxml2-2.7.6.tar.gz" \
         "./configure --with-threads --prefix=\$LIB_HOME  ${HOSTARCH:+--host=$HOSTARCH};\
-		    $MAKE; $MAKE install" 
+		    $MAKE; make install" 
 fi
 }
 
