@@ -1,8 +1,8 @@
 #!/bin/bash
-SCRIPT=$(readlink -f $0)
-BUILD_ROOT_DIR=`dirname $SCRIPT`
-
+BUILD_ROOT_DIR=`dirname $0`
 cd "$BUILD_ROOT_DIR"
+BUILD_ROOT_DIR=`pwd`
+
 if [ -n "$ALL_DIR" ] ; then
   [ -e "$ALL_DIR" ] || { echo "Directory in \$ALL_DIR does not exist: $ALL_DIR"; exit; }  
   [ -z "$LIBEVENT_DIR" ] && LIBEVENT_DIR=$ALL_DIR/libevent
