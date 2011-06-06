@@ -3,6 +3,19 @@ BUILD_ROOT_DIR=`dirname $0`
 cd "$BUILD_ROOT_DIR"
 BUILD_ROOT_DIR=`pwd`
 
+#check the architecture
+if [ "$OSTYPE" == "linux-gnu" ]; then
+   # do something Linux-y
+   echo "Building for Linux"
+elif [ "$OSTYPE" == "darwin10.0" ]; then
+   # do something OSX-y
+   echo "Building for OSX"
+   CFLAGS="$CFLAGS -DMAC_OS"
+   CXXFLAGS="$CXXFLAGS -DMAC_OS"
+   OBJ_CHECK=0
+   [ "$STATIC"==2 ] && STATIC=1
+fi
+
 if [ -n "$ALL_DIR" ] ; then
   [ -e "$ALL_DIR" ] || { echo "Directory in \$ALL_DIR does not exist: $ALL_DIR"; exit; }  
   [ -z "$LIBEVENT_DIR" ] && LIBEVENT_DIR=$ALL_DIR/libevent
