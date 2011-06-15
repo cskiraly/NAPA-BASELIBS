@@ -1522,6 +1522,8 @@ int create_socket(const int port, const char *ipaddr)
 void try_stun()
 {
 	if (isStunDefined()) {
+		struct timeval timeout_value_NAT_traversal = NAT_TRAVERSAL_TIMEOUT;
+
 		/*
 		* send the NAT traversal STUN request
 		*/
@@ -1530,10 +1532,7 @@ void try_stun()
 		/*
 		* enter a NAT traversal timeout that takes care of retransmission
 		*/
-		struct event *ev1;
-		struct timeval timeout_value_NAT_traversal = NAT_TRAVERSAL_TIMEOUT;
-		ev1 = evtimer_new(base, nat_traversal_timeout, NULL);
-		event_add(ev1, &timeout_value_NAT_traversal);
+		event_base_once(base, -1, EV_TIMEOUT, &nat_traversal_timeout, NULL, &timeout_value_NAT_traversal);
 
 		NAT_traversal = false;
 	} else {
