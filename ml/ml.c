@@ -266,6 +266,13 @@ void last_pkt_recv_timeout_cb(int fd, short event, void *arg){
 		return;
 	}
 
+	if (recvdatabuf[recv_id]->last_pkt_timeout_event) {
+		debug("ML: freeing last packet timeout for %d",recv_id);
+		event_del(recvdatabuf[recv_id]->last_pkt_timeout_event);
+		event_free(recvdatabuf[recv_id]->last_pkt_timeout_event);
+		recvdatabuf[recv_id]->last_pkt_timeout_event = NULL;
+	}
+
 	if (recvdatabuf[recv_id]->expectedOffset == recvdatabuf[recv_id]->bufsize - recvdatabuf[recv_id]->monitoringDataHeaderLen) return;
 
 	struct nack_msg nackmsg;
@@ -927,7 +934,7 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 		recvdatabuf[recv_id]->gapArray[recvdatabuf[recv_id]->gapCounter].offsetFrom = recvdatabuf[recv_id]->expectedOffset;
 		recvdatabuf[recv_id]->gapArray[recvdatabuf[recv_id]->gapCounter].offsetTo = msg_h->offset;
 		if (recvdatabuf[recv_id]->gapCounter < RTX_MAX_GAPS - 1) recvdatabuf[recv_id]->gapCounter++;
-		evtimer_add(event_new(base, -1, EV_TIMEOUT, &pkt_recv_timeout_cb, (void *) (long)recv_id), &pkt_recv_timeout);
+		event_base_once(base, -1, EV_TIMEOUT, &pkt_recv_timeout_cb, (void *) (long)recv_id, &pkt_recv_timeout);
 	}
 	
 	//filling the gap by delayed packets
