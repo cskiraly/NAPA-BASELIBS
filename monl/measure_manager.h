@@ -334,6 +334,29 @@ public:
 		return mMeasureInstances[mh]->newSample(r);
 	};
 
+  result monRetrieveResultById(SocketId src, MsgType mt, MeasurementCapabilities flags, MeasurementId mid, enum stat_types st) {
+		struct SocketIdMt h_dst;
+
+		h_dst.sid = src;
+		h_dst.mt = initmeasure->msg_type;
+
+		/* Check if anything for that destination exists */
+		if(dispatcherList.find(h_dst) == dispatcherList.end())
+			return NAN;
+
+		/* check if the specific measure is available */
+		m = findMeasureFromId(dispatcherList[h_dst], initmeasure->mc, initmeasure->mid);
+		if(m == NULL)
+			return NAN;
+
+		/* check if the specific measure is storing results */
+		if(m->rb  == NULL)
+			return NAN;
+
+		m->rb->updateStats();
+		return m->rb->stats[st];
+	}
+
 	void monParseConfig(void *);
 
 	int monSetPeerName(const char *pn);
