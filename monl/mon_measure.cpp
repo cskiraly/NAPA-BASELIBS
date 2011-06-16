@@ -50,6 +50,8 @@ MonMeasure::MonMeasure(class MeasurePlugin *mp, MeasurementCapabilities mc, clas
 
 	if(!(flags & REMOTE))
 		rb = new ResultBuffer((int)param_values[P_WINDOW_SIZE], mp->name.c_str(), ptrDispatcher->mm->peer_name, this);
+	else if(flags & REMOTE_RESULTS)
+		rb = new ResultBuffer((int)param_values[P_WINDOW_SIZE], mp->name.c_str(), ptrDispatcher->mm->peer_name, this);
 	else
 		rb = NULL;
 };
