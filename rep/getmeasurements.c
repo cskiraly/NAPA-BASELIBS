@@ -77,6 +77,7 @@ void _getMeasurements_callback(struct evhttp_request *req,void *arg) {
 }
 
 MeasurementRecord parse_measurementrecord(const char *line) {
+        extern char *strtok_r(char *str, const char *delim, char **savep); // mingw fails to define this
 	MeasurementRecord r;
 	char *work = strdup(line);
 	char *fieldptr;

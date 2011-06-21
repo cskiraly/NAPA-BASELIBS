@@ -135,7 +135,7 @@ $REMOVE_OBJECTS && REBUILD_BASELIBS=true && REBUILD_GRAPES=true
 get_system_includes() {
    DUMMY_FILE=`mktemp temp_file.XXXX`
    DUMMY_OUT=`mktemp temp_out.XXXX`
-   cpp -v $DUMMY_FILE 2>$DUMMY_OUT;
+   ${CPP:-cpp} -v $DUMMY_FILE 2>$DUMMY_OUT;
    INC_DIRS1=`awk '/#include <...> search.*/, /^End.*/' <$DUMMY_OUT | grep -v '^#include\|^End'`
    GCC_INCLUDEPATH=""
    for D in $INC_DIRS1 ; do GCC_INCLUDEPATH="$GCC_INCLUDEPATH:$D" ; done;

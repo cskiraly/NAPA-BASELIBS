@@ -6,7 +6,7 @@
 #define LOG_MODULE "[rep] "
 #include	"repoclient_impl.h"
 
-struct streambuffer publish_streambuffer = { NULL, NULL, 0};
+struct streambuffer publish_streambuffer = { 0, NULL, 0};
 
 void bprintf(struct streambuffer *sb, const char *txt, ...) {
 	va_list str_args;
