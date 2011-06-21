@@ -17,7 +17,7 @@ elif [ "$OSTYPE" == "darwin10.0" ]; then
 fi
 
 if [ -n "$ALL_DIR" ] ; then
-  [ -e "$ALL_DIR" ] || { echo "Directory in \$ALL_DIR does not exist: $ALL_DIR"; exit; }  
+  [ -e "$ALL_DIR" ] || { echo "Directory in \$ALL_DIR does not exist: $ALL_DIR"; exit 1; }  
   [ -z "$LIBEVENT_DIR" ] && LIBEVENT_DIR=$ALL_DIR/libevent
   [ -z "$LIBCONFUSE_DIR" ] && LIBCONFUSE_DIR=$ALL_DIR/libconfuse;
   [ -z "$LIBXML2_DIR" ] && LIBXML2_DIR=$ALL_DIR/libxml2;
@@ -96,7 +96,7 @@ fi
 THIRDPARTY_DIR="${BUILD_ROOT_DIR}/3RDPARTY-LIBS"
 [ -z "$DOWNLOAD_CACHE" ] && { DOWNLOAD_CACHE="${THIRDPARTY_DIR}/_download_cache"; mkdir -p $DOWNLOAD_CACHE; }
 [ "$DOWNLOAD_CACHE" == "<no>" ] || [ -d "$DOWNLOAD_CACHE" -a -w "$DOWNLOAD_CACHE" ] || \
-     { echo "ERROR: Download cache $DOWNLOAD_CACHE is not a writable directory"; exit; }
+     { echo "ERROR: Download cache $DOWNLOAD_CACHE is not a writable directory"; exit 1; }
 
 QUICK=false
 REMOVE_OBJECTS=false
@@ -157,7 +157,7 @@ check_files_in_system_paths() {
    for FNAME in $FILENAMES ; do 
      echo $FNAME | grep -q '\.h$' && SPATH=$GCC_INCLUDEPATH
      echo $FNAME | grep -q '\.a$' && SPATH=$GCC_LIBPATH
-     [ -z "$SPATH" ] && echo "Unknown file type to check: $FNAME (.a and .h supported)" && exit
+     [ -z "$SPATH" ] && echo "Unknown file type to check: $FNAME (.a and .h supported)" && exit 1
      FOUND=
      for P in `tr ":" " " <<<$SPATH` ; do
        [ -n "$P" -a -e "$P/$FNAME" ] && FOUND=$P
@@ -175,7 +175,7 @@ cache_or_wget() {
 		FILE=$2
 		[ -z "$FILE" ] && FILE=`grep -o '[^/]*$' <<<"$URL"`
 		if [ "$DOWNLOAD_CACHE" == "<no>" -o ! -e "$DOWNLOAD_CACHE/$FILE" ] ; then 
-			$WGET_OR_CURL $WGET_OR_CURLOPT $URL || [ ! -e $FILE ] || { echo "ERROR: download of $URL failed"; exit; }
+			$WGET_OR_CURL $WGET_OR_CURLOPT $URL || [ ! -e $FILE ] || { echo "ERROR: download of $URL failed"; exit 1; }
 	[ "$DOWNLOAD_CACHE" == "<no>" ] || cp $FILE $DOWNLOAD_CACHE;
 		else 
 			cp $DOWNLOAD_CACHE/$FILE .
@@ -214,7 +214,7 @@ prepare_lib() {
           INSTALL_COMPONENT=
        elif [ "$LIB_DIR" == '<system>' ] ; then
            echo "ERROR: $LIB_NAME specified as '<system>' but not found on search path"
-           exit
+           exit 1
        else
           echo "INFO: Library $LIB_NAME will be built locally"
        fi
@@ -222,9 +222,9 @@ prepare_lib() {
     else 
       INSTALL_COMPONENT=
       grep -q '^<' <<<$LIB_DIR && \
-	 { echo "ERROR: Invalid location for $LIB_NAME: $LIB_DIR" ; exit; }
+	 { echo "ERROR: Invalid location for $LIB_NAME: $LIB_DIR" ; exit 1;  }
       [ -e "$LIB_DIR" ] || \
-	 { echo "ERROR: Nonexistent location for $LIB_NAME: $LIB_DIR"; exit; }
+	 { echo "ERROR: Nonexistent location for $LIB_NAME: $LIB_DIR"; exit 1; }
       LIB_HOME=$(readlink -f $LIB_DIR)
     fi
     if [ -n "$INSTALL_COMPONENT" ] ; then
@@ -242,12 +242,12 @@ prepare_lib() {
        mkdir -p $LIB_HOME/_src; 
        pushd $LIB_HOME
        cd _src
-       eval "$DOWNLOAD_CMD" || { echo "ERROR Downloading $LIB_NAME" ; exit; }
+       eval "$DOWNLOAD_CMD" || { echo "ERROR Downloading $LIB_NAME" ; exit 1; }
        cd ..
 
        echo "Building $LIB_NAME"  
        cd _src/*/.
-       eval "$BUILD_CMD" || { echo "ERROR BUilding $LIB_NAME" ; exit; }
+       eval "$BUILD_CMD" || { echo "ERROR BUilding $LIB_NAME" ; exit 1; }
        popd
     fi      
     if [ -n "$LIB_HOME" ] ; then
@@ -259,7 +259,7 @@ prepare_lib() {
           fi
        done
        [ -n "$MISSING" ] && \
-          { echo "ERROR: $LIB_NAME not found in $LIB_HOME"; exit; } 
+          { echo "ERROR: $LIB_NAME not found in $LIB_HOME"; exit 1; } 
        echo "INFO: $LIB_NAME is found in $LIB_HOME"
     fi
     eval "$LIB_DIR_VARNAME=$LIB_HOME"
@@ -286,7 +286,7 @@ if [ -n "$ALTO" ] ; then
 prepare_lib libxml2 LIBXML2_DIR "libxml2/libxml/xmlversion.h libxml2/libxml/xmlIO.h libxml2/libxml/parser.h libxml2/libxml/tree.h libxml2.a" \
         "cache_or_wget ftp://xmlsoft.org/libxml2/libxml2-2.7.6.tar.gz; \
               tar xvzf libxml2-2.7.6.tar.gz" \
-        "./configure --with-threads --prefix=\$LIB_HOME  ${HOSTARCH:+--host=$HOSTARCH};\
+        "./configure --with-python=no --with-threads --prefix=\$LIB_HOME  ${HOSTARCH:+--host=$HOSTARCH};\
 		    $MAKE; make install" 
 fi
 }
@@ -322,9 +322,10 @@ export LIBEVENT_DIR LIBCONFUSE_DIR LIBXML2_DIR
      sh conf.sh
      echo "//blah" > common/chunk.c
    fi
-   for SUBDIR in dclog common monl rep ALTOclient ; do
+   ALTO_NEEDED=`grep 1 <<<"$ALTO"`
+   for SUBDIR in dclog common monl rep ${ALTO_NEEDED:+ALTOclient} ; do
        echo "Making `pwd`/$SUBDIR"
-       $MAKE -C $SUBDIR
+       $MAKE -C $SUBDIR || { echo "ERROR Building $SUBDIR"; exit 1; }
    done
    cd ml
       if [ ! -e Makefile -o -n "$REBUILD_BASELIBS" ] ; then
@@ -335,7 +336,7 @@ export LIBEVENT_DIR LIBCONFUSE_DIR LIBXML2_DIR
      sh conf.sh
 	$MAKE clean
       fi
-      $MAKE
+      $MAKE || { echo "ERROR Building ml"; exit 1; }
    cd .. 
 
 echo "=============== YOUR NAPA-BASELIBS ============"
