@@ -345,7 +345,6 @@ void mlCloseSocket(socketID_handle socketID);
  * @brief Open a connection.
  * This fuction opens a connection between two socketIDs.
  * @param external_socketID The remote socketID
- * @param *connectionID A pointer to an int. The connectionID will be stored in that int. 
  * @param connection_cb  A function pointer to a callback function from the type receive_connect\
 ion_cb                                                                                           
  * @param arg A void pointer that is returned via the callback. 
