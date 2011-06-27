@@ -142,8 +142,8 @@ int send_stun_request(const int udpSocket,struct sockaddr_in *stunServ)
   struct iovec iov;
   iov.iov_len = len;
   iov.iov_base = buf;
-debug("Sending STUN %d!!!!!\n",len); 
-  sendPacket(udpSocket,&iov,1,stunServ);
+  debug("Sending STUN with sendPacketFinal %d, %d!!!!!\n",len, udpSocket); 
+  sendPacketFinal(udpSocket,&iov,1,stunServ);
 
   return 0;
 
