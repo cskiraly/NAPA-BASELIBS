@@ -336,26 +336,31 @@ public:
 
   result monRetrieveResultById(SocketId src, MsgType mt, MeasurementCapabilities flags, MeasurementId mid, enum stat_types st) {
 		struct SocketIdMt h_dst;
+		MonMeasure *m;
 
 		h_dst.sid = src;
-		h_dst.mt = initmeasure->msg_type;
+		h_dst.mt = mt;
 
 		/* Check if anything for that destination exists */
-		if(dispatcherList.find(h_dst) == dispatcherList.end())
+		if(cDispatcher.dispatcherList.find(h_dst) == cDispatcher.dispatcherList.end()) {
 			return NAN;
+		}
 
 		/* check if the specific measure is available */
-		m = findMeasureFromId(dispatcherList[h_dst], initmeasure->mc, initmeasure->mid);
-		if(m == NULL)
+		m = cDispatcher.findMeasureFromId(cDispatcher.dispatcherList[h_dst], flags, mid);
+		if(m == NULL) {
 			return NAN;
+		}
 
 		/* check if the specific measure is storing results */
-		if(m->rb  == NULL)
+		if(m->rb  == NULL) {
 			return NAN;
+		}
 
 		m->rb->updateStats();
 		return m->rb->stats[st];
 	}
+
 
 	void monParseConfig(void *);
 

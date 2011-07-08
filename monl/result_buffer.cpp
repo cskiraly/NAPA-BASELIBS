@@ -217,9 +217,9 @@ int ResultBuffer::newSample(result r) {
 	new_data = true;
 
 	/* is it time to publish ?*/
-	if(m->param_values[P_PUBLISHING_PKT_TIME_BASED] == 0.0 && samples % (int)m->param_values[P_PUBLISHING_RATE] == 0) {
-		return publishResults();
-	}
+       if(m->param_values[P_PUBLISHING_PKT_TIME_BASED] == 0.0 && samples % (int)m->param_values[P_PUBLISHING_RATE] == 0 && !(m->flags & REMOTE)) {
+               return publishResults();
+       }
 
 	return EOK;
 };

@@ -210,12 +210,12 @@ public:
 	};
 
 	void defaultStop() {
-		if(rb)
-			rb->publishResults();
-		stop();
-		if(param_values[P_DEBUG_FILE] == 1.0 || param_values[P_DEBUG_FILE] == 3.0)
-			debugStop();
-	};
+               if(rb && !(flags & REMOTE))
+                       rb->publishResults();
+               stop();
+               if(param_values[P_DEBUG_FILE] == 1.0 || param_values[P_DEBUG_FILE] == 3.0)
+                       debugStop();
+       };
 
 	/* called when  changes in parameter values happen */
 	virtual int paramChange(MonParameterType ph, MonParameterValue p) {return EOK;};
