@@ -4,10 +4,11 @@ cd "$BUILD_ROOT_DIR"
 BUILD_ROOT_DIR=`pwd`
 
 #check the architecture
-if [ "$OSTYPE" == "linux-gnu" ]; then
+UNAME=`uname`
+if [ "$UNAME" == "Linux" ]; then
    # do something Linux-y
    echo "Building for Linux"
-elif [ "$OSTYPE" == "darwin10.0" ]; then
+elif [ "$UNAME" == "Darwin" ]; then
    # do something OSX-y
    echo "Building for OSX"
    CFLAGS="$CFLAGS -DMAC_OS"
@@ -87,7 +88,7 @@ fi
 [ -n "$CFLAGS" ] && CONF_CFLAGS="CFLAGS='$CFLAGS'"
 [ -n "$CXXFLAGS" ] && CONF_CXXFLAGS="CXXFLAGS='$CXXFLAGS'"
 
-if [ "$OSTYPE" == "linux-gnu" ]; then
+if [ "$UNAME" == "Linux" ]; then
   MAKE="make -j `grep processor /proc/cpuinfo | wc -l`"
 else
   MAKE="make -j 4"
