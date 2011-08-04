@@ -285,7 +285,7 @@ prepare_lib libconfuse LIBCONFUSE_DIR "confuse.h libconfuse.a" \
 
 if [ -n "$ALTO" ] ; then
 prepare_lib libxml2 LIBXML2_DIR "libxml2/libxml/xmlversion.h libxml2/libxml/xmlIO.h libxml2/libxml/parser.h libxml2/libxml/tree.h libxml2.a" \
-        "cache_or_wget ftp://xmlsoft.org/libxml2/libxml2-2.7.6.tar.gz; \
+        "cache_or_wget http://xmlsoft.org/sources/libxml2-2.7.6.tar.gz; \
               tar xvzf libxml2-2.7.6.tar.gz" \
         "./configure --with-python=no --with-threads --prefix=\$LIB_HOME  ${HOSTARCH:+--host=$HOSTARCH};\
 		    $MAKE; make install" 
