@@ -11,8 +11,7 @@ if [ "$UNAME" == "Linux" ]; then
 elif [ "$UNAME" == "Darwin" ]; then
    # do something OSX-y
    echo "Building for OSX"
-   CFLAGS="$CFLAGS -DMAC_OS"
-   CXXFLAGS="$CXXFLAGS -DMAC_OS"
+   CPPFLAGS="$CPPFLAGS -DMAC_OS"
    OBJ_CHECK=0
    [ "$STATIC"==2 ] && STATIC=1
 fi
@@ -80,13 +79,11 @@ which autoconf >/dev/null || { echo "please install autoconf!"; exit 1; }
 [ -n "$ALTO" ] && ALTO=1
 
 if [ -n "$RTX" ]; then
-	CFLAGS="$CFLAGS -DRTX"
-	CXXFLAGS="$CXXFLAGS -DRTX"
+	CPPFLAGS="$CPPFLAGS -DRTX"
 fi
 
 #Set the otpions to use with configure
-[ -n "$CFLAGS" ] && CONF_CFLAGS="CFLAGS='$CFLAGS'"
-[ -n "$CXXFLAGS" ] && CONF_CXXFLAGS="CXXFLAGS='$CXXFLAGS'"
+[ -n "$CPPFLAGS" ] && CONF_CPPFLAGS="CPPFLAGS='$CPPFLAGS'"
 
 if [ "$UNAME" == "Linux" ]; then
   MAKE="make -j `grep processor /proc/cpuinfo | wc -l`"
@@ -318,8 +315,8 @@ export LIBEVENT_DIR LIBCONFUSE_DIR LIBXML2_DIR
      [ -e Makefile ] && $MAKE distclean
    mkdir -p m4 config
      autoreconf --force -I config -I m4 --install
-     echo "./configure $EVOPT $CONFOPT $CONF_CFLAGS $CONF_CXXFLAGS ${HOSTARCH:+--host=$HOSTARCH}"
-     echo "./configure $EVOPT $CONFOPT $CONF_CFLAGS $CONF_CXXFLAGS ${HOSTARCH:+--host=$HOSTARCH}" > conf.sh
+     echo "./configure $EVOPT $CONFOPT $CONF_CPPFLAGS ${HOSTARCH:+--host=$HOSTARCH}"
+     echo "./configure $EVOPT $CONFOPT $CONF_CPPFLAGS ${HOSTARCH:+--host=$HOSTARCH}" > conf.sh
      sh conf.sh
      echo "//blah" > common/chunk.c
    fi
@@ -332,8 +329,8 @@ export LIBEVENT_DIR LIBCONFUSE_DIR LIBXML2_DIR
       if [ ! -e Makefile -o -n "$REBUILD_BASELIBS" ] ; then
         mkdir -p m4 config
         autoreconf --force -I config -I m4 --install
-     echo "./configure $EVOPT $CONFOPT $CONF_CFLAGS $CONF_CXXFLAGS ${HOSTARCH:+--host=$HOSTARCH}"
-     echo "./configure $EVOPT $CONFOPT $CONF_CFLAGS $CONF_CXXFLAGS ${HOSTARCH:+--host=$HOSTARCH}" > conf.sh
+     echo "./configure $EVOPT $CONFOPT $CONF_CPPFLAGS ${HOSTARCH:+--host=$HOSTARCH}"
+     echo "./configure $EVOPT $CONFOPT $CONF_CPPFLAGS ${HOSTARCH:+--host=$HOSTARCH}" > conf.sh
      sh conf.sh
 	$MAKE clean
       fi

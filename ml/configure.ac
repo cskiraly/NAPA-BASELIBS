@@ -15,7 +15,6 @@ then
 fi
 if test -d "$with_libevent2"
 then
-	CFLAGS="$CFLAGS -I$with_libevent2/include"
 	CPPFLAGS="$CPPFLAGS -I$with_libevent2/include"
 	LDFLAGS="$LDFLAGS -L$with_libevent2/lib"
 fi

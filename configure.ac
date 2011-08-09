@@ -34,7 +34,6 @@ then
 fi
 if test -d "$with_libevent2"
 then
-	CFLAGS="$CFLAGS -I$with_libevent2/include"
 	CPPFLAGS="$CPPFLAGS -I$with_libevent2/include"
 	LDFLAGS="$LDFLAGS -L$with_libevent2/lib"
 fi
@@ -62,7 +61,6 @@ fi
 
 if test -d "$with_libconfuse"
 then
-	CFLAGS="$CFLAGS -I$with_libconfuse/include"
 	CPPFLAGS="$CPPFLAGS -I$with_libconfuse/include"
 	LDFLAGS="$LDFLAGS -L$with_libconfuse/lib"
 fi
