@@ -642,7 +642,7 @@ void recv_conn_msg(struct msg_header *msg_h, char *msgbuf, int msg_size, struct 
 				connectbuf[free_con_id]->timeout_event = NULL;
 				connectbuf[free_con_id]->external_connectionID = msg_h->local_con_id;
 				connectbuf[free_con_id]->internal_connect =
-					!compare_external_address_socketIDs(&(con_msg->sock_id), loc_socketID);
+					(con_msg->sock_id.internal_addr.udpaddr.sin_addr.s_addr == recv_addr->sin_addr.s_addr);
 				con_id = free_con_id;
 			}
 
