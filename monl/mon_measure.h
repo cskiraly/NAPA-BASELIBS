@@ -129,7 +129,7 @@ public:
 
 	/* Functions */
 	/* Constructor: MUST BE CALLED BY DERIVED CLASSES*/
-	MonMeasure(class MeasurePlugin *mp, MeasurementCapabilities mc, class MeasureDispatcher *ptrDisp);
+	MonMeasure(class MeasurePlugin *mp, MeasurementCapabilities mc, class MeasureDispatcher *ptrDisp, int tx_every=1);
 
 	virtual ~MonMeasure() {
 		delete[] param_values;

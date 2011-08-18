@@ -19,8 +19,7 @@
 
 #include "hopcount_measure.h"
 
-HopcountMeasure::HopcountMeasure(class MeasurePlugin *m, MeasurementCapabilities mc, class MeasureDispatcher *md): MonMeasure(m,mc,md) {
-	tx_every = 100;
+HopcountMeasure::HopcountMeasure(class MeasurePlugin *m, MeasurementCapabilities mc, class MeasureDispatcher *md): MonMeasure(m,mc,md,100) {
 };
 
 HopcountMeasure::~HopcountMeasure() {

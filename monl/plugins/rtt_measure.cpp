@@ -19,8 +19,7 @@
 #include "rtt_measure.h"
 #include <sys/time.h>
 
-RttMeasure::RttMeasure(class MeasurePlugin *m, MeasurementCapabilities mc, class MeasureDispatcher *md): MonMeasure(m,mc,md) {
-	tx_every = 10;
+RttMeasure::RttMeasure(class MeasurePlugin *m, MeasurementCapabilities mc, class MeasureDispatcher *md): MonMeasure(m,mc,md,10) {
 }
 
 RttMeasure::~RttMeasure() {

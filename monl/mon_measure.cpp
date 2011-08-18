@@ -25,11 +25,11 @@
 #include "mon_event.h"
 #include	"napa_log.h"
 
-MonMeasure::MonMeasure(class MeasurePlugin *mp, MeasurementCapabilities mc, class MeasureDispatcher *ptrDisp) {
+MonMeasure::MonMeasure(class MeasurePlugin *mp, MeasurementCapabilities mc, class MeasureDispatcher *ptrDisp, int txe) {
 	rx_cnt = 0;
 	meas_sum = 0;
 	meas_cnt = 0;
-	tx_every = 1;
+	tx_every = txe;
 
 	measure_plugin = mp;
 	flags = mc;

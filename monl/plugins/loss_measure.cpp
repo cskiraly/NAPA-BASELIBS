@@ -20,9 +20,8 @@
 #include "loss_measure.h"
 #include "napa_log.h"
 
-LossMeasure::LossMeasure(class MeasurePlugin *m, MeasurementCapabilities mc, class MeasureDispatcher *md): MonMeasure(m,mc,md) {
+LossMeasure::LossMeasure(class MeasurePlugin *m, MeasurementCapabilities mc, class MeasureDispatcher *md): MonMeasure(m,mc,md,10) {
 	mSeqWin = NULL;
-	tx_every = 10;
 }
 
 void LossMeasure::init() {
