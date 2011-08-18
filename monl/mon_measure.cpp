@@ -49,7 +49,7 @@ MonMeasure::MonMeasure(class MeasurePlugin *mp, MeasurementCapabilities mc, clas
 		param_values[i] =  mp->params[i]->dval;
 
 	if(!(flags & REMOTE))
-		rb = new ResultBuffer((int)param_values[P_WINDOW_SIZE], mp->name.c_str(), ptrDispatcher->mm->peer_name, this);
+		rb = new ResultBuffer((int)ceil(param_values[P_WINDOW_SIZE] / tx_every), mp->name.c_str(), ptrDispatcher->mm->peer_name, this);
 	else
 		rb = NULL;
 };

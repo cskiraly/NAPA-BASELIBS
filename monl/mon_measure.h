@@ -93,7 +93,7 @@ protected:
 
 	int paramChangeDefault(MonParameterType ph, MonParameterValue p) {
 		if(ph == P_WINDOW_SIZE && rb != NULL)
-			return rb->resizeBuffer((int)p);
+			return rb->resizeBuffer((int)ceil(p/tx_every));
 		if(ph == P_INIT_NAN_ZERO && rb != NULL)
 			return rb->init();
 		if(ph == P_DEBUG_FILE) {
