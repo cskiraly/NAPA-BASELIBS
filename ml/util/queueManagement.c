@@ -211,7 +211,6 @@ int rtxPacketsFromTo(int connID, int msgSeqNum, int offsetFrom, int offsetTo) {
                 sendPacket(packetToRTX->udpSocket, packetToRTX->iov, 4, packetToRTX->socketaddr);
                 sentRTXDataPktCounter++;
                 offset += packetToRTX->iov[3].iov_len;
-		destroyPacketContainer(packetToRTX);
         }
         return 0;
 }
