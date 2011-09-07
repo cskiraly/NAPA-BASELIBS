@@ -1855,6 +1855,14 @@ void mlCloseConnection(const int connectionID){
 			event_free(connectbuf[connectionID]->timeout_event);
 			connectbuf[connectionID]->timeout_event = NULL;
 		}
+		// remove related callbacks
+		while(connectbuf[connectionID]->connection_head != NULL) {
+			struct receive_connection_cb_list *temp;
+			temp = connectbuf[connectionID]->connection_head;
+			connectbuf[connectionID]->connection_head = temp->next;
+			free(temp);
+		}
+
 		free(connectbuf[connectionID]);
 		connectbuf[connectionID] = NULL;
 	}
