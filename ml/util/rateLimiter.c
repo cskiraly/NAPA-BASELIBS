@@ -90,7 +90,7 @@ void planFreeSpaceInBucketEvent(int bytes) {		//plan the event for time when the
 
 int queueOrSendPacket(const int udpSocket, struct iovec *iov, int len, struct sockaddr_in *socketaddr, unsigned char priority)
 {
-	PacketContainer *newPacket = (PacketContainer*) createPacketContainer(udpSocket,iov,len,socketaddr,priority);
+	PacketContainer *newPacket = createPacketContainer(udpSocket,iov,len,socketaddr,priority);
 
 	if(!(priority & HP)) {
 		if (!isQueueEmpty()) {						//some packets are already waiting, "I am for sure after them"
