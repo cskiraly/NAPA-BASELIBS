@@ -421,9 +421,12 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 			int priority = 0; 
 			if ((msg_type == ML_CON_MSG)
 #ifdef RTX
- || (msg_type == ML_NACK_MSG)
+				|| (msg_type == ML_NACK_MSG)
 #endif
-) priority = HP;
+			) { 
+				priority = HP & NO_RTX;
+			}
+
 			//fprintf(stderr,"*******************************ML.C: Sending packet: msg_h.offset: %d msg_h.msg_seq_num: %d\n",ntohl(msg_h.offset),ntohl(msg_h.msg_seq_num));
 			switch(queueOrSendPacket(socketfd, iov, 4, &udpgen.udpaddr,priority)) {
 				case MSGLEN:
