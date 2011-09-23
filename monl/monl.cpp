@@ -255,6 +255,10 @@ result monRetrieveResult(MonHandler mh, enum stat_types st){
 	return man->monRetrieveResult(mh,st);
 }
 
+result monRetrieveResultById(SocketId src, MsgType mt, MeasurementCapabilities flags, MeasurementId mid, enum stat_types st) {
+	return man->monRetrieveResultById(src, mt, flags, mid, st);
+}
+
 int monNewSample(MonHandler mh, result r){
 	return man->monNewSample(mh,r);
 }

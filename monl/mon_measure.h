@@ -177,7 +177,7 @@ public:
 		if(f == measure_plugin->getCaps() && f == 0)
 			return EOK;
 		/*check that f is a subset of Caps */
-		if(f & ~(measure_plugin->getCaps() | TXRXBI | REMOTE))
+		if(f & ~(measure_plugin->getCaps() | TXRXBI | REMOTE | REMOTE_RESULTS))
 			return -ERANGE;
 		/* Check packet vs chunk */
 		if(!((f & PACKET)^(f & DATA)))
@@ -210,12 +210,12 @@ public:
 	};
 
 	void defaultStop() {
-		if(rb)
-			rb->publishResults();
-		stop();
-		if(param_values[P_DEBUG_FILE] == 1.0 || param_values[P_DEBUG_FILE] == 3.0)
-			debugStop();
-	};
+               if(rb && !(flags & REMOTE))
+                       rb->publishResults();
+               stop();
+               if(param_values[P_DEBUG_FILE] == 1.0 || param_values[P_DEBUG_FILE] == 3.0)
+                       debugStop();
+       };
 
 	/* called when  changes in parameter values happen */
 	virtual int paramChange(MonParameterType ph, MonParameterValue p) {return EOK;};
@@ -230,6 +230,7 @@ public:
 		if(r_rx_list == NULL)
 			return;
 		result r = RxPkt(r_rx_list, el);
+		newSample(r);
 		if(!isnan(r)) {
 			rmp[i].res = r;
 			rmp[i].mh = mh_remote;
@@ -246,6 +247,7 @@ public:
 		if(r_rx_list == NULL)
 			return;
 		result r = RxData(r_rx_list, el);
+		newSample(r);
 		if(!isnan(r)) {
 			rmp[i].res = r;
 			rmp[i].mh = mh_remote;
@@ -262,6 +264,7 @@ public:
 		if(r_tx_list == NULL)
 			return;
 		result r = TxPkt(r_tx_list, el);
+		newSample(r);
 		if(!isnan(r)) {
 			rmp[i].res = r;
 			rmp[i].mh = mh_remote;
@@ -278,6 +281,7 @@ public:
 		if(r_tx_list == NULL)
 			return;
 		result r = TxData(r_tx_list, el);
+		newSample(r);
 		if(!isnan(r)) {
 			rmp[i].res = r;
 			rmp[i].mh = mh_remote;

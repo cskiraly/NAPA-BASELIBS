@@ -50,6 +50,8 @@ MonMeasure::MonMeasure(class MeasurePlugin *mp, MeasurementCapabilities mc, clas
 
 	if(!(flags & REMOTE))
 		rb = new ResultBuffer((int)ceil(param_values[P_WINDOW_SIZE] / tx_every), mp->name.c_str(), ptrDispatcher->mm->peer_name, this);
+	else if(flags & REMOTE_RESULTS)
+		rb = new ResultBuffer((int)param_values[P_WINDOW_SIZE], mp->name.c_str(), ptrDispatcher->mm->peer_name, this);	//TODO: check if division is needed here as well
 	else
 		rb = NULL;
 };

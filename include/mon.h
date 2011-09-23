@@ -157,6 +157,9 @@ typedef int32_t MeasurementCapabilities;
 #define RXREM		256
 /** Defines if this is the local (0) or remote (1) part of a measurement (internal use only)*/
 #define REMOTE		512
+/** Defines if the measure should provide also remote measurements locally (does not work with all)*/
+#define REMOTE_RESULTS	1024
+
 
 /** Used to advertise a TX based measurement (mutually exclusive with RXONLY, TXRXUNI and TXRXBI) */
 #define TXONLY 	TXLOC
@@ -419,13 +422,17 @@ result monRetrieveResult(MonHandler mh, enum stat_types st);
 /**
   Retrieve results
 
-   Used to retreive a result shortcuting the repository.
+   As above but used to retreive a result usig measurement description instead of handler
 
-   @param[in] mh handler of the measurement instance
+   @param[in] src socketId: it is always the address of the other peer involved
+   @param[in] mt the message type
+   @param[in] flags measurmente falgs used while creating the measure
+   @param[in] mid measurmente type id
    @param[in] st statistal type to be retrieved (i.e. average value) enum defined in monl/ids.h
    @return the value on success, NAN on failure
 */
 
+result monRetrieveResultById(SocketId src, MsgType mt, MeasurementCapabilities flags, MeasurementId mid, enum stat_types st);
 
 /**
   Save arbitrary samples
