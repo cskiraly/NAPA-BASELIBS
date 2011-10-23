@@ -77,7 +77,7 @@ int ResultBuffer::publishResults(void){
 
 	updateStats();
 
-	info("MONL: publishResults called: %s value: %f (%s)", publish_name.c_str(), stats[LAST], default_name);
+	info("MONL: publishResults called: %s last value: %f (%s)", publish_name.c_str(), stats[LAST], default_name);
 	if(publish_length == 0)
 		return EOK;
 	/* Get local ID */

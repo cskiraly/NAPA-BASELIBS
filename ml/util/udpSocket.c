@@ -129,6 +129,19 @@ int createSocket(const int port,const char *ipaddr)
 	error("setsockopt: cannot set RECV_ERROR. ERRNO %d\n",errno);
     }
 
+  /* Increase UDP receive buffer */
+
+#endif
+
+#ifdef _WIN32 //TODO: verify whether this fix is needed on other OSes. Verify why this is needed on Win (libevent?)
+  int intval = 64*1024;
+  if(setsockopt(udpSocket,SOL_SOCKET, SO_RCVBUF, (char *) &intval,sizeof(intval)) < 0) {
+	error("setsockopt: cannot set SO_RECVBUF. ERRNO %d\n",errno);
+    }
+
+  if(setsockopt(udpSocket,SOL_SOCKET, SO_SNDBUF, (char *) &intval,sizeof(intval)) < 0) {
+	error("setsockopt: cannot set SO_RECVBUF. ERRNO %d\n",errno);
+    }
 #endif
 
   debug("X.CreateSock\n");
