@@ -155,6 +155,12 @@ typedef struct {
   int firstGap;	//first gap which hasn't been handled yet (for which the NACK hasn't been sent yet)
   struct gap gapArray[RTX_MAX_GAPS];
 #endif
+#ifdef FEC
+  int *pix; //Keep track of packet indexes.
+  int *pix_chk; //to avoid multiple received packets.
+  int nix; //counter incrimented after the arrivel of each packet. pix[nix]
+  int finish;
+#endif
 } recvdata;
 
 struct receive_connection_cb_list{
