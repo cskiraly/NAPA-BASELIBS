@@ -288,7 +288,30 @@ void last_pkt_recv_timeout_cb(int fd, short event, void *arg){
 
 #endif
 
+/*
+ * compare the external IP address of two socketIDs
+ */
+bool compare_address(struct sockaddr_in *sock1, struct sockaddr_in *sock2, int netmaskbits, bool port)
+{
+	int i;
+	uint32_t mask = 0;
 
+	for (i = 0; i < netmaskbits; i ++) {
+		mask += 1<<i;
+	}
+	mask = htonl(mask);
+
+	return ((sock1->sin_addr.s_addr | mask )  == (sock2->sin_addr.s_addr | mask)) &&
+	       (!port || (sock1->sin_port == sock2->sin_port) );
+}
+
+/*
+ * decide whether it is worth trying to connect with internal connect
+ */
+bool internal_connect_plausible(socketID_handle sock1, socketID_handle sock2)
+{
+	return compare_address (&sock1->external_addr.udpaddr, &sock2->external_addr.udpaddr, 0, false);
+}
 
 /*
  * convert a socketID to a string. It uses a static buffer, so either strdup is needed, or the string will get lost!
@@ -1431,16 +1454,6 @@ void recv_pkg(int fd, short event, void *arg)
 	}
 }
 
-/*
- * compare the external IP address of two socketIDs
- */
-int
-compare_external_address_socketIDs(socketID_handle sock1, socketID_handle sock2)
-{
-	if( sock1->external_addr.udpaddr.sin_addr.s_addr == sock2->external_addr.udpaddr.sin_addr.s_addr)
-		return 0;
-	return 1;
-}
 
 void try_stun();
 
@@ -1809,7 +1822,7 @@ int mlOpenConnection(socketID_handle external_socketID,receive_connection_cb con
 			connectbuf[con_id]->timeout_event = NULL;
 			connectbuf[con_id]->status = INVITE;
 			connectbuf[con_id]->seqnr = 0;
-			connectbuf[con_id]->internal_connect = !compare_external_address_socketIDs(external_socketID, &local_socketID);
+			connectbuf[con_id]->internal_connect = internal_connect_plausible(external_socketID, &local_socketID);
 			connectbuf[con_id]->connectionID = con_id;
 
 			connectbuf[con_id]->connection_head = connectbuf[con_id]->connection_last = malloc(sizeof(struct receive_connection_cb_list));
