@@ -352,12 +352,9 @@ bool isStunDefined()
 
 void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, send_params * sParams) {
 #ifdef FEC
-	void *code;
 	int chk_msg_len=msg_len;
 	int n=4;
 	int k=64;
-	char **src;
-	char **pkt;
 	int lcnt=0;
 	int icnt=0;
 	int i=0;
@@ -394,6 +391,13 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 		udpgen = connectbuf[con_id]->external_socketID.external_addr;
 
 	do{
+#ifdef FEC
+		char *Pmsg = NULL;
+		int npaksX2 = 0;
+		void *code;
+		char **src = NULL;
+		char **pkt = NULL;
+#endif
 		offset = 0;
 		retry = false;
 		// Monitoring layer hook
@@ -411,9 +415,7 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 #ifdef FEC
 			if(msg_type==17 && msg_len>1372){
 			   //@add padding bits to msg!
-			   char *Pmsg;
 			   int npaks=0;
-			   int npaksX2=0;
 			   int toffset=0;
 			   int tpkt_len=1372;
 			   int ipad = (1372-(msg_len%1372));
@@ -423,6 +425,7 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 				icnt++;
 			    }
 			    for(i=msg_len; i<(msg_len+ipad); i++){
+				*(Pmsg+i)=0;
 				icnt++;
 			    }
 			    msg=Pmsg;
@@ -433,7 +436,6 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 			    pkt = ( char ** ) malloc ( npaksX2 * sizeof ( char* ));
 			    code = fec_new(npaks,256);
 			    for(i=0; i<npaks; i++){
-			      src[i] = ( char* ) malloc( tpkt_len * sizeof ( char ) );
 			      src[i]= (msg + toffset);
 			      toffset += tpkt_len;
 			    }
@@ -444,16 +446,13 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 			     pkt[i] = ( char* )malloc( tpkt_len * sizeof ( char ) );
 			     fec_encode(code, src, pkt[i], i, tpkt_len) ;
 			    }
-			    sd_data_inf.buffer = src;
-			    sd_data_inf.bufSize = msg_len;
-			}else{
-			    sd_data_inf.buffer = msg;
-			    sd_data_inf.bufSize = msg_len;
+			    for(i=npaks; i<npaksX2; i++){//X2
+			      free(src[i]);
+			    }
 			}
-#else
+#endif
 			sd_data_inf.buffer = msg;
 			sd_data_inf.bufSize = msg_len;
-#endif
 			sd_data_inf.msgtype = msg_type;
 			sd_data_inf.monitoringDataHeader = iov[2].iov_base;
 			sd_data_inf.monitoringDataHeaderLen = iov[2].iov_len;
@@ -562,17 +561,23 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 					iov[2].iov_len = 0;
 					break;
 			}
+#ifdef FEC
+		} while(offset != chk_msg_len && !truncable);
+		if(msg_type==MSG_TYPE_CHUNK && msg_len>1372){ //free the pointers.
+			free(Pmsg);
+			free(src);
+			for(i=0; i<npaksX2; i++) {
+			  free(pkt[i]);
+			}
+			free(pkt);
+			fec_free(code);
+		}
+#else
 		} while(offset != msg_len && !truncable);
+#endif
 	} while(retry);
 	//fprintf(stderr, "sentDataPktCounter after msg_seq_num = %d: %d\n", msg_h.msg_seq_num, counters.sentDataPktCounter);
 	//fprintf(stderr, "sentRTXDataPktCounter after msg_seq_num = %d: %d\n", msg_h.msg_seq_num, counters.sentRTXDataPktCtr);
-#ifdef FEC 
-	if(msg_type==17 && msg_len>1372){ //free the pointers.
-	  free(src);
-	  free (pkt);
-	  fec_free(code);
-	}
-#endif
 }
 
 void pmtu_timeout_cb(int fd, short event, void *arg);
@@ -969,6 +974,10 @@ void recv_timeout_cb(int fd, short event, void *arg)
 			recvdatabuf[recv_id]->timeout_event = NULL;
 		}
 		free(recvdatabuf[recv_id]->recvbuf);
+#ifdef FEC
+		free(recvdatabuf[recv_id]->pix);
+		free(recvdatabuf[recv_id]->pix_chk);
+#endif
 		free(recvdatabuf[recv_id]);
 		recvdatabuf[recv_id] = NULL;
 	}
@@ -1154,7 +1163,12 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 		    toffset+=tpkt_len;
 		  }
 		    fec_free(code);
+		    for(i=0; i<npaks; i++){
+		      free(src[i]);
+		    }
 		    free(src);
+		    free(recvdatabuf[recv_id]->pix);
+		    free(recvdatabuf[recv_id]->pix_chk);
 		    nix=0;
 		    recvdatabuf[recv_id]->nix=0;
 		}
