@@ -969,21 +969,30 @@ void recv_timeout_cb(int fd, short event, void *arg)
 		//fprintf(stderr,"******Cleaning slot for inclomplete msg_seq_num: %d\n", recvdatabuf[recv_id]->seqnr);		
 #endif
  		//(receive_data_callback) (recvdatabuf[recv_id]->recvbuf + recvdatabuf[recv_id]->monitoringDataHeaderLen, recvdatabuf[recv_id]->bufsize - recvdatabuf[recv_id]->monitoringDataHeaderLen, recvdatabuf[recv_id]->msgtype, &rParams);
+        }
 
-		//clean up
-		if (recvdatabuf[recv_id]->timeout_event) {
-			event_del(recvdatabuf[recv_id]->timeout_event);
-			event_free(recvdatabuf[recv_id]->timeout_event);
-			recvdatabuf[recv_id]->timeout_event = NULL;
-		}
-		free(recvdatabuf[recv_id]->recvbuf);
+	//clean up
+	if (recvdatabuf[recv_id]->timeout_event) {
+		debug("ML: freeing timeout for %d",recv_id);
+		event_del(recvdatabuf[recv_id]->timeout_event);
+		event_free(recvdatabuf[recv_id]->timeout_event);
+		recvdatabuf[recv_id]->timeout_event = NULL;
+	}
+	free(recvdatabuf[recv_id]->recvbuf);
+#ifdef RTX
+	if (recvdatabuf[recv_id]->last_pkt_timeout_event) {
+		debug("ML: freeing last packet timeout for %d",recv_id);
+		event_del(recvdatabuf[recv_id]->last_pkt_timeout_event);
+		event_free(recvdatabuf[recv_id]->last_pkt_timeout_event);
+		recvdatabuf[recv_id]->last_pkt_timeout_event = NULL;
+	}
+#endif
 #ifdef FEC
 		free(recvdatabuf[recv_id]->pix);
 		free(recvdatabuf[recv_id]->pix_chk);
 #endif
-		free(recvdatabuf[recv_id]);
-		recvdatabuf[recv_id] = NULL;
-	}
+	free(recvdatabuf[recv_id]);
+	recvdatabuf[recv_id] = NULL;
 }
 
 // process a single recv data message
@@ -1073,6 +1082,9 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 		debug(" new @ id:%d\n",recv_id);
 	} else {	//message structure already exists, no need to create new
 		debug(" found @ id:%d (arrived before this packet: bytes:%d fragments%d\n",recv_id, recvdatabuf[recv_id]->arrivedBytes, recvdatabuf[recv_id]->recvFragments);
+		if(recvdatabuf[recv_id]->status == COMPLETE) {
+		  return;
+		}
 	}
 
 	//if first packet extract mon data header and advance pointer
@@ -1252,38 +1264,18 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 			    warn("ML: callback not initialized for this message type: %d!\n",msg_h->msg_type);
 			}
 			
-			//clean up
-			if (recvdatabuf[recv_id]->timeout_event) {
-				debug("ML: freeing timeout for %d",recv_id);
-				event_del(recvdatabuf[recv_id]->timeout_event);
-				event_free(recvdatabuf[recv_id]->timeout_event);
-				recvdatabuf[recv_id]->timeout_event = NULL;
-			} else {
-				debug("ML: received in 1 packet\n",recv_id);
-			}
+			//clean up after a timeout
+		}
+
+		//start time out for cleaning up this slot
+		if (!recvdatabuf[recv_id]->timeout_event) {
+			//TODO make timeout at least a DEFINE
+			recvdatabuf[recv_id]->timeout_event = event_new(base, -1, EV_TIMEOUT, &recv_timeout_cb, (void *) (long)recv_id);
+			evtimer_add(recvdatabuf[recv_id]->timeout_event, &recv_timeout);
 #ifdef RTX
-			if (recvdatabuf[recv_id]->last_pkt_timeout_event) {
-				debug("ML: freeing last packet timeout for %d",recv_id);
-				event_del(recvdatabuf[recv_id]->last_pkt_timeout_event);
-				event_free(recvdatabuf[recv_id]->last_pkt_timeout_event);
-				recvdatabuf[recv_id]->last_pkt_timeout_event = NULL;
-			}
-			//fprintf(stderr,"******Cleaning slot for clomplete msg_seq_num: %d\n", recvdatabuf[recv_id]->seqnr);	
+			recvdatabuf[recv_id]->last_pkt_timeout_event = event_new(base, -1, EV_TIMEOUT, &last_pkt_recv_timeout_cb, (void *) (long)recv_id);
+			evtimer_add(recvdatabuf[recv_id]->last_pkt_timeout_event, &last_pkt_recv_timeout);
 #endif
-			free(recvdatabuf[recv_id]->recvbuf);
-			free(recvdatabuf[recv_id]);
-			recvdatabuf[recv_id] = NULL;
-		} else { // not COMPLETE
-			if (!recvdatabuf[recv_id]->timeout_event) {
-				//start time out
-				//TODO make timeout at least a DEFINE
-				recvdatabuf[recv_id]->timeout_event = event_new(base, -1, EV_TIMEOUT, &recv_timeout_cb, (void *) (long)recv_id);
-				evtimer_add(recvdatabuf[recv_id]->timeout_event, &recv_timeout);
-#ifdef RTX
-				recvdatabuf[recv_id]->last_pkt_timeout_event = event_new(base, -1, EV_TIMEOUT, &last_pkt_recv_timeout_cb, (void *) (long)recv_id);
-				evtimer_add(recvdatabuf[recv_id]->last_pkt_timeout_event, &last_pkt_recv_timeout);
-#endif
-			}
 		}
 	}
 }
