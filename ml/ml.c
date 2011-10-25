@@ -1173,6 +1173,7 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 		    }
 		    toffset+=tpkt_len;
 		  }
+		  recvdatabuf[recv_id]->firstPacketArrived = 1;	//we've decoded the first packet as well
 		    fec_free(code);
 		    for(i=0; i<npaks; i++){
 		      free(src[i]);
