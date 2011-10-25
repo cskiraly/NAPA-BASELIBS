@@ -1090,8 +1090,8 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 	// enter the data into the buffer
 #ifdef FEC
 	if(recvdatabuf[recv_id]->msgtype==17 && recvdatabuf[recv_id]->bufsize>1372 && recvdatabuf[recv_id]->pix_chk[recvdatabuf[recv_id]->nix]==0)
-	  memcpy(recvdatabuf[recv_id]->recvbuf + msg_h->len_mon_data_hdr + (recvdatabuf[recv_id]->nix)*1372, msgbuf, bufsize);		
-	else	
+	  memcpy(recvdatabuf[recv_id]->recvbuf + msg_h->len_mon_data_hdr + (recvdatabuf[recv_id]->nix)*1372, msgbuf, bufsize);
+	else
 	  memcpy(recvdatabuf[recv_id]->recvbuf + msg_h->len_mon_data_hdr + msg_h->offset, msgbuf, bufsize);
 	//TODO very basic checkif all fragments arrived: has to be reviewed
 #else
