@@ -29,7 +29,6 @@ int prev_sqnr=0;  //used to track the previous seq nrs, so that not to consider 
 int *pix;	 //keep track of packet indexes.
 int nix=0;	//counter incrimented after the arrivel of each packet. pix[nix]
 int cnt=0;
-int chk_complete[5000]={0};
 #endif
 
 /**************************** START OF INTERNALS ***********************/
@@ -988,8 +987,8 @@ void recv_timeout_cb(int fd, short event, void *arg)
 	}
 #endif
 #ifdef FEC
-		free(recvdatabuf[recv_id]->pix);
-		free(recvdatabuf[recv_id]->pix_chk);
+	free(recvdatabuf[recv_id]->pix);
+	free(recvdatabuf[recv_id]->pix_chk);
 #endif
 	free(recvdatabuf[recv_id]);
 	recvdatabuf[recv_id] = NULL;
@@ -1030,13 +1029,6 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 				free_recv_id = recv_id;
   }
 
-#ifdef FEC
-	// Consider only first k packets and decline the rest >k packets.
-	if((msg_h->msg_type==17) && ((msg_h->msg_length + msg_h->len_mon_data_hdr)>pmtusize) && (chk_complete[msg_h->msg_seq_num]==1)){
-	  return;
-	}
-#endif
-
 	if(recv_id == RECVDATABUFSIZE) {
 		debug(" recv id not found (free found: %d)\n", free_recv_id);
 		//no recv_data found: create one
@@ -1068,7 +1060,6 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 
 #ifdef FEC
 		if(recvdatabuf[recv_id]->msgtype==17 && recvdatabuf[recv_id]->bufsize>pmtusize){
-		  chk_complete[msg_h->msg_seq_num]=0;
 		  recvdatabuf[recv_id]->nix=0;
 		  recvdatabuf[recv_id]->pix = ( int * ) malloc ( (recvdatabuf[recv_id]->bufsize/pmtusize) * sizeof ( int ));
 		  recvdatabuf[recv_id]->pix_chk = ( int * ) malloc ( (recvdatabuf[recv_id]->bufsize/pmtusize) * sizeof ( int ));
@@ -1155,7 +1146,6 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 		recvdatabuf[recv_id]->status = COMPLETE; //buffer full -> msg completly arrived
 #ifdef FEC
 		if(recvdatabuf[recv_id]->msgtype==17 && recvdatabuf[recv_id]->bufsize>pmtusize){
-		  chk_complete[msg_h->msg_seq_num]=1;
 		  prev_sqnr=recvdatabuf[recv_id]->seqnr;
 		  int npaks=0;
 		  int toffset=20;
@@ -1191,8 +1181,6 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 		      free(src[i]);
 		    }
 		    free(src);
-		    free(recvdatabuf[recv_id]->pix);
-		    free(recvdatabuf[recv_id]->pix_chk);
 		    nix=0;
 		    recvdatabuf[recv_id]->nix=0;
 		}
