@@ -796,17 +796,6 @@ void recv_timeout_cb(int fd, short event, void *arg)
 		return;
 	}
 
-
-/*	if(recvdatabuf[recv_id]->status == ACTIVE) {
-		//TODO make timeout at least a DEFINE
-		struct timeval timeout = { 4, 0 };
-		recvdatabuf[recv_id]->status = INACTIVE;
-		event_base_once(base, -1, EV_TIMEOUT, recv_timeout_cb,
-			arg, &timeout);
-		return;
-	}
-*/
-
 	if(recvdatabuf[recv_id]->status == ACTIVE) {
 		// Monitoring layer hook
 		if(get_Recv_data_inf_cb != NULL) {
