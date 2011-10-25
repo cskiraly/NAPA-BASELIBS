@@ -1149,7 +1149,11 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 		  for(i=0; i<npaks; i++){
 		      src[i] = ( char * )malloc(tpkt_len * sizeof ( char ) );
 		      for(j=0; j<tpkt_len; j++){
-			*(src[i]+j)=*(recvdatabuf[recv_id]->recvbuf+toffset+j);
+			if (toffset+j < recvdatabuf[recv_id]->bufsize) {
+			  *(src[i]+j)=*(recvdatabuf[recv_id]->recvbuf+toffset+j);
+			}else {
+			  *(src[i]+j)=0;
+			}
 		      }
 		      toffset += tpkt_len;
 		  }
@@ -1158,7 +1162,9 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 		  toffset=20;
 		  for(i=0; i<npaks; i++){
 		    for(j=0; j<tpkt_len; j++){
-		      *(recvdatabuf[recv_id]->recvbuf+toffset+j)=*(src[i]+j);
+		      if (toffset+j < recvdatabuf[recv_id]->bufsize) {
+		        *(recvdatabuf[recv_id]->recvbuf+toffset+j)=*(src[i]+j);
+		      }
 		    }
 		    toffset+=tpkt_len;
 		  }
