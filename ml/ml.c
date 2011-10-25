@@ -413,12 +413,12 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 
 			sd_data_inf.remote_socketID = &(connectbuf[con_id]->external_socketID);
 #ifdef FEC
-			if(msg_type==17 && msg_len>1372){
+			if(msg_type==17 && msg_len>connectbuf[con_id]->pmtusize){
 			   //@add padding bits to msg!
 			   int npaks=0;
 			   int toffset=0;
-			   int tpkt_len=1372;
-			   int ipad = (1372-(msg_len%1372));
+			   int tpkt_len=connectbuf[con_id]->pmtusize;
+			   int ipad = (connectbuf[con_id]->pmtusize-(msg_len%(connectbuf[con_id]->pmtusize)));
 			   Pmsg = (char*) malloc((msg_len + ipad)*sizeof ( char* ));
 			    for(i=0; i<msg_len; i++){
 				*(Pmsg+i)=*(((char *)msg)+i);
@@ -430,7 +430,7 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 			    }
 			    msg=Pmsg;
 			    msg_len=(msg_len+ipad);
-			    npaks=(int)(msg_len/1372);
+			    npaks=(int)(msg_len/connectbuf[con_id]->pmtusize);
 			    npaksX2=2*npaks; //2 times.
 			    src = ( char ** ) malloc ( npaksX2 * sizeof ( char* ));
 			    pkt = ( char ** ) malloc ( npaksX2 * sizeof ( char* ));
@@ -478,7 +478,7 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 #endif
 			iov[3].iov_len = pkt_len;
 #ifdef FEC
-			if(msg_type==17 && msg_len>1372 && lcnt<((msg_len*2)/1372)){ //&& lcnt<(msg_len/1372)
+			if(msg_type==17 && msg_len>connectbuf[con_id]->pmtusize && lcnt<((msg_len*2)/connectbuf[con_id]->pmtusize)){ //&& lcnt<(msg_len/connectbuf[con_id]->pmtusize)
 			      iov[3].iov_base = pkt[lcnt];
 			      chk_msg_len=(msg_len*2); //half-rate.
 			} else {
@@ -499,7 +499,7 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 				mon_pkt_inf pkt_info;
 				memset(h_pkt,0,MON_PKT_HEADER_SPACE);
 				pkt_info.remote_socketID = &(connectbuf[con_id]->external_socketID);
-				if(msg_type==17 && msg_len>1372 && lcnt<((msg_len*2)/1372)){
+				if(msg_type==17 && msg_len>connectbuf[con_id]->pmtusize && lcnt<((msg_len*2)/connectbuf[con_id]->pmtusize)){
 				    pkt_info.buffer = pkt[lcnt];
 				    chk_msg_len=(msg_len*2);
 				} else {
@@ -555,7 +555,7 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 					//update
 					offset += pkt_len;
 #ifdef FEC
-					if(msg_type==17 && msg_len>1372 && lcnt<((msg_len*2)/1372)){
+					if(msg_type==17 && msg_len>connectbuf[con_id]->pmtusize && lcnt<((msg_len*2)/connectbuf[con_id]->pmtusize)){
 					  lcnt++;
 					}
 #endif
@@ -566,7 +566,7 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 			if (break2) break;
 #ifdef FEC
 		} while(offset != chk_msg_len && !truncable);
-		if(msg_type==MSG_TYPE_CHUNK && msg_len>1372){ //free the pointers.
+		if(msg_type==17 && msg_len>connectbuf[con_id]->pmtusize){ //free the pointers.
 			free(Pmsg);
 			free(src);
 			for(i=0; i<npaksX2; i++) {
@@ -999,11 +999,13 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 	debug("ML: received packet of size %d with rconID:%d lconID:%d type:%d offset:%d inlength: %d\n",bufsize,msg_h->remote_con_id,msg_h->local_con_id,msg_h->msg_type,msg_h->offset, msg_h->msg_length);
 
 	int recv_id, free_recv_id = -1;
+	int pmtusize;
 
 	if(connectbuf[msg_h->remote_con_id] == NULL) {
 		debug("ML: Received a message not related to any opened connection!\n");
 		return;
 	}
+	pmtusize = connectbuf[msg_h->remote_con_id]->pmtusize;
 
 #ifdef RTX
 	counters.receivedDataPktCounter++;
@@ -1021,7 +1023,7 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 
 #ifdef FEC
 	// Consider only first k packets and decline the rest >k packets.
-	if((msg_h->msg_type==17) && ((msg_h->msg_length + msg_h->len_mon_data_hdr)>1372) && (chk_complete[msg_h->msg_seq_num]==1)){
+	if((msg_h->msg_type==17) && ((msg_h->msg_length + msg_h->len_mon_data_hdr)>pmtusize) && (chk_complete[msg_h->msg_seq_num]==1)){
 	  return;
 	}
 #endif
@@ -1056,12 +1058,12 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 		recvdatabuf[recv_id]->msgtype = msg_h->msg_type;
 
 #ifdef FEC
-		if(recvdatabuf[recv_id]->msgtype==17 && recvdatabuf[recv_id]->bufsize>1372){
+		if(recvdatabuf[recv_id]->msgtype==17 && recvdatabuf[recv_id]->bufsize>pmtusize){
 		  chk_complete[msg_h->msg_seq_num]=0;
 		  recvdatabuf[recv_id]->nix=0;
-		  recvdatabuf[recv_id]->pix = ( int * ) malloc ( (recvdatabuf[recv_id]->bufsize/1372) * sizeof ( int ));
-		  recvdatabuf[recv_id]->pix_chk = ( int * ) malloc ( (recvdatabuf[recv_id]->bufsize/1372) * sizeof ( int ));
-		  for(i=0;i<(recvdatabuf[recv_id]->bufsize/1372);i++)
+		  recvdatabuf[recv_id]->pix = ( int * ) malloc ( (recvdatabuf[recv_id]->bufsize/pmtusize) * sizeof ( int ));
+		  recvdatabuf[recv_id]->pix_chk = ( int * ) malloc ( (recvdatabuf[recv_id]->bufsize/pmtusize) * sizeof ( int ));
+		  for(i=0;i<(recvdatabuf[recv_id]->bufsize/pmtusize);i++)
 		      recvdatabuf[recv_id]->pix_chk[i] = 0;
 		}
 #endif
@@ -1092,8 +1094,8 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 
 	// enter the data into the buffer
 #ifdef FEC
-	if(recvdatabuf[recv_id]->msgtype==17 && recvdatabuf[recv_id]->bufsize>1372 && recvdatabuf[recv_id]->pix_chk[recvdatabuf[recv_id]->nix]==0)
-	  memcpy(recvdatabuf[recv_id]->recvbuf + msg_h->len_mon_data_hdr + (recvdatabuf[recv_id]->nix)*1372, msgbuf, bufsize);
+	if(recvdatabuf[recv_id]->msgtype==17 && recvdatabuf[recv_id]->bufsize>pmtusize && recvdatabuf[recv_id]->pix_chk[recvdatabuf[recv_id]->nix]==0)
+	  memcpy(recvdatabuf[recv_id]->recvbuf + msg_h->len_mon_data_hdr + (recvdatabuf[recv_id]->nix)*pmtusize, msgbuf, bufsize);
 	else
 	  memcpy(recvdatabuf[recv_id]->recvbuf + msg_h->len_mon_data_hdr + msg_h->offset, msgbuf, bufsize);
 	//TODO very basic checkif all fragments arrived: has to be reviewed
@@ -1140,13 +1142,13 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 	if(recvdatabuf[recv_id]->arrivedBytes == recvdatabuf[recv_id]->bufsize - recvdatabuf[recv_id]->monitoringDataHeaderLen) {
 		recvdatabuf[recv_id]->status = COMPLETE; //buffer full -> msg completly arrived
 #ifdef FEC
-		if(recvdatabuf[recv_id]->msgtype==17 && recvdatabuf[recv_id]->bufsize>1372){
+		if(recvdatabuf[recv_id]->msgtype==17 && recvdatabuf[recv_id]->bufsize>pmtusize){
 		  chk_complete[msg_h->msg_seq_num]=1;
 		  prev_sqnr=recvdatabuf[recv_id]->seqnr;
 		  int npaks=0;
 		  int toffset=20;
-		  int tpkt_len=1372;
-		  npaks=(int)(recvdatabuf[recv_id]->bufsize/1372);
+		  int tpkt_len=pmtusize;
+		  npaks=(int)(recvdatabuf[recv_id]->bufsize/pmtusize);
 		  src = ( char ** )malloc ( npaks * sizeof ( char * ));
 		  code = fec_new(npaks,256);
 		  for(i=0; i<npaks; i++){
@@ -1160,7 +1162,7 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 		      }
 		      toffset += tpkt_len;
 		  }
-		  recvdatabuf[recv_id]->pix[recvdatabuf[recv_id]->nix]=(int)(msg_h->offset/1372);
+		  recvdatabuf[recv_id]->pix[recvdatabuf[recv_id]->nix]=(int)(msg_h->offset/pmtusize);
 		  fec_decode(code, src, recvdatabuf[recv_id]->pix, tpkt_len);
 		  toffset=20;
 		  for(i=0; i<npaks; i++){
@@ -1185,8 +1187,8 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 	} else {
 		recvdatabuf[recv_id]->status = ACTIVE;
 #ifdef FEC
-		if(recvdatabuf[recv_id]->msgtype==17 && recvdatabuf[recv_id]->bufsize>1372 && recvdatabuf[recv_id]->pix_chk[recvdatabuf[recv_id]->nix]==0){
-		  recvdatabuf[recv_id]->pix[recvdatabuf[recv_id]->nix]=(int)(msg_h->offset/1372);
+		if(recvdatabuf[recv_id]->msgtype==17 && recvdatabuf[recv_id]->bufsize>pmtusize && recvdatabuf[recv_id]->pix_chk[recvdatabuf[recv_id]->nix]==0){
+		  recvdatabuf[recv_id]->pix[recvdatabuf[recv_id]->nix]=(int)(msg_h->offset/pmtusize);
 		  recvdatabuf[recv_id]->pix_chk[recvdatabuf[recv_id]->nix]=1;
 		  recvdatabuf[recv_id]->nix++;
 		}
