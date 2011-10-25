@@ -477,9 +477,9 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 #endif
 			iov[3].iov_len = pkt_len;
 #ifdef FEC
-			if(msg_type==17 && msg_len>connectbuf[con_id]->pmtusize && lcnt<((msg_len*2)/connectbuf[con_id]->pmtusize)){ //&& lcnt<(msg_len/connectbuf[con_id]->pmtusize)
+			if(msg_type==17 && msg_len>connectbuf[con_id]->pmtusize && lcnt<npaksX2){
 			      iov[3].iov_base = pkt[lcnt];
-			      chk_msg_len=(msg_len*2); //half-rate.
+			      chk_msg_len=connectbuf[con_id]->pmtusize*npaksX2;
 			} else {
 			      iov[3].iov_base = msg + offset;
 			      chk_msg_len=msg_len;
@@ -498,9 +498,9 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 				mon_pkt_inf pkt_info;
 				memset(h_pkt,0,MON_PKT_HEADER_SPACE);
 				pkt_info.remote_socketID = &(connectbuf[con_id]->external_socketID);
-				if(msg_type==17 && msg_len>connectbuf[con_id]->pmtusize && lcnt<((msg_len*2)/connectbuf[con_id]->pmtusize)){
+				if(msg_type==17 && msg_len>connectbuf[con_id]->pmtusize && lcnt<npaksX2){
 				    pkt_info.buffer = pkt[lcnt];
-				    chk_msg_len=(msg_len*2);
+				    chk_msg_len=connectbuf[con_id]->pmtusize*npaksX2;
 				} else {
 				    pkt_info.buffer = msg + offset;
 				    chk_msg_len=msg_len;
@@ -554,7 +554,7 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 					//update
 					offset += pkt_len;
 #ifdef FEC
-					if(msg_type==17 && msg_len>connectbuf[con_id]->pmtusize && lcnt<((msg_len*2)/connectbuf[con_id]->pmtusize)){
+					if(msg_type==17 && msg_len>connectbuf[con_id]->pmtusize && lcnt<npaksX2){
 					  lcnt++;
 					}
 #endif
