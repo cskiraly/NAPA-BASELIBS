@@ -1515,7 +1515,11 @@ void recv_pkg(int fd, short event, void *arg)
 	msg_h = (struct msg_header *) msgbuf;
 
         uint32_t inlen = ntohl(msg_h->msg_length);
+#ifdef FEC
+        if(inlen > 0x20000 || inlen == 0) {	//FEC packets have a larger offset value than msg_length
+#else
         if(inlen > 0x20000 || inlen < ntohl(msg_h->offset) || inlen == 0) {
+#endif
             warn("ML: BAD PACKET received from: %s:%d (len: %d < %d [=%08X] o:%d)", 
                   inet_ntoa(recv_addr.sin_addr), recv_addr.sin_port,
                                recvSize, inlen, inlen, ntohl(msg_h->offset));
