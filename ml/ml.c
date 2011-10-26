@@ -97,6 +97,16 @@ struct event_base *base;
  */
 #define LAST_PKT_RECV_TIMEOUT_FRACTION 0.7
 
+/*
+ * how many times try retransmissions ( e.g. 1:only one attempt)
+ */
+#define RTX_RETRY 1
+
+/*
+ * retry with NACK if still not received
+ */
+#define PKT_RECV_TIMEOUT_RETRY_DEFAULT { 0, 550000 } // 550 ms
+
 #endif
 
 
@@ -204,6 +214,7 @@ struct pkt_recv_timeout_cb_arg{
 	int recv_id;
 	int seqnr;
 	int gap;
+	int retry;
 };
 
 
@@ -214,6 +225,7 @@ extern unsigned int sentRTXDataPktCounter;
  */
 static struct timeval pkt_recv_timeout = PKT_RECV_TIMEOUT_DEFAULT;
 
+static struct timeval pkt_recv_timeout_retry = PKT_RECV_TIMEOUT_RETRY_DEFAULT;
 
 static struct timeval last_pkt_recv_timeout = LAST_PKT_RECV_TIMEOUT_DEFAULT;
 
@@ -270,7 +282,11 @@ void pkt_recv_timeout_cb(int fd, short event, void *arg){
 
 	send_msg(recvdatabuf[recv_id]->connectionID, ML_NACK_MSG, (char *) &nackmsg, sizeof(struct nack_msg), true, &(connectbuf[recvdatabuf[recv_id]->connectionID]->defaultSendParams));	
 
+	if (--args->retry > 0) {
+		event_base_once(base, -1, EV_TIMEOUT, &pkt_recv_timeout_cb, arg, &pkt_recv_timeout_retry);	//prepare the next timeout
+	} else {
 		free(args);
+	}
 }
 
 void last_pkt_recv_timeout_cb(int fd, short event, void *arg){
@@ -952,6 +968,7 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 		args->recv_id = recv_id;
 		args->seqnr = recvdatabuf[recv_id]->seqnr;
 		args->gap = recvdatabuf[recv_id]->gapCounter++;
+		args->retry = RTX_RETRY;
 		event_base_once(base, -1, EV_TIMEOUT, &pkt_recv_timeout_cb, (void *) args, &pkt_recv_timeout);
 	}
 	
