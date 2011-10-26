@@ -260,7 +260,7 @@ void pkt_recv_timeout_cb(int fd, short event, void *arg){
 
 void last_pkt_recv_timeout_cb(int fd, short event, void *arg){
 	int recv_id = (long) arg;
-	debug("ML: recv_timeout_cb called. Timeout for id:%d\n",recv_id);
+	debug("ML: last_pkt_recv_timeout_cb called. Timeout for id:%d\n",recv_id);
 
 	if (recvdatabuf[recv_id] == NULL) {
 		return;
