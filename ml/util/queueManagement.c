@@ -174,7 +174,8 @@ int getFirstPacketSize() {
 }
 
 #ifdef RTX
-PacketContainer* searchPacketInRTX(int connID, int msgSeqNum, int offset) {
+//returns: pointer to packet (if keep: ownership remains at the queue)
+PacketContainer* searchPacketInRTX(int connID, int msgSeqNum, int offset, int keep) {
 	
 	connID = ntohl(connID);
 	msgSeqNum = ntohl(msgSeqNum);
@@ -195,10 +196,12 @@ PacketContainer* searchPacketInRTX(int connID, int msgSeqNum, int offset) {
 
 		if ((msg_h->local_con_id == connID) && (msg_h->msg_seq_num == msgSeqNum) && (msg_h->offset == offset)) {
 		//fprintf(stderr,"*****************Packet found: ConID: %d  MsgseqNum: %d Offset: %d \n", ntohl(connID),ntohl(msgSeqNum),ntohl(offset));
-			if (tmp == RTXqueue.head) RTXqueue.head = tmp->next;
-			else if (tmp == RTXqueue.tail) { RTXqueue.tail = prev; prev->next == NULL; }
-			else prev->next = tmp->next;
-			RTXqueue.size -= tmp->pktLen;
+			if (!keep) {
+				if (tmp == RTXqueue.head) RTXqueue.head = tmp->next;
+				else if (tmp == RTXqueue.tail) { RTXqueue.tail = prev; prev->next == NULL; }
+				else prev->next = tmp->next;
+				RTXqueue.size -= tmp->pktLen;
+			}
 			return tmp;
 		}
 		prev = tmp;
@@ -213,7 +216,7 @@ int rtxPacketsFromTo(int connID, int msgSeqNum, int offsetFrom, int offsetTo) {
         //fprintf(stderr,"\t\t\t\t Retransmission request From: %d To: %d\n",offsetFrom, offsetTo);
 
         while (offset < offsetTo) {
-                PacketContainer *packetToRTX = searchPacketInRTX(connID,msgSeqNum,offset);
+                PacketContainer *packetToRTX = searchPacketInRTX(connID,msgSeqNum,offset,1);
                 if (packetToRTX == NULL) return 1;
 
                 //sending packet
