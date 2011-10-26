@@ -152,7 +152,6 @@ typedef struct {
   int txConnectionID;
   int expectedOffset;
   int gapCounter; //index of the first "free slot"
-  int firstGap;	//first gap which hasn't been handled yet (for which the NACK hasn't been sent yet)
   struct gap gapArray[RTX_MAX_GAPS];
 #endif
 #ifdef FEC

@@ -94,6 +94,16 @@ struct event_base *base;
  */
 #define LAST_PKT_RECV_TIMEOUT_FRACTION 0.7
 
+/*
+ * how many times try retransmissions ( e.g. 1:only one attempt)
+ */
+#define RTX_RETRY 1
+
+/*
+ * retry with NACK if still not received
+ */
+#define PKT_RECV_TIMEOUT_RETRY_DEFAULT { 0, 550000 } // 550 ms
+
 #endif
 
 
@@ -197,6 +207,14 @@ struct Counters {
 	unsigned int sentNACKMorePktCounter;
 } counters;
 
+struct pkt_recv_timeout_cb_arg{
+	int recv_id;
+	int seqnr;
+	int gap;
+	int retry;
+};
+
+
 extern unsigned int sentRTXDataPktCounter;
 
 /*
@@ -204,6 +222,7 @@ extern unsigned int sentRTXDataPktCounter;
  */
 static struct timeval pkt_recv_timeout = PKT_RECV_TIMEOUT_DEFAULT;
 
+static struct timeval pkt_recv_timeout_retry = PKT_RECV_TIMEOUT_RETRY_DEFAULT;
 
 static struct timeval last_pkt_recv_timeout = LAST_PKT_RECV_TIMEOUT_DEFAULT;
 
@@ -231,33 +250,45 @@ void recv_nack_msg(struct msg_header *msg_h, char *msgbuf, int msg_size)
 void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, send_params * sParams);
 
 void pkt_recv_timeout_cb(int fd, short event, void *arg){
-	int recv_id = (long) arg;
-	debug("ML: recv_timeout_cb called. Timeout for id:%d\n",recv_id);
+	struct pkt_recv_timeout_cb_arg *args = arg;
+	int recv_id = args->recv_id;
+	int seqnr = args->seqnr;
+	int gap = args->gap;
+
+	debug("ML: pkt_recv_timeout_cb called. Timeout for id:%d\n",recv_id);
 
 	//check if message still exists	
-	if (recvdatabuf[recv_id] == NULL) return;
+	if (recvdatabuf[recv_id] == NULL || recvdatabuf[recv_id]->seqnr != seqnr) {
+		free(args);
+		return;
+	}
 
 	//check if gap was filled in the meantime
-	if (recvdatabuf[recv_id]->gapArray[recvdatabuf[recv_id]->firstGap].offsetFrom == recvdatabuf[recv_id]->gapArray[recvdatabuf[recv_id]->firstGap].offsetTo) {
-		recvdatabuf[recv_id]->firstGap++;
+	if (recvdatabuf[recv_id]->gapArray[gap].offsetFrom == recvdatabuf[recv_id]->gapArray[gap].offsetTo) {
+		free(args);
 		return;	
 	}
 
 	struct nack_msg nackmsg;
 	nackmsg.con_id = recvdatabuf[recv_id]->txConnectionID;
 	nackmsg.msg_seq_num = recvdatabuf[recv_id]->seqnr;
-	nackmsg.offsetFrom = recvdatabuf[recv_id]->gapArray[recvdatabuf[recv_id]->firstGap].offsetFrom;
-	nackmsg.offsetTo = recvdatabuf[recv_id]->gapArray[recvdatabuf[recv_id]->firstGap].offsetTo;
-	recvdatabuf[recv_id]->firstGap++;
+	nackmsg.offsetFrom = recvdatabuf[recv_id]->gapArray[gap].offsetFrom;
+	nackmsg.offsetTo = recvdatabuf[recv_id]->gapArray[gap].offsetTo;
 
 	unsigned int gapSize = nackmsg.offsetTo - nackmsg.offsetFrom;
 
 	send_msg(recvdatabuf[recv_id]->connectionID, ML_NACK_MSG, (char *) &nackmsg, sizeof(struct nack_msg), true, &(connectbuf[recvdatabuf[recv_id]->connectionID]->defaultSendParams));	
+
+	if (--args->retry > 0) {
+		event_base_once(base, -1, EV_TIMEOUT, &pkt_recv_timeout_cb, arg, &pkt_recv_timeout_retry);	//prepare the next timeout
+	} else {
+		free(args);
+	}
 }
 
 void last_pkt_recv_timeout_cb(int fd, short event, void *arg){
 	int recv_id = (long) arg;
-	debug("ML: recv_timeout_cb called. Timeout for id:%d\n",recv_id);
+	debug("ML: last_pkt_recv_timeout_cb called. Timeout for id:%d\n",recv_id);
 
 	if (recvdatabuf[recv_id] == NULL) {
 		return;
@@ -1010,7 +1041,6 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 		recvdatabuf[recv_id]->txConnectionID = msg_h->local_con_id;
 		recvdatabuf[recv_id]->expectedOffset = 0;
 		recvdatabuf[recv_id]->gapCounter = 0;
-		recvdatabuf[recv_id]->firstGap = 0;
 		recvdatabuf[recv_id]->last_pkt_timeout_event = NULL;
 #endif
 
@@ -1073,21 +1103,22 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 
 #ifdef RTX
 	// detecting a new gap	
-	if (msg_h->offset > recvdatabuf[recv_id]->expectedOffset) {
+	if (msg_h->offset > recvdatabuf[recv_id]->expectedOffset && recvdatabuf[recv_id]->gapCounter < RTX_MAX_GAPS) {
 		recvdatabuf[recv_id]->gapArray[recvdatabuf[recv_id]->gapCounter].offsetFrom = recvdatabuf[recv_id]->expectedOffset;
 		recvdatabuf[recv_id]->gapArray[recvdatabuf[recv_id]->gapCounter].offsetTo = msg_h->offset;
-		if (recvdatabuf[recv_id]->gapCounter < RTX_MAX_GAPS - 1) recvdatabuf[recv_id]->gapCounter++;
-		event_base_once(base, -1, EV_TIMEOUT, &pkt_recv_timeout_cb, (void *) (long)recv_id, &pkt_recv_timeout);
+		struct pkt_recv_timeout_cb_arg *args = malloc(sizeof *args);
+		args->recv_id = recv_id;
+		args->seqnr = recvdatabuf[recv_id]->seqnr;
+		args->gap = recvdatabuf[recv_id]->gapCounter++;
+		args->retry = RTX_RETRY;
+		event_base_once(base, -1, EV_TIMEOUT, &pkt_recv_timeout_cb, (void *) args, &pkt_recv_timeout);
 	}
 	
 	//filling the gap by delayed packets
 	if (msg_h->offset < recvdatabuf[recv_id]->expectedOffset){
+		int i;
 		counters.receivedRTXDataPktCounter++;
-		//skip retransmitted packets
-		if (recvdatabuf[recv_id]->firstGap < recvdatabuf[recv_id]->gapCounter && msg_h->offset >= recvdatabuf[recv_id]->gapArray[recvdatabuf[recv_id]->firstGap].offsetFrom) {
-			int i;
-			//fprintf(stderr,"firstGap: %d	gapCounter: %d\n", recvdatabuf[recv_id]->firstGap, recvdatabuf[recv_id]->gapCounter);
-			for (i = recvdatabuf[recv_id]->firstGap; i < recvdatabuf[recv_id]->gapCounter; i++){
+			for (i = 0; i < recvdatabuf[recv_id]->gapCounter; i++){
 				if (msg_h->offset == recvdatabuf[recv_id]->gapArray[i].offsetFrom) {
 					recvdatabuf[recv_id]->gapArray[i].offsetFrom += bufsize;
 					break;
@@ -1096,9 +1127,6 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 					recvdatabuf[recv_id]->gapArray[i].offsetTo -= bufsize;
 					break;
 				}
-			}
-		} else {//fprintf(stderr,"Skipping retransmitted packets in filling the gap.\n"); 
-			//counters.receivedRTXDataPktCounter++;
 			}
 	}
 
