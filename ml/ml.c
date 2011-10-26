@@ -493,33 +493,6 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 			msg_h.offset = htonl(offset);
 			msg_h.msg_length = htonl(truncable ? pkt_len : msg_len);
 
-#ifdef FEC
-			if(get_Send_pkt_inf_cb != NULL && iov[1].iov_len) {
-				mon_pkt_inf pkt_info;
-				memset(h_pkt,0,MON_PKT_HEADER_SPACE);
-				pkt_info.remote_socketID = &(connectbuf[con_id]->external_socketID);
-				if(msg_type==17 && msg_len>connectbuf[con_id]->pmtusize && lcnt<npaksX2){
-				    pkt_info.buffer = pkt[lcnt];
-				    chk_msg_len=connectbuf[con_id]->pmtusize*npaksX2;
-				} else {
-				    pkt_info.buffer = msg + offset;
-				    chk_msg_len=msg_len;
-				}
-
-				pkt_info.bufSize = pkt_len;
-				pkt_info.msgtype = msg_type;
-				pkt_info.dataID = connectbuf[con_id]->seqnr;
-				pkt_info.offset = offset;
-				pkt_info.datasize = msg_len;
-				pkt_info.monitoringHeaderLen = iov[1].iov_len;
-				pkt_info.monitoringHeader = iov[1].iov_base;
-				pkt_info.ttl = -1;
-				memset(&(pkt_info.arrival_time),0,sizeof(struct timeval));
-				(get_Send_pkt_inf_cb) ((void *) &pkt_info);
-			}
-#endif
-
-
 			debug("ML: sending packet to %s with rconID:%d lconID:%d\n", conid_to_string(con_id), ntohl(msg_h.remote_con_id), ntohl(msg_h.local_con_id));
 			int priority = 0; 
 			if ((msg_type == ML_CON_MSG)
