@@ -46,6 +46,7 @@ fi
 [ -z "$MONL" ] && MONL=1
 [ -z "$ALTO" ] && ALTO=1
 [ -z "$RTX" ] && RTX=1
+[ -z "$FEC" ] && FEC=1
 
 # Refresh base libraries if this is an svn checkout?
 [ -n "$UPDATE_BASELIBS" ] || UPDATE_BASELIBS="" 
@@ -71,6 +72,7 @@ which autoconf >/dev/null || { echo "please install autoconf!"; exit 1; }
 [ "$MONL" == "0" ] && MONL=
 [ "$ALTO" == "0" ] && ALTO=
 [ "$RTX" == "0" ] && RTX=
+[ "$FEC" == "0" ] && FEC=
 
 # if not empty, options are set to '1' (except for STATIC)
 [ -n "$DUMMY" ] && DUMMY=0
@@ -80,6 +82,10 @@ which autoconf >/dev/null || { echo "please install autoconf!"; exit 1; }
 
 if [ -n "$RTX" ]; then
 	CPPFLAGS="$CPPFLAGS -DRTX"
+fi
+
+if [ -n "$FEC" ]; then
+	CPPFLAGS="$CPPFLAGS -DFEC"
 fi
 
 #Set the otpions to use with configure

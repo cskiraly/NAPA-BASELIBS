@@ -23,6 +23,14 @@
 
 #include <ml_all.h>
 
+#ifdef FEC
+#include "fec/RSfec.h"
+int prev_sqnr=0;  //used to track the previous seq nrs, so that not to consider extra pakts >k.
+int *pix;	 //keep track of packet indexes.
+int nix=0;	//counter incrimented after the arrivel of each packet. pix[nix]
+int cnt=0;
+#endif
+
 /**************************** START OF INTERNALS ***********************/
 
 
@@ -342,6 +350,14 @@ bool isStunDefined()
 }
 
 void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, send_params * sParams) {
+#ifdef FEC
+	int chk_msg_len=msg_len;
+	int n=4;
+	int k=64;
+	int lcnt=0;
+	int icnt=0;
+	int i=0;
+#endif
 	socketaddrgen udpgen;
 	bool retry;
 	int pkt_len, offset;
@@ -374,6 +390,13 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 		udpgen = connectbuf[con_id]->external_socketID.external_addr;
 
 	do{
+#ifdef FEC
+		char *Pmsg = NULL;
+		int npaksX2 = 0;
+		void *code;
+		char **src = NULL;
+		char **pkt = NULL;
+#endif
 		offset = 0;
 		retry = false;
 		// Monitoring layer hook
@@ -388,6 +411,45 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 			memset(h_data, 0, MON_DATA_HEADER_SPACE);
 
 			sd_data_inf.remote_socketID = &(connectbuf[con_id]->external_socketID);
+#ifdef FEC
+			if(msg_type==17 && msg_len>connectbuf[con_id]->pmtusize){
+			   //@add padding bits to msg!
+			   int npaks=0;
+			   int toffset=0;
+			   int tpkt_len=connectbuf[con_id]->pmtusize;
+			   int ipad = (connectbuf[con_id]->pmtusize-(msg_len%(connectbuf[con_id]->pmtusize)));
+			   Pmsg = (char*) malloc((msg_len + ipad)*sizeof ( char* ));
+			    for(i=0; i<msg_len; i++){
+				*(Pmsg+i)=*(((char *)msg)+i);
+				icnt++;
+			    }
+			    for(i=msg_len; i<(msg_len+ipad); i++){
+				*(Pmsg+i)=0;
+				icnt++;
+			    }
+			    msg=Pmsg;
+			    msg_len=(msg_len+ipad);
+			    npaks=(int)(msg_len/connectbuf[con_id]->pmtusize);
+			    npaksX2=2*npaks; //2 times.
+			    src = ( char ** ) malloc ( npaksX2 * sizeof ( char* ));
+			    pkt = ( char ** ) malloc ( npaksX2 * sizeof ( char* ));
+			    code = fec_new(npaks,256);
+			    for(i=0; i<npaks; i++){
+			      src[i]= (msg + toffset);
+			      toffset += tpkt_len;
+			    }
+			    for(i=npaks; i<npaksX2; i++){//X2
+			      src[i] = malloc( tpkt_len * sizeof ( char ) );
+			    }
+			    for(i=0; i<npaksX2; i++){//X2
+			     pkt[i] = ( char* )malloc( tpkt_len * sizeof ( char ) );
+			     fec_encode(code, src, pkt[i], i, tpkt_len) ;
+			    }
+			    for(i=npaks; i<npaksX2; i++){//X2
+			      free(src[i]);
+			    }
+			}
+#endif
 			sd_data_inf.buffer = msg;
 			sd_data_inf.bufSize = msg_len;
 			sd_data_inf.msgtype = msg_type;
@@ -408,16 +470,28 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 			if(set_Monitoring_header_pkt_cb != NULL) {
 				iov[1].iov_len = (set_Monitoring_header_pkt_cb) (&(connectbuf[con_id]->external_socketID), msg_type);
 			}
+#ifdef FEC
+			pkt_len = min(connectbuf[con_id]->pmtusize, chk_msg_len - offset) ;
+#else
 			pkt_len = min(connectbuf[con_id]->pmtusize - iov[2].iov_len - iov[1].iov_len - iov[0].iov_len, msg_len - offset) ;
-
+#endif
 			iov[3].iov_len = pkt_len;
+#ifdef FEC
+			if(msg_type==17 && msg_len>connectbuf[con_id]->pmtusize && lcnt<npaksX2){
+			      iov[3].iov_base = pkt[lcnt];
+			      chk_msg_len=connectbuf[con_id]->pmtusize*npaksX2;
+			} else {
+			      iov[3].iov_base = msg + offset;
+			      chk_msg_len=msg_len;
+			}
+#else	
 			iov[3].iov_base = msg + offset;
+#endif
 
 			//fill header
 			msg_h.len_mon_packet_hdr = iov[1].iov_len;
 			msg_h.offset = htonl(offset);
 			msg_h.msg_length = htonl(truncable ? pkt_len : msg_len);
-
 
 			debug("ML: sending packet to %s with rconID:%d lconID:%d\n", conid_to_string(con_id), ntohl(msg_h.remote_con_id), ntohl(msg_h.local_con_id));
 			int priority = 0; 
@@ -455,12 +529,30 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 #endif
 					//update
 					offset += pkt_len;
+#ifdef FEC
+					if(msg_type==17 && msg_len>connectbuf[con_id]->pmtusize && lcnt<npaksX2){
+					  lcnt++;
+					}
+#endif
 					//transmit data header only in the first packet
 					iov[2].iov_len = 0;
 					break;
 			}
 			if (break2) break;
+#ifdef FEC
+		} while(offset != chk_msg_len && !truncable);
+		if(msg_type==17 && msg_len>connectbuf[con_id]->pmtusize){ //free the pointers.
+			free(Pmsg);
+			free(src);
+			for(i=0; i<npaksX2; i++) {
+			  free(pkt[i]);
+			}
+			free(pkt);
+			fec_free(code);
+		}
+#else
 		} while(offset != msg_len && !truncable);
+#endif
 	} while(retry);
 	//fprintf(stderr, "sentDataPktCounter after msg_seq_num = %d: %d\n", msg_h.msg_seq_num, counters.sentDataPktCounter);
 	//fprintf(stderr, "sentRTXDataPktCounter after msg_seq_num = %d: %d\n", msg_h.msg_seq_num, counters.sentRTXDataPktCtr);
@@ -859,6 +951,10 @@ void recv_timeout_cb(int fd, short event, void *arg)
 		recvdatabuf[recv_id]->last_pkt_timeout_event = NULL;
 	}
 #endif
+#ifdef FEC
+	free(recvdatabuf[recv_id]->pix);
+	free(recvdatabuf[recv_id]->pix_chk);
+#endif
 	free(recvdatabuf[recv_id]);
 	recvdatabuf[recv_id] = NULL;
 }
@@ -866,14 +962,23 @@ void recv_timeout_cb(int fd, short event, void *arg)
 // process a single recv data message
 void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 {
+#ifdef FEC
+	void *code;
+	int n, k, i, j;
+	n=4;
+	k=64;
+	char **src;
+#endif
 	debug("ML: received packet of size %d with rconID:%d lconID:%d type:%d offset:%d inlength: %d\n",bufsize,msg_h->remote_con_id,msg_h->local_con_id,msg_h->msg_type,msg_h->offset, msg_h->msg_length);
 
 	int recv_id, free_recv_id = -1;
+	int pmtusize;
 
 	if(connectbuf[msg_h->remote_con_id] == NULL) {
 		debug("ML: Received a message not related to any opened connection!\n");
 		return;
 	}
+	pmtusize = connectbuf[msg_h->remote_con_id]->pmtusize;
 
 #ifdef RTX
 	counters.receivedDataPktCounter++;
@@ -918,6 +1023,16 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 		recvdatabuf[recv_id]->starttime = time(NULL);
 		recvdatabuf[recv_id]->msgtype = msg_h->msg_type;
 
+#ifdef FEC
+		if(recvdatabuf[recv_id]->msgtype==17 && recvdatabuf[recv_id]->bufsize>pmtusize){
+		  recvdatabuf[recv_id]->nix=0;
+		  recvdatabuf[recv_id]->pix = ( int * ) malloc ( (recvdatabuf[recv_id]->bufsize/pmtusize) * sizeof ( int ));
+		  recvdatabuf[recv_id]->pix_chk = ( int * ) malloc ( (recvdatabuf[recv_id]->bufsize/pmtusize) * sizeof ( int ));
+		  for(i=0;i<(recvdatabuf[recv_id]->bufsize/pmtusize);i++)
+		      recvdatabuf[recv_id]->pix_chk[i] = 0;
+		}
+#endif
+
 		// fill the buffer with zeros
 		memset(recvdatabuf[recv_id]->recvbuf, 0, recvdatabuf[recv_id]->bufsize);
 		debug(" new @ id:%d\n",recv_id);
@@ -946,7 +1061,16 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 	//fprintf(stderr,"Arrived bytes: %d Offset: %d Expected offset: %d\n",recvdatabuf[recv_id]->arrivedBytes/1349,msg_h->offset/1349,recvdatabuf[recv_id]->expectedOffset/1349);
 
 	// enter the data into the buffer
+#ifdef FEC
+	if(recvdatabuf[recv_id]->msgtype==17 && recvdatabuf[recv_id]->bufsize>pmtusize && recvdatabuf[recv_id]->pix_chk[recvdatabuf[recv_id]->nix]==0)
+	  memcpy(recvdatabuf[recv_id]->recvbuf + msg_h->len_mon_data_hdr + (recvdatabuf[recv_id]->nix)*pmtusize, msgbuf, bufsize);
+	else
+	  memcpy(recvdatabuf[recv_id]->recvbuf + msg_h->len_mon_data_hdr + msg_h->offset, msgbuf, bufsize);
+	//TODO very basic checkif all fragments arrived: has to be reviewed
+#else
 	memcpy(recvdatabuf[recv_id]->recvbuf + msg_h->len_mon_data_hdr + msg_h->offset, msgbuf, bufsize);
+#endif
+
 #ifdef RTX
 	// detecting a new gap	
 	if (msg_h->offset > recvdatabuf[recv_id]->expectedOffset) {
@@ -983,10 +1107,59 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 #endif
 
 	//TODO very basic checkif all fragments arrived: has to be reviewed
-	if(recvdatabuf[recv_id]->arrivedBytes == recvdatabuf[recv_id]->bufsize - recvdatabuf[recv_id]->monitoringDataHeaderLen)
+	if(recvdatabuf[recv_id]->arrivedBytes == recvdatabuf[recv_id]->bufsize - recvdatabuf[recv_id]->monitoringDataHeaderLen) {
 		recvdatabuf[recv_id]->status = COMPLETE; //buffer full -> msg completly arrived
-	else
+#ifdef FEC
+		if(recvdatabuf[recv_id]->msgtype==17 && recvdatabuf[recv_id]->bufsize>pmtusize){
+		  prev_sqnr=recvdatabuf[recv_id]->seqnr;
+		  int npaks=0;
+		  int toffset=20;
+		  int tpkt_len=pmtusize;
+		  npaks=(int)(recvdatabuf[recv_id]->bufsize/pmtusize);
+		  src = ( char ** )malloc ( npaks * sizeof ( char * ));
+		  code = fec_new(npaks,256);
+		  for(i=0; i<npaks; i++){
+		      src[i] = ( char * )malloc(tpkt_len * sizeof ( char ) );
+		      for(j=0; j<tpkt_len; j++){
+			if (toffset+j < recvdatabuf[recv_id]->bufsize) {
+			  *(src[i]+j)=*(recvdatabuf[recv_id]->recvbuf+toffset+j);
+			}else {
+			  *(src[i]+j)=0;
+			}
+		      }
+		      toffset += tpkt_len;
+		  }
+		  recvdatabuf[recv_id]->pix[recvdatabuf[recv_id]->nix]=(int)(msg_h->offset/pmtusize);
+		  fec_decode(code, src, recvdatabuf[recv_id]->pix, tpkt_len);
+		  toffset=20;
+		  for(i=0; i<npaks; i++){
+		    for(j=0; j<tpkt_len; j++){
+		      if (toffset+j < recvdatabuf[recv_id]->bufsize) {
+		        *(recvdatabuf[recv_id]->recvbuf+toffset+j)=*(src[i]+j);
+		      }
+		    }
+		    toffset+=tpkt_len;
+		  }
+		  recvdatabuf[recv_id]->firstPacketArrived = 1;	//we've decoded the first packet as well
+		    fec_free(code);
+		    for(i=0; i<npaks; i++){
+		      free(src[i]);
+		    }
+		    free(src);
+		    nix=0;
+		    recvdatabuf[recv_id]->nix=0;
+		}
+#endif
+	} else {
 		recvdatabuf[recv_id]->status = ACTIVE;
+#ifdef FEC
+		if(recvdatabuf[recv_id]->msgtype==17 && recvdatabuf[recv_id]->bufsize>pmtusize && recvdatabuf[recv_id]->pix_chk[recvdatabuf[recv_id]->nix]==0){
+		  recvdatabuf[recv_id]->pix[recvdatabuf[recv_id]->nix]=(int)(msg_h->offset/pmtusize);
+		  recvdatabuf[recv_id]->pix_chk[recvdatabuf[recv_id]->nix]=1;
+		  recvdatabuf[recv_id]->nix++;
+		}
+#endif
+	}
 
 	if (recv_data_callback) {
 		if(recvdatabuf[recv_id]->status == COMPLETE) {
@@ -1345,7 +1518,11 @@ void recv_pkg(int fd, short event, void *arg)
 	msg_h = (struct msg_header *) msgbuf;
 
         uint32_t inlen = ntohl(msg_h->msg_length);
+#ifdef FEC
+        if(inlen > 0x20000 || inlen == 0) {	//FEC packets have a larger offset value than msg_length
+#else
         if(inlen > 0x20000 || inlen < ntohl(msg_h->offset) || inlen == 0) {
+#endif
             warn("ML: BAD PACKET received from: %s:%d (len: %d < %d [=%08X] o:%d)", 
                   inet_ntoa(recv_addr.sin_addr), recv_addr.sin_port,
                                recvSize, inlen, inlen, ntohl(msg_h->offset));
