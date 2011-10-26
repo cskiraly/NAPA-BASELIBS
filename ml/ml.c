@@ -403,6 +403,8 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 		}
 
 		do {
+                        bool break2 = false;
+
 			if(set_Monitoring_header_pkt_cb != NULL) {
 				iov[1].iov_len = (set_Monitoring_header_pkt_cb) (&(connectbuf[con_id]->external_socketID), msg_type);
 			}
@@ -437,15 +439,15 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 						connectbuf[con_id]->delay = true;
 						retry = true;
 					}
-					offset = msg_len; // exit the while
+					break2 = true;
 					break;
 				case FAILURE:
 					info("ML: sending message failed (to:%s conID:%d lconID:%d msgsize:%d msgtype:%d offset:%d)\n", conid_to_string(con_id), ntohl(msg_h.remote_con_id), ntohl(msg_h.local_con_id), msg_len, msg_h.msg_type, offset);
-					offset = msg_len; // exit the while
+					break2 = true;
 					break;
                                 case THROTTLE:
                                         debug("THROTTLE on output"); 
-					offset = msg_len; // exit the while
+					break2 = true;
 					break;
 				case OK:
 #ifdef RTX
@@ -457,6 +459,7 @@ void send_msg(int con_id, int msg_type, void* msg, int msg_len, bool truncable, 
 					iov[2].iov_len = 0;
 					break;
 			}
+			if (break2) break;
 		} while(offset != msg_len && !truncable);
 	} while(retry);
 	//fprintf(stderr, "sentDataPktCounter after msg_seq_num = %d: %d\n", msg_h.msg_seq_num, counters.sentDataPktCounter);
