@@ -842,6 +842,7 @@ void recv_timeout_cb(int fd, short event, void *arg)
 			recvdatabuf[recv_id]->timeout_event = NULL;
 		}
 		free(recvdatabuf[recv_id]->recvbuf);
+		recvdatabuf[recv_id]->recvbuf = NULL;
 		free(recvdatabuf[recv_id]);
 		recvdatabuf[recv_id] = NULL;
 	}
@@ -1044,6 +1045,7 @@ void recv_data_msg(struct msg_header *msg_h, char *msgbuf, int bufsize)
 			//fprintf(stderr,"******Cleaning slot for clomplete msg_seq_num: %d\n", recvdatabuf[recv_id]->seqnr);	
 #endif
 			free(recvdatabuf[recv_id]->recvbuf);
+			recvdatabuf[recv_id]->recvbuf = NULL;
 			free(recvdatabuf[recv_id]);
 			recvdatabuf[recv_id] = NULL;
 		} else { // not COMPLETE
