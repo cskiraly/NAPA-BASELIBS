@@ -38,6 +38,8 @@
  * but fastest operation is achieved with 8 bit elements
  * This is the only parameter you may want to change.
  */
+#ifdef FEC
+
 #ifndef GF_BITS
 #define GF_BITS  8	/* code over GF(2**GF_BITS) - change to suit */
 #endif
@@ -896,3 +898,5 @@ test_gf()
     }
 }
 #endif /* TEST */
+
+#endif /* FEC */
