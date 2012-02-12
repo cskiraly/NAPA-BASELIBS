@@ -276,13 +276,13 @@ get_system_libs
 prepare_lib libevent LIBEVENT_DIR "event2/event.h libevent.a" \
         "cache_or_wget http://www.monkey.org/~provos/libevent-2.0.3-alpha.tar.gz; \
                   tar xvzf libevent-2.0.3-alpha.tar.gz" \
-			 "./configure --prefix=\$LIB_HOME ${HOSTARCH:+--host=$HOSTARCH};\
+			 "./configure --prefix=\$LIB_HOME --libdir=\$LIB_HOME/lib ${HOSTARCH:+--host=$HOSTARCH};\
         $MAKE; make install" 
 
 prepare_lib libconfuse LIBCONFUSE_DIR "confuse.h libconfuse.a" \
 	"cache_or_wget http://savannah.nongnu.org/download/confuse/confuse-2.7.tar.gz;\
 	tar xvzf confuse-2.7.tar.gz" \
-			 "./configure --disable-examples --prefix=\$LIB_HOME  ${HOSTARCH:+--host=$HOSTARCH};\
+			 "./configure --disable-examples --prefix=\$LIB_HOME --libdir=\$LIB_HOME/lib ${HOSTARCH:+--host=$HOSTARCH};\
 			 $MAKE; make install" 
 [ `uname -m` = x86_64 ] && LIBEXPAT_HACK='--with-expat=builtin'
 
@@ -290,7 +290,7 @@ if [ -n "$ALTO" ] ; then
 prepare_lib libxml2 LIBXML2_DIR "libxml2/libxml/xmlversion.h libxml2/libxml/xmlIO.h libxml2/libxml/parser.h libxml2/libxml/tree.h libxml2.a" \
         "cache_or_wget http://xmlsoft.org/sources/libxml2-2.7.6.tar.gz; \
               tar xvzf libxml2-2.7.6.tar.gz" \
-        "./configure --with-python=no --with-threads --prefix=\$LIB_HOME  ${HOSTARCH:+--host=$HOSTARCH};\
+        "./configure --with-python=no --with-threads --prefix=\$LIB_HOME --libdir=\$LIB_HOME/lib ${HOSTARCH:+--host=$HOSTARCH};\
 		    $MAKE; make install" 
 fi
 }
