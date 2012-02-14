@@ -116,7 +116,7 @@ int ResultBuffer::publishResults(void){
 		publish_name += stat_suffixes[publish[i]];
 		mr.published_name = publish_name.c_str();
 		debug("MONL: publishResults called: %s value: %f", mr.published_name, mr.value);
-		fprintf(stderr,"abouttopublish,%s,%s,%s,%s,%f,%s,%s,%.3f\n",
+		info("abouttopublish,%s,%s,%s,%s,%f,%s,%s,%.3f\n",
 		mr.originator, mr.targetA, mr.targetB, mr.published_name, mr.value,
 		mr.string_value, mr.channel, ts);
 		if (repo_client) repPublish(repo_client, NULL, NULL, &mr);
