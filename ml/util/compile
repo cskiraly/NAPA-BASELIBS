@@ -1,0 +1,1 @@
+gcc upnp.c test_upnp.c /usr/lib/libminiupnpc.so  && ./a.out
