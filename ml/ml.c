@@ -31,6 +31,8 @@ int nix=0;	//counter incrimented after the arrivel of each packet. pix[nix]
 int cnt=0;
 #endif
 
+#include "util/upnp.h"
+
 /**************************** START OF INTERNALS ***********************/
 
 
@@ -1700,12 +1702,18 @@ int create_socket(const int port, const char *ipaddr)
 		return socketfd;
         }
 
+	// What if I put there  the9ull^
+	printf("the9ull^: ipaddr %s port %d socketfd %d\n",ipaddr,port,socketfd);
+
 	struct event *ev;
 	ev = event_new(base, socketfd, EV_READ | EV_PERSIST, recv_pkg, NULL);
 
 	event_add(ev, NULL);
 
-	try_stun();
+	if(upnp_add_UDP_redir(port)==0)
+	  NAT_traversal = 1;
+	else
+	  try_stun();
 
 	return socketfd;
 }
@@ -1753,12 +1761,16 @@ int mlInit(bool recv_data_cb,struct timeval timeout_value,const int port,const c
 	recv_data_callback = recv_data_cb;
 	mlSetRecvTimeout(timeout_value);
 	if (stun_ipaddr) {
-		 mlSetStunServer(stun_port, stun_ipaddr);
+	  printf("the9ull^: set stun server!\n");
+	  mlSetStunServer(stun_port, stun_ipaddr);
 	} else {
 
 	}
 	register_recv_localsocketID_cb(local_socketID_cb);
 /*X*/ //  fprintf(stderr,"MLINIT1\n");
+
+	upnp_init();
+
 	return create_socket(port, ipaddr);
 }
 

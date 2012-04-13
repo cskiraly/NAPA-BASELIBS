@@ -9,12 +9,6 @@
 #include <miniupnpc/miniwget.h>
 #include <miniupnpc/upnpcommands.h>
 
-//#include "xchat.h"
-//#include "network.h"
-//#include "upnp.h"
-
-//ls → declspec.h  igd_desc_parse.h  miniupnpc.h  miniwget.h  upnpcommands.h  upnperrors.h  upnpreplyparse.h
-
 static struct UPNPUrls urls;
 static struct IGDdatas data;
 char lanaddr[64] = "";
@@ -30,11 +24,11 @@ int upnp_init(void)
     int ret;
 
     if(lanaddr[0]!='\0'){
-      printf("TB : init yet done\n");
+      printf("UP: init yet done\n");
       return 0;
     }
 
-    printf("TB : init_upnp()\n");
+    printf("UP: init_upnp()\n");
     memset(&urls, 0, sizeof(struct UPNPUrls));
     memset(&data, 0, sizeof(struct IGDdatas));
     devlist = upnpDiscover(2000, NULL/*multicast interface*/, NULL/*minissdpd socket path*/, 0/*sameport*/);
@@ -72,7 +66,7 @@ int upnp_init(void)
     }
     else {
       /* error ! */
-      printf("TB: no Gateway devices found\n");
+      printf("UP: no Gateway devices found\n");
       return 1;
     }
     return 0;
@@ -85,14 +79,14 @@ int upnp_add_redir(int port, const char *protocol)
     int r;
     
     if(lanaddr[0]=='\0'){
-      printf("TB: the init is failed\n");
+      printf("UP: the init is failed\n");
       return 1;
     }
 
-    printf("TB : upnp_add_redir (%s, %d)\n", lanaddr, port);
+    printf("UP: upnp_add_redir (%s, %d)\n", lanaddr, port);
     if(urls.controlURL[0] == '\0')
     {
-        printf("TB : the init was not done !\n");
+        printf("UP: the init was not done !\n");
         return 2;
     }
     sprintf(port_str, "%d", port);
@@ -118,15 +112,15 @@ void upnp_rem_redir (int port)
 {
     char port_str[16];
     int t;
-    printf("TB : upnp_rem_redir (%d)\n", port);
+    printf("UP: upnp_rem_redir (%d)\n", port);
 
     if(lanaddr[0]=='\0'){
-      printf("TB: the init is failed\n");
+      printf("UP: the init is failed\n");
       return;
     }
     if(urls.controlURL[0] == '\0')
     {
-        printf("TB : the init was not done !\n");
+        printf("UP: the init was not done !\n");
         return;
     }
     sprintf(port_str, "%d", port);
