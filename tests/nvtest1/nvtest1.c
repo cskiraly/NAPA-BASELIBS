@@ -123,7 +123,7 @@ int	setup_http_ejector(const char const *url, double delay) {
 
 
 		printf("Registering HTTP ejector toward %s:%d  (delay: %f)\n", host, port, delay);
-        struct evhttp_connection *htc = evhttp_connection_base_new(evb, host, port);
+		struct evhttp_connection *htc = evhttp_connection_base_new(evb, NULL, host, port); // NULL -> dns
         evhttp_connection_set_closecb(htc, http_close_cb, "DUMMY");
 // TODO: THIS SEEMS LOGICAL, BUT CAUSES COREDUMP
 //		evhttp_connection_set_timeout(htc,1);
@@ -143,7 +143,7 @@ int	setup_http_ejector(const char const *url, double delay) {
 void send_test_http_request(const char *addr, int port, char *pprefix) {
 		fprintf(stdout, "Sending HTTP request to %s:%d\n", addr, port);
                   int res;
-                  struct evhttp_connection *htc = evhttp_connection_base_new(evb, addr, port);
+                  struct evhttp_connection *htc = evhttp_connection_base_new(evb, NULL, addr, port); // NULL -> dns
                   evhttp_connection_set_closecb(htc, http_close_cb, "ABCABCT");
                   struct evhttp_request *reqobj = evhttp_request_new (http_request_cb, "VAVAVAV");
                   reqobj->kind = EVHTTP_REQUEST;
