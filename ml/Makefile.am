@@ -7,7 +7,7 @@ noinst_LIBRARIES = libml.a
 
 libml_a_SOURCES = BUGS.txt ml.c ml_log.c util/stun.c \
 	util/udpSocket.c util/rateLimiter.c util/queueManagement.c \
-	fec/RSfec.c
+	util/upnp.c fec/RSfec.c -lminiupnpc
 
 # testMessaginglayer: echoServer.c ml.h ml.c transmissionHandler.h transmissionHandler.c util/stun.h util/stun.c util/udpSocket.h util/udpSocket.c
 #        ${COMPILER} -o echoServer.o echoServer.c ml.h ml.c transmissionHandler.h transmissionHandler.c util/stun.h util/stun.c util/udpSocket.h util/udpSocket.c ${EVENT} ${MATH} ${GDB}
