@@ -40,6 +40,8 @@ int createSocket(const int port,const char *ipaddr)
 {
   /* variables needed */
   struct sockaddr_in udpsrc, udpdst;
+  int yes = 1;
+  int size = sizeof(int);
 
   int returnStatus = 0;
   debug("X.CreateSock %s %d\n",ipaddr, port);
@@ -84,6 +86,7 @@ int createSocket(const int port,const char *ipaddr)
     }
 
   /* bind to the socket */
+  setsockopt(udpSocket,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(int)); //avoid some bind errors due to fast restart, this is a UDP socket
   returnStatus = bind(udpSocket,(struct sockaddr *)&udpsrc,sizeof(udpsrc));
 
   /* This is debug code */
@@ -93,8 +96,6 @@ int createSocket(const int port,const char *ipaddr)
   }
 #ifdef IP_MTU_DISCOVER
 
-  int yes = 1;
-  int size = sizeof(int);
   int pmtuopt = IP_PMTUDISC_DO;
 
   /*Setting the automatic PMTU discoery function from the socket
