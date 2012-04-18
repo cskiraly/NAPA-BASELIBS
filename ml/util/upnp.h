@@ -1,11 +1,11 @@
 #ifndef UPNP_H
 #define UPNP_H
 
-#define upnp_add_TCP_redir(p) upnp_add_redir(p, "TCP")
-#define upnp_add_UDP_redir(p) upnp_add_redir(p, "UDP")
+#define upnp_add_TCP_redir(i,e) upnp_add_redir(i,e, "TCP")
+#define upnp_add_UDP_redir(i,e) upnp_add_redir(i,e, "UDP")
 
 int upnp_init();
-int upnp_add_redir(int port, const char *protocol);
+int upnp_add_redir(int iport, int eport, const char *protocol);
 void upnp_rem_redir(int port);
 
 #endif /* UPNP_H */

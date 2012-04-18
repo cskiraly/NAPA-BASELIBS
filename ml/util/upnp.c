@@ -72,9 +72,9 @@ int upnp_init(void)
     return 0;
 }
 
-int upnp_add_redir(int port, const char *protocol)
+int upnp_add_redir(int iport, int eport, const char *protocol)
 {
-    char port_str[16];
+  char eport_str[16], iport_str[16];
     char desc[50];
     int r;
     
@@ -83,16 +83,17 @@ int upnp_add_redir(int port, const char *protocol)
       return 1;
     }
 
-    printf("UP: upnp_add_redir (%s, %d)\n", lanaddr, port);
+    printf("UP: upnp_add_redir (%s, %d; %d)\n", lanaddr, iport, eport);
     if(urls.controlURL[0] == '\0')
     {
         printf("UP: the init was not done !\n");
         return 2;
     }
-    sprintf(port_str, "%d", port);
-    sprintf(desc, "PeerStreamer %c %d",protocol[0],port);
+    sprintf(iport_str, "%d", iport);
+    sprintf(eport_str, "%d", eport);
+    sprintf(desc, "PeerStreamer %c %d->%d",protocol[0],iport,eport);
     r = UPNP_AddPortMapping(urls.controlURL, data.first.servicetype,
-                            port_str, port_str, lanaddr, desc, protocol, NULL);
+                            eport_str, iport_str, lanaddr, desc, protocol, NULL);
 ;
     /*LIBSPEC int
 UPNP_AddPortMapping(const char * controlURL, const char * servicetype,
@@ -104,7 +105,7 @@ UPNP_AddPortMapping(const char * controlURL, const char * servicetype,
                     const char * proto,
                     const char * remoteHost);*/
     if(r)
-        printf("AddPortMapping(%s, %s, %s) failed\n", port_str, port_str, lanaddr);
+      printf("AddPortMapping(%s, %s, %s) failed\n", iport_str, lanaddr, eport_str);
     return 0;
 }
 
