@@ -206,7 +206,7 @@ void receive_local_socketID_cb(socketID_handle local_socketID, int status){
 }
 
 void recv_data_from_peer_cb(char *buffer,int buflen,unsigned char msgtype,void *arg){
-	buffer[20] = 0;
+  buffer[20] = 0;
   info("[MLTest] - Received data: %s\n",buffer);
 
 
@@ -218,7 +218,7 @@ void conn_fail_cb(int connectionID, void *arg){
 }
 
 int main(int argc, char *argv[]) {
-	char *stun_server = "localhost";
+	char *stun_server = "stun.rnktel.com";
 	char *bind_ip = NULL;
 	int verbosity = 100;
 
