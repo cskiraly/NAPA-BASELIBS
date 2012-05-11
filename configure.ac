@@ -12,7 +12,6 @@ AC_PROG_CXX
 AC_PROG_RANLIB
 AC_LANG_C
 
-#the9ull^
 LIBS="-lminiupnpc $LIBS"
 
 if test "$ac_cv_header_sys_types_h" == no

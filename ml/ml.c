@@ -1675,8 +1675,12 @@ unsigned long resolve(const char *ipaddr)
 int create_socket(const int port, const char *ipaddr)
 {
 	struct sockaddr_in udpaddr = {0};
+	char upnp_done;
+	unsigned short int eport;
 	udpaddr.sin_family = AF_INET;
         debug("X. create_socket %s, %d\n", ipaddr, port);
+	//the9ull^
+	//printf("create_connection!!!\n");
 	if (ipaddr == NULL) {
 		/*
 		* try to guess the local IP address
@@ -1710,10 +1714,29 @@ int create_socket(const int port, const char *ipaddr)
 
 	event_add(ev, NULL);
 
-	if(upnp_add_UDP_redir(port)==0)
-	  NAT_traversal = 1;
-	else
+	//TODO, add offset by internal IP
+	eport = port;
+	//                                   int, ext
+	while((upnp_done=upnp_add_UDP_redir(port,port))!=0 && eport){
+	  printf(">>%d\n",upnp_done);
+	  if(eport-port<10) // 10 tries
+	    eport++;
+	  else
+	    eport = 0;
+	}
+	printf(">%d\n",upnp_done);
+
+	if(upnp_done==0) {
+	  //question: when I put information in
+	  //local_socketID? Now?
+	  printf("upnp_done==0, NST_traversal=true\n");
+	  NAT_traversal = true;
+	}
+	
+	else{
+	  printf("No!\n");
 	  try_stun();
+	}
 
 	return socketfd;
 }
@@ -1723,8 +1746,13 @@ int create_socket(const int port, const char *ipaddr)
  */
 void try_stun()
 {
+  error("* Mi han chiamata!");
+  printf("#");
 	if (isStunDefined()) {
 		struct timeval timeout_value_NAT_traversal = NAT_TRAVERSAL_TIMEOUT;
+
+		error("* E lo stun è definito!");
+		printf("@");
 
 		/*
 		* send the NAT traversal STUN request

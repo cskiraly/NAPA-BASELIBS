@@ -49,6 +49,7 @@ void send_data_to_peer(int fd, short event,void *arg){
 		return;
 	}
 
+
 	info("%d.[MLTest} - Sending data to peer 2...", execNum);
 
 	char* buffer;
@@ -60,7 +61,9 @@ void send_data_to_peer(int fd, short event,void *arg){
 		memset(buffer,letter, msgLen);
 		buffer[msgLen-1] = 0;
 		mlSendData(connectionID,buffer,msgLen,msgtype,NULL);
-		info("[MLTest} - Message '%c' has been sent.",letter);
+		info("[MLTest} - Message '%c' has been sent.",letter); 
+		//the9ull^
+		printf("Sending!\n");
 		letter++;
 		if (letter > 0x7d ) letter = 0x41;		
 	}

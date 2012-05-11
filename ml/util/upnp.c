@@ -74,7 +74,7 @@ int upnp_init(void)
 
 int upnp_add_redir(int iport, int eport, const char *protocol)
 {
-  char eport_str[16], iport_str[16];
+    char eport_str[16], iport_str[16];
     char desc[50];
     int r;
     
