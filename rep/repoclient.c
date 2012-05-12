@@ -42,8 +42,8 @@ HANDLE repOpen(const char *server, int publish_delay) {
 
 	info("Opening repository client %p to http://%s:%d", rep, rep->address,  rep->port);
 
-	if ((rep->evhttp_conn = evhttp_connection_base_new(eventbase, NULL /*struct evdns_base *dnsbase*/, rep->address,  rep->port)) == NULL) 
-	  fatal("Unable to establish connection to %s:%d", rep->address, rep->port);
+	if ((rep->evhttp_conn = evhttp_connection_base_new(eventbase,  rep->address,  rep->port)) == NULL) 
+		fatal("Unable to establish connection to %s:%d", rep->address, rep->port);
 
 	if (publish_delay) {
 		rep->publish_buffer = calloc(sizeof(struct deferred_publish), PUBLISH_BUFFER_SIZE);

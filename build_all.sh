@@ -21,6 +21,7 @@ if [ -n "$ALL_DIR" ] ; then
   [ -z "$LIBEVENT_DIR" ] && LIBEVENT_DIR=$ALL_DIR/libevent
   [ -z "$LIBCONFUSE_DIR" ] && LIBCONFUSE_DIR=$ALL_DIR/libconfuse;
   [ -z "$LIBXML2_DIR" ] && LIBXML2_DIR=$ALL_DIR/libxml2;
+  [ -z "$MINIUPNPC_DIR" ] && $MINIUPNPC_DIR=$ALL_DIR/miniupnpc;
 fi
 
 
@@ -36,6 +37,7 @@ fi
 [ -n "$LIBEVENT_DIR" ] || LIBEVENT_DIR="<build_local>"
 [ -n "$LIBCONFUSE_DIR" ] || LIBCONFUSE_DIR="<build_local>"
 [ -n "$LIBXML2_DIR" ] || LIBXML2_DIR="<build_local>"
+[ -n "$MINIUPNPC_DIR" ] || MINIUPNPC_DIR="<build_local>"
 
 # leave empty or assign 0 to disable these features.
 # or assign 1 or anything else to enable them. 
@@ -187,6 +189,7 @@ cache_or_wget() {
 }
    
 prepare_lib() {
+    echo "ASS $1 $2 $3 $4 $5"
     LIB_NAME="$1"
     LIB_DIR_VARNAME="$2"
     eval "LIB_DIR=\"\$$2\""
@@ -194,6 +197,8 @@ prepare_lib() {
     TEST_FILES="$3"
     DOWNLOAD_CMD="$4"
     BUILD_CMD="$5"
+
+    echo "SHIT $DOWNLOAD_CMD"
     
     LIB_HOME="${THIRDPARTY_DIR}/${LIB_NAME}"
     if [ "$LIB_DIR" == '<rebuild_local>' ] ; then INSTALL_COMPONENT=true
@@ -293,6 +298,13 @@ prepare_lib libxml2 LIBXML2_DIR "libxml2/libxml/xmlversion.h libxml2/libxml/xmlI
         "./configure --with-python=no --with-threads --prefix=\$LIB_HOME --libdir=\$LIB_HOME/lib ${HOSTARCH:+--host=$HOSTARCH};\
 		    $MAKE; make install" 
 fi
+
+prepare_lib libminiupnpc MINIUPNPC_DIR "miniupnpc/miniupnpc.h miniupnpc/miniwget.h miniupnpc/upnpcommands.h libminiupnpc.a" \
+        "cache_or_wget http://miniupnp.free.fr/files/download.php?file=miniupnpc-1.5.20110618.tar.gz; \
+                  tar xvzf download.php\?file\=miniupnpc-1.5.20110618.tar.gz" \
+			 "INSTALLPREFIX=\$LIB_HOME make install"
+
+
 }
 
 prepare_libs 
@@ -305,15 +317,17 @@ echo "=============== YOUR 3RDPARTY DIRECTORIES ============"
 echo "LIBEVENT_DIR=$LIBEVENT_DIR" 
 echo "LIBCONFUSE_DIR=$LIBCONFUSE_DIR" 
 echo "LIBXML2_DIR=$LIBXML2_DIR"
+echo "MINIUPNPC_DIR=$MINIUPNPC_DIR"
 
 echo
 echo ">>> Press enter continue with building NAPA-BASELIBS..."
 $QUICK || read
 
-export LIBEVENT_DIR LIBCONFUSE_DIR LIBXML2_DIR
+export LIBEVENT_DIR LIBCONFUSE_DIR LIBXML2_DIR MINIUPNPC_DIR
 
    EVOPT= ; [ -n LIBEVENT_DIR ] && EVOPT="--with-libevent2=$LIBEVENT_DIR"
    CONFOPT= ; [ -n LIBCONFUSE_DIR ] && CONFOPT="--with-libconfuse=$LIBCONFUSE_DIR"
+   UPNPOPT= ; [ -n MINIUPNPC_DIR ] && UPNPOPT="--with-libminiupnpc=$MINIUPNPC_DIR"
    if [ -e .svn -a -n "$UPDATE_BASELIBS" ] ; then
       svn update
    fi
@@ -321,8 +335,8 @@ export LIBEVENT_DIR LIBCONFUSE_DIR LIBXML2_DIR
      [ -e Makefile ] && $MAKE distclean
    mkdir -p m4 config
      autoreconf --force -I config -I m4 --install
-     echo "./configure $EVOPT $CONFOPT $CONF_CPPFLAGS ${HOSTARCH:+--host=$HOSTARCH}"
-     echo "./configure $EVOPT $CONFOPT $CONF_CPPFLAGS ${HOSTARCH:+--host=$HOSTARCH}" > conf.sh
+     echo "./configure $EVOPT $CONFOPT $UPNPOPT $CONF_CPPFLAGS ${HOSTARCH:+--host=$HOSTARCH}"
+     echo "./configure $EVOPT $CONFOPT $UPNPOPT $CONF_CPPFLAGS ${HOSTARCH:+--host=$HOSTARCH}" > conf.sh
      sh conf.sh
      echo "//blah" > common/chunk.c
    fi

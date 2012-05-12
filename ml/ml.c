@@ -1650,6 +1650,7 @@ debug("X. NatTrTo %d\n", NAT_traversal);
 		debug("ML: NAT traversal request re-send\n");
 		if(receive_SocketID_cb)
 			(receive_SocketID_cb) (&local_socketID, 2);
+		printf("the9ull^: retry stun\n");
 		try_stun();
 	}
 debug("X. NatTrTo\n");
@@ -1731,6 +1732,8 @@ int create_socket(const int port, const char *ipaddr)
 	  //local_socketID? Now?
 	  printf("upnp_done==0, NST_traversal=true\n");
 	  NAT_traversal = true;
+	  if(receive_SocketID_cb)
+	    (receive_SocketID_cb) (&local_socketID, 0);
 	}
 	
 	else{
