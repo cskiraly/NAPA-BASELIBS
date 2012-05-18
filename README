@@ -8,7 +8,6 @@ PREREQUISITES
 Developments versions of the following libraries are needed:
  - libevent2 (http://monkey.org/~provos/libevent/ - note that we
    use version 2.0, generally referred to as libevent2)
- - libconfuse (http://www.nongnu.org/confuse/)
 
 These libraries should either be compiled from source and installed in
 some folder, or should be installed in the system. Packages (deb, RPM)
@@ -49,9 +48,9 @@ COMPILATION & DOCUMENT GENERATION
 ./configure
 make
 
-If libevent or libconfuse are installed in a non-standard location (i.e.
+If libevent is installed in a non-standard location (i.e.
 not in /usr or /usr/local) then use
-./configure --with-lib[confuse|event2]=_dir_location
+./configure --with-libevent2=_dir_location
 
 To generate HTML doc by doxygen into directory doxygen/html, use:
 make doxygen

@@ -19,7 +19,6 @@ fi
 if [ -n "$ALL_DIR" ] ; then
   [ -e "$ALL_DIR" ] || { echo "Directory in \$ALL_DIR does not exist: $ALL_DIR"; exit 1; }  
   [ -z "$LIBEVENT_DIR" ] && LIBEVENT_DIR=$ALL_DIR/libevent
-  [ -z "$LIBCONFUSE_DIR" ] && LIBCONFUSE_DIR=$ALL_DIR/libconfuse;
   [ -z "$LIBXML2_DIR" ] && LIBXML2_DIR=$ALL_DIR/libxml2;
 fi
 
@@ -34,7 +33,6 @@ fi
 # If built locally, it will be built under ${BUILD_ROOT_DIR}/3RDPARTY-LIBS
 
 [ -n "$LIBEVENT_DIR" ] || LIBEVENT_DIR="<build_local>"
-[ -n "$LIBCONFUSE_DIR" ] || LIBCONFUSE_DIR="<build_local>"
 [ -n "$LIBXML2_DIR" ] || LIBXML2_DIR="<build_local>"
 
 # leave empty or assign 0 to disable these features.
@@ -279,13 +277,6 @@ prepare_lib libevent LIBEVENT_DIR "event2/event.h libevent.a" \
 			 "./configure --prefix=\$LIB_HOME --libdir=\$LIB_HOME/lib ${HOSTARCH:+--host=$HOSTARCH};\
         $MAKE; make install" 
 
-prepare_lib libconfuse LIBCONFUSE_DIR "confuse.h libconfuse.a" \
-	"cache_or_wget http://savannah.nongnu.org/download/confuse/confuse-2.7.tar.gz;\
-	tar xvzf confuse-2.7.tar.gz" \
-			 "./configure --disable-examples --prefix=\$LIB_HOME --libdir=\$LIB_HOME/lib ${HOSTARCH:+--host=$HOSTARCH};\
-			 $MAKE; make install" 
-[ `uname -m` = x86_64 ] && LIBEXPAT_HACK='--with-expat=builtin'
-
 if [ -n "$ALTO" ] ; then
 prepare_lib libxml2 LIBXML2_DIR "libxml2/libxml/xmlversion.h libxml2/libxml/xmlIO.h libxml2/libxml/parser.h libxml2/libxml/tree.h libxml2.a" \
         "cache_or_wget http://xmlsoft.org/sources/libxml2-2.7.6.tar.gz; \
@@ -298,22 +289,19 @@ fi
 prepare_libs 
 
 grep -q "^<" <<<$LIBEVENT_DIR  && LIBEVENT_DIR=
-grep -q "^<" <<<$LIBCONFUSE_DIR  && LIBCONFUSE_DIR=
 grep -q "^<" <<<$LIBXML2_DIR  && LIBXML2_DIR=
 
 echo "=============== YOUR 3RDPARTY DIRECTORIES ============"
 echo "LIBEVENT_DIR=$LIBEVENT_DIR" 
-echo "LIBCONFUSE_DIR=$LIBCONFUSE_DIR" 
 echo "LIBXML2_DIR=$LIBXML2_DIR"
 
 echo
 echo ">>> Press enter continue with building NAPA-BASELIBS..."
 $QUICK || read
 
-export LIBEVENT_DIR LIBCONFUSE_DIR LIBXML2_DIR
+export LIBEVENT_DIR LIBXML2_DIR
 
    EVOPT= ; [ -n LIBEVENT_DIR ] && EVOPT="--with-libevent2=$LIBEVENT_DIR"
-   CONFOPT= ; [ -n LIBCONFUSE_DIR ] && CONFOPT="--with-libconfuse=$LIBCONFUSE_DIR"
    if [ -e .svn -a -n "$UPDATE_BASELIBS" ] ; then
       svn update
    fi

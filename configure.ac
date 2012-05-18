@@ -52,32 +52,6 @@ then
 	exit -1
 fi
 
-AC_ARG_WITH(libconfuse, [  --with-libconfuse=libconfuse_dir use libconfuse in dir])
-if test "$with_libconfuse" == "yes"
-then
-	AC_MSG_ERROR([missing directory specification after --libconfuse])
-	exit -1
-fi
-
-if test -d "$with_libconfuse"
-then
-	CPPFLAGS="$CPPFLAGS -I$with_libconfuse/include"
-	LDFLAGS="$LDFLAGS -L$with_libconfuse/lib"
-fi
-AC_CHECK_HEADER(confuse.h)
-if test "$ac_cv_header_libconfuse_h" == no
-then
-	AC_MSG_ERROR([libconfuse seems to be missing, unable to continue])
-	exit -1
-fi
-	
-AC_CHECK_LIB(confuse, cfg_init)
-if test $ac_cv_lib_confuse_cfg_init == no
-then
-	AC_MSG_ERROR([libconfuse seems to be missing, unable to continue])
-	exit -1
-fi
-
 AC_OUTPUT( [ Makefile \
 	common/Makefile \
 	dclog/Makefile \
