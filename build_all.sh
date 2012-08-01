@@ -282,7 +282,7 @@ prepare_lib libevent LIBEVENT_DIR "event2/event.h libevent.a" \
 prepare_lib libconfuse LIBCONFUSE_DIR "confuse.h libconfuse.a" \
 	"cache_or_wget http://savannah.nongnu.org/download/confuse/confuse-2.7.tar.gz;\
 	tar xvzf confuse-2.7.tar.gz" \
-			 "./configure --disable-examples --prefix=\$LIB_HOME --libdir=\$LIB_HOME/lib ${HOSTARCH:+--host=$HOSTARCH};\
+			 "./configure --disable-examples --prefix=\$LIB_HOME --libdir=\$LIB_HOME/lib ${HOSTARCH:+--build=$HOSTARCH};\
 			 $MAKE; make install" 
 [ `uname -m` = x86_64 ] && LIBEXPAT_HACK='--with-expat=builtin'
 
