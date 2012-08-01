@@ -669,13 +669,15 @@ stunRand()
       int seed = (int)(tick);
 #ifdef _WIN32
       srand(seed);
+   }
+
+   return rand();
 #else
       srandom(seed);
-#endif
    }
-	
 
-   return random(); 
+   return random();
+#endif
 
 }
 
