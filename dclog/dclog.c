@@ -987,8 +987,8 @@ UCHAR DCLogAlarm( DCLog *dclog, const char *code, const char *syn,
   vsnprintf( msg, 480, fmt, str_args );
   va_end( str_args );
 
-  if (snprintf( fn, 256, "%s/%s.%s.%ld", dclog->spool, dclog->from, code,
-                random() ) < 0)
+  if (snprintf( fn, 256, "%s/%s.%s.%d", dclog->spool, dclog->from, code,
+                rand() ) < 0)
     return 0;
 
   if ((fp = fopen( fn, "w" )) == NULL)
