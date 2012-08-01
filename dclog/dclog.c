@@ -56,6 +56,7 @@
 #include <netinet/in.h>
 
 #else
+#include <winsock2.h>
 
 static struct tm *localtime_r(const time_t *clock, struct tm *result) {
     struct tm *res = localtime(clock);
