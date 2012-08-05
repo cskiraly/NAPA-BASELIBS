@@ -33,6 +33,32 @@ then
 	exit -1
 fi
 
+AC_ARG_WITH(libminiupnpc, [  --with-libminiupnpc=libminiupnpc_dir use libminiupnpc in dir])
+if test "$with_libminiupnpc" == "yes"
+then
+	AC_MSG_ERROR([missing directory specification after --libminiupnpc])
+	exit -1
+fi
+if test -d "$with_libminiupnpc"
+then
+	CPPFLAGS="$CPPFLAGS -I$with_libminiupnpc/include"
+	LDFLAGS="$LDFLAGS -L$with_libminiupnpc/lib"
+fi
+
+AC_CHECK_HEADER(miniupnpc/miniupnpc.h)
+if test "$ac_cv_header_miniupnpc_miniupnpc_h" == no
+then
+	AC_MSG_ERROR([libminiupnpc seems to be missing, unable to continue])
+	exit -1
+fi
+
+AC_CHECK_LIB(miniupnpc, upnpDiscover)
+if test $ac_cv_lib_miniupnpc_upnpDiscover == no
+then
+	AC_MSG_ERROR([libminiupnpc seems to be missing, unable to continue])
+	exit -1
+fi
+
 AC_OUTPUT( [ Makefile \
 	tests/Makefile ] )
 
