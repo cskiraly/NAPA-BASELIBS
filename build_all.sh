@@ -346,8 +346,8 @@ export LIBEVENT_DIR LIBCONFUSE_DIR LIBXML2_DIR MINIUPNPC_DIR
       if [ ! -e Makefile -o -n "$REBUILD_BASELIBS" ] ; then
         mkdir -p m4 config
         autoreconf --force -I config -I m4 --install
-     echo "./configure $EVOPT $CONFOPT $CONF_CPPFLAGS ${HOSTARCH:+--host=$HOSTARCH}"
-     echo "./configure $EVOPT $CONFOPT $CONF_CPPFLAGS ${HOSTARCH:+--host=$HOSTARCH}" > conf.sh
+     echo "./configure $EVOPT $CONFOPT $UPNPOPT $CONF_CPPFLAGS ${HOSTARCH:+--host=$HOSTARCH}"
+     echo "./configure $EVOPT $CONFOPT $UPNPOPT $CONF_CPPFLAGS ${HOSTARCH:+--host=$HOSTARCH}" > conf.sh
      sh conf.sh
 	$MAKE clean
       fi
