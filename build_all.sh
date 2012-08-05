@@ -189,7 +189,6 @@ cache_or_wget() {
 }
    
 prepare_lib() {
-    echo "ASS $1 $2 $3 $4 $5"
     LIB_NAME="$1"
     LIB_DIR_VARNAME="$2"
     eval "LIB_DIR=\"\$$2\""
@@ -197,8 +196,6 @@ prepare_lib() {
     TEST_FILES="$3"
     DOWNLOAD_CMD="$4"
     BUILD_CMD="$5"
-
-    echo "SHIT $DOWNLOAD_CMD"
     
     LIB_HOME="${THIRDPARTY_DIR}/${LIB_NAME}"
     if [ "$LIB_DIR" == '<rebuild_local>' ] ; then INSTALL_COMPONENT=true
