@@ -31,7 +31,7 @@ int upnp_init(void)
     printf("UP: init_upnp()\n");
     memset(&urls, 0, sizeof(struct UPNPUrls));
     memset(&data, 0, sizeof(struct IGDdatas));
-    devlist = upnpDiscover(2000, NULL/*multicast interface*/, NULL/*minissdpd socket path*/, 0/*sameport*/);
+    devlist = upnpDiscover(2000, NULL/*multicast interface*/, NULL/*minissdpd socket path*/, 0/*sameport*/,0 , NULL);
     /*LIBSPEC struct UPNPDev * upnpDiscover(int delay, const char * multicastif,
       const char * minissdpdsock, int sameport);*/
 
@@ -93,7 +93,7 @@ int upnp_add_redir(int iport, int eport, const char *protocol)
     sprintf(eport_str, "%d", eport);
     sprintf(desc, "PeerStreamer %c %d->%d",protocol[0],iport,eport);
     r = UPNP_AddPortMapping(urls.controlURL, data.first.servicetype,
-                            eport_str, iport_str, lanaddr, desc, protocol, NULL);
+                            eport_str, iport_str, lanaddr, desc, protocol, NULL, 0);
 ;
     /*LIBSPEC int
 UPNP_AddPortMapping(const char * controlURL, const char * servicetype,
