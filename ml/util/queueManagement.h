@@ -35,7 +35,7 @@ typedef struct PktContainer {
 	int iovlen; 
 	struct sockaddr_in *socketaddr;
 
-	int pktLen;		//kB
+	int pktLen;		//bytes
 	struct timeval timeStamp;
 	struct PktContainer *next;
 	unsigned char priority;
@@ -46,7 +46,7 @@ typedef struct PktQueue {
 	PacketContainer *head;
 	PacketContainer *tail;
 
-	int size;		//kB
+	int size;		//bytes
 
 } PacketQueue;
 
